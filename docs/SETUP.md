@@ -1,59 +1,56 @@
 # Puesta en marcha
 
-Guía para alguien que no programa. Todo se hace con la **cuenta institucional del despacho** (no con una cuenta personal) y todo es gratuito: nunca aceptes pasar Firebase al plan Blaze ni agregar una tarjeta.
+Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Firebase al plan Blaze ni agregar una tarjeta.
 
-## 1. Lo que necesito de ti, todo junto
+## 1. Lo que falta, todo junto
 
-### 1a. Respuestas
+| #   | Qué                               | Cómo                                                 | Se manda por el chat                                          |
+| --- | --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | Decidir la cuenta propietaria     | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    |
+| 2   | Proyecto de Firebase              | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                |
+| 3   | Restringir las API keys           | Paso 3                                               | No                                                            |
+| 4   | Proyecto de Apps Script           | Paso 4                                               | Sí: el ID de la secuencia de comandos                         |
+| 5   | Script Properties                 | Paso 5                                               | **No: son secretos**                                          |
+| 6   | API key de Gemini                 | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio |
+| 7   | URL del aviso de privacidad       | —                                                    | Sí                                                            |
+| 8   | DNS en GoDaddy                    | Paso 7, cuando publiquemos                           | —                                                             |
+| 9   | Despliegue automático del backend | Paso 8, una sola vez                                 | **No: es secreto**                                            |
 
-Las 15 preguntas de `PLAN.md` § 13 (cuenta, dominio, usuarios, alertas, IA, días sin conexión, paleta y tipografía, etc.).
+Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
-### 1b. Datos que **sí** puedes mandarme por el chat
-
-No son secretos: terminan visibles en el navegador de cualquier usuario.
-
-| Dato                                                                                              | Dónde se obtiene      | Paso |
-| ------------------------------------------------------------------------------------------------- | --------------------- | ---- |
-| Correo de la cuenta institucional y si es Google Workspace                                        | —                     | 1    |
-| Configuración web de Firebase (`apiKey`, `authDomain`, `projectId`, `appId`, `messagingSenderId`) | Consola de Firebase   | 2    |
-| ID del proyecto de Apps Script (Script ID)                                                        | Editor de Apps Script | 4    |
-| Cuota diaria de Gemini que muestra AI Studio para Flash y Flash-Lite                              | AI Studio             | 6    |
-| Dominio definitivo y quién administra el DNS de `empirica.mx`                                     | —                     | 7    |
-| Usuarios del despacho: nombre, correo y rol                                                       | —                     | —    |
-| URL o texto del aviso de privacidad                                                               | —                     | —    |
-
-### 1c. Secretos: **no me los mandes**; pégalos tú en Script Properties (paso 5)
-
-| Secreto                                                     | Paso |
-| ----------------------------------------------------------- | ---- |
-| API key de servidor de Firebase (`FIREBASE_SERVER_API_KEY`) | 3    |
-| API key de Gemini (`GEMINI_API_KEY`)                        | 6    |
-
-Si alguno se pega por error en un chat, un correo o el repositorio, se borra y se crea otro.
-
-### 1d. Lo que no tienes que crear
-
-La hoja de cálculo, las carpetas de Drive y los calendarios los crea el propio sistema con `setup()` en la Fase 1.
+La hoja de cálculo, las carpetas de Drive y los calendarios **no** se crean a mano: los crea el sistema con `setup()`.
 
 ---
 
 ## 2. Paso a paso
 
-### Paso 1 · Cuenta institucional
+### Paso 1 · Cuenta propietaria dedicada (recomendado)
 
-1. Usa (o crea) una cuenta dedicada, por ejemplo `portal@empirica.mx`. Si Empírica tiene Google Workspace, créala ahí: sus cuotas son mucho mayores (`LIMITES.md` § 1).
-2. Activa la **verificación en dos pasos** en <https://myaccount.google.com/security>.
-3. Usa esa cuenta en todos los pasos siguientes. Si en tu navegador hay varias cuentas abiertas, revisa el avatar de arriba a la derecha antes de crear cada cosa.
+Todo lo del portal (hoja, Drive, Apps Script, Firebase) vivirá en esta cuenta. Que sea **una cuenta nueva y solo para el portal**, no `enlilh@gmail.com`:
+
+- tus usuarios no verán tu correo personal como remitente, en "Continuar con Google" ni en calendarios compartidos;
+- la credencial del despliegue automático (paso 8) solo tendrá acceso a esa cuenta, no a tus otros proyectos;
+- los datos de los clientes quedan separados de tu información personal.
+
+Cómo:
+
+1. Abre una ventana de incógnito y entra a <https://accounts.google.com/signup>.
+2. Crea la cuenta (por ejemplo `portal.empirica@gmail.com` o el nombre disponible más parecido). Nombre visible: **Empírica Portal**.
+3. Activa la **verificación en dos pasos**: <https://myaccount.google.com/security>.
+4. Usa esa cuenta en todos los pasos siguientes. Si tienes varias cuentas abiertas, revisa el avatar de arriba a la derecha antes de crear cada cosa.
+
+No hace falta Google Workspace. Solo convendría si un día el portal manda más de 100 correos al día de forma sostenida; el sistema avisa antes.
 
 ### Paso 2 · Proyecto de Firebase (plan Spark, gratuito)
 
-1. Entra a <https://console.firebase.google.com> y pulsa **Crear un proyecto**. Nombre: `empirica-portal`. Google Analytics: desactivado (no se necesita).
+1. Entra a <https://console.firebase.google.com> con la cuenta del paso 1 y pulsa **Crear un proyecto**. Nombre: `empirica-portal`. Google Analytics: desactivado.
 2. Menú **Compilación → Authentication → Comenzar**. En **Método de acceso** activa:
-   - **Correo electrónico/contraseña**: solo el primer interruptor. Deja apagado "Vínculo de correo electrónico (acceso sin contraseña)": en el plan gratuito solo manda 5 correos al día.
-   - **Google**: elige el correo de asistencia y guarda.
-3. **Authentication → Configuración → Dominios autorizados**: agrega `portal.empirica.mx` (`localhost` ya viene).
-4. Engrane ⚙ → **Configuración del proyecto → General → Tus apps** → ícono web `</>`. Apodo: `portal-web`. **No** marques Firebase Hosting. Pulsa **Registrar app**.
-5. Copia el bloque `firebaseConfig` que aparece y mándamelo.
+   - **Correo electrónico/contraseña**: solo el primer interruptor. Deja apagado "Vínculo de correo electrónico (acceso sin contraseña)".
+   - **Google**: como correo de asistencia elige la cuenta del paso 1, y guarda.
+3. **Authentication → Configuración → Dominios autorizados**: agrega `portal.empirica.mx`.
+4. **Authentication → Plantillas**: en cada plantilla de correo cambia el nombre del remitente a **Empírica Portal**.
+5. Engrane ⚙ → **Configuración del proyecto → General → Tus apps** → ícono web `</>`. Apodo: `portal-web`. **No** marques Firebase Hosting. Pulsa **Registrar app**.
+6. Copia el bloque `firebaseConfig` y mándamelo.
 
 ### Paso 3 · Restringir las API keys (Google Cloud)
 
@@ -64,48 +61,64 @@ La hoja de cálculo, las carpetas de Drive y los calendarios los crea el propio 
    - Guarda.
 3. **Crear credenciales → Clave de API**. Edítala:
    - Nombre: `portal-servidor`.
-   - _Restricciones de aplicaciones_: Ninguna (la usa Apps Script desde servidores de Google).
+   - _Restricciones de aplicaciones_: Ninguna (la usa Apps Script desde los servidores de Google).
    - _Restricciones de API_: solo **Identity Toolkit API**.
    - Guarda y copia la clave: va a Script Properties en el paso 5. **No me la mandes.**
 
 ### Paso 4 · Proyecto de Apps Script
 
-1. Entra a <https://script.google.com> → **Nuevo proyecto**. Cámbiale el nombre a `Empírica Portal API`.
+1. Entra a <https://script.google.com> → **Nuevo proyecto**. Nombre: `Empírica Portal API`.
 2. Engrane ⚙ **Configuración del proyecto** → copia el **ID de la secuencia de comandos** y mándamelo.
-3. Activa la API de Apps Script (la necesita `clasp` para subir el código): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**.
+3. Activa la API de Apps Script (la usa el despliegue automático): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**.
 
 ### Paso 5 · Script Properties (aquí viven los secretos)
 
-En el editor del proyecto `Empírica Portal API`: ⚙ **Configuración del proyecto → Propiedades de la secuencia de comandos → Agregar propiedad de secuencia de comandos**:
+En el editor del proyecto `Empírica Portal API`: ⚙ **Configuración del proyecto → Propiedades de la secuencia de comandos → Agregar propiedad**:
 
-| Propiedad                 | Valor                                           |
-| ------------------------- | ----------------------------------------------- |
-| `FIREBASE_SERVER_API_KEY` | La clave `portal-servidor` del paso 3           |
-| `FIREBASE_PROJECT_ID`     | `empirica-portal` (o el id que te dio Firebase) |
-| `GEMINI_API_KEY`          | La clave del paso 6                             |
+| Propiedad                 | Valor                                                                                          |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| `FIREBASE_SERVER_API_KEY` | La clave `portal-servidor` del paso 3                                                          |
+| `FIREBASE_PROJECT_ID`     | `empirica-portal` (o el id que te dio Firebase)                                                |
+| `GEMINI_API_KEY`          | La clave del paso 6                                                                            |
+| `ADMIN_EMAILS`            | Los correos de los dos socios titulares, separados por coma: serán los `SOCIO_ADMIN` iniciales |
 
 Guarda. Estos valores no aparecen en el repositorio ni en el navegador.
 
 ### Paso 6 · API key de Gemini
 
-1. Entra a <https://aistudio.google.com/apikey> → **Crear clave de API** → elige el proyecto `empirica-portal`.
+1. Entra a <https://aistudio.google.com/apikey> con la cuenta del paso 1 → **Crear clave de API** → proyecto `empirica-portal`.
 2. Pégala en Script Properties como `GEMINI_API_KEY` (paso 5). **No me la mandes.**
-3. En AI Studio, abre la página de límites de uso de tu proyecto y mándame cuántas peticiones por día te da para Flash y Flash-Lite.
-4. No actives facturación: el modo de IA por defecto (`METADATA_ONLY`) está pensado para el nivel gratuito (`IA.md`).
+3. En AI Studio, abre la página de límites de uso del proyecto y mándame cuántas peticiones por día da para Flash y Flash-Lite.
+4. No actives facturación: el modo `METADATA_ONLY` está pensado para el nivel gratuito (`IA.md`).
 
-### Paso 7 · Dominio (cuando publiquemos)
+### Paso 7 · Dominio en GoDaddy (cuando publiquemos)
 
-Quien administra el DNS de `empirica.mx` agrega este registro:
+1. Entra a GoDaddy → **Mis productos** → junto a `empirica.mx`, **DNS**.
+2. **Agregar nuevo registro**:
 
-| Tipo  | Nombre   | Valor                |
-| ----- | -------- | -------------------- |
-| CNAME | `portal` | `jorch01.github.io.` |
+   | Tipo  | Nombre   | Valor               | TTL    |
+   | ----- | -------- | ------------------- | ------ |
+   | CNAME | `portal` | `jorch01.github.io` | 1 hora |
 
-Después, en GitHub: **Settings → Pages → Source: GitHub Actions**; **Custom domain**: `portal.empirica.mx`; **Enforce HTTPS**. Y en **Settings → Secrets and variables → Actions → Variables**, crea `PAGES_ENABLED` = `true` para que el CI publique. Te aviso cuándo.
+3. Guarda. El cambio puede tardar desde minutos hasta unas horas.
+4. En GitHub: **Settings → Pages → Source: GitHub Actions**; **Custom domain**: `portal.empirica.mx` → **Save**; cuando aparezca, marca **Enforce HTTPS**.
+5. En **Settings → Secrets and variables → Actions → Variables**, crea `PAGES_ENABLED` = `true`. Te aviso cuándo.
 
-### Paso 8 · Subir el backend (Fase 1)
+No toques los demás registros: el correo de `empirica.mx` sigue igual.
 
-Cuando llegue el momento te dejo un comando único. Necesitarás Node.js 22 LTS (<https://nodejs.org>) y, una sola vez, iniciar sesión con la cuenta institucional (`npx @google/clasp login`). Las credenciales quedan en tu computadora, no en el repositorio.
+### Paso 8 · Despliegue automático del backend (una sola vez)
+
+Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma dirección y solo si todas las pruebas pasaron. Necesitas iniciar sesión una vez con la cuenta del paso 1 y guardar esa credencial en GitHub. Sin instalar nada en tu computadora:
+
+1. En la página del repositorio en GitHub: botón verde **Code → Codespaces → Create codespace on main**. Se abre un editor en el navegador (gratis dentro de las horas mensuales de GitHub).
+2. En la terminal de abajo escribe `npx @google/clasp login --no-localhost` y pulsa Enter.
+3. Abre el enlace que aparece, entra con la cuenta del paso 1, acepta los permisos, copia el código que te da Google y pégalo en la terminal.
+4. Escribe `cat ~/.clasprc.json` y copia todo el texto que aparece.
+5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
+6. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
+7. Avísame: dejo configurados el ID del proyecto y la dirección fija del Web App.
+
+Si algún día quieres retirar este acceso: borra el secreto en GitHub y revoca "clasp" en <https://myaccount.google.com/permissions> con la cuenta del paso 1.
 
 ---
 

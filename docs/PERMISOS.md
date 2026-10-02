@@ -1,6 +1,6 @@
 # Matriz de permisos
 
-> Estado: **propuesta de la Fase 0, pendiente de aprobación.** En la Fase 1 esta matriz se escribe en código (`packages/shared/src/permissions`), la misma para el frontend y el backend, y cada celda se cubre con pruebas automáticas.
+> Estado: **aprobada con el plan (2026-10-02)** y ampliada con el alcance por unidad (D13). En la Fase 1 se escribe en código (`packages/shared/src/permissions`), la misma para el frontend y el backend, y cada regla se cubre con pruebas automáticas.
 
 ## Principios
 
@@ -12,49 +12,58 @@
 
 ## Roles
 
-| Rol                   | Lado     | Alcance                                                                               |
-| --------------------- | -------- | ------------------------------------------------------------------------------------- |
-| `SOCIO_ADMIN`         | Despacho | Todos los clientes, administración y bitácora                                         |
-| `ABOGADO`             | Despacho | Clientes donde tiene membresía (asignados)                                            |
-| `ASISTENTE`           | Despacho | Como el abogado, sin borrar ni administrar usuarios                                   |
-| `CLIENTE_ADMIN`       | Cliente  | Lo compartido de su empresa; invita usuarios (con aprobación del despacho)            |
-| `CLIENTE_COLABORADOR` | Cliente  | Como el admin del cliente, sin invitar; puede limitarse a ciertos asuntos o entidades |
-| `CLIENTE_LECTURA`     | Cliente  | Solo lectura de lo compartido                                                         |
+| Rol                   | Lado     | Alcance                                                                                                                          |
+| --------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `SOCIO_ADMIN`         | Despacho | Todos los clientes, administración y bitácora                                                                                    |
+| `ABOGADO`             | Despacho | Clientes donde tiene membresía (asignados)                                                                                       |
+| `ASISTENTE`           | Despacho | Como el abogado, sin borrar ni administrar usuarios                                                                              |
+| `CLIENTE_ADMIN`       | Cliente  | Lo compartido de su empresa, o de su unidad si tiene alcance; invita usuarios dentro de su alcance (con aprobación del despacho) |
+| `CLIENTE_COLABORADOR` | Cliente  | Como el admin del cliente, sin invitar                                                                                           |
+| `CLIENTE_LECTURA`     | Cliente  | Solo lectura de lo compartido                                                                                                    |
 
 Un usuario puede tener membresías en varios clientes (por ejemplo, el contador externo de varias empresas) y elige el cliente activo en el header.
+
+## Alcance por unidad (clientes con varias unidades de negocio)
+
+Cualquier membresía de cliente puede llevar un **alcance**: una lista de unidades (y, si hace falta, de asuntos). Una unidad incluye a sus sucursales.
+
+- **Sin alcance** = usuario del **hub**: ve todas las unidades y el consolidado.
+- **Con alcance** = usuario de **unidad**: ve los registros de sus unidades, los que tiene asignados y los que él creó; nada del resto del cliente, ni en conteos ni en el consolidado.
+- Un `CLIENTE_ADMIN` con alcance solo invita usuarios **dentro** de su alcance, y la invitación queda pendiente de aprobación del despacho.
+- Cambiar el rol o el alcance de alguien obliga a sus dispositivos a borrar y volver a descargar ese cliente, para que no quede nada que ya no le corresponde.
 
 ## Matriz
 
 C = crear · R = leer · U = editar · D = borrar (lógico, con fecha) · — = sin acceso. "Compartido" = solo registros `COMPARTIDO`. "Alcance" = limitado por la membresía del colaborador.
 
-| Recurso                           | SOCIO_ADMIN                  | ABOGADO                                 | ASISTENTE                              | CLIENTE_ADMIN                   | CLIENTE_COLABORADOR                    | CLIENTE_LECTURA      |
-| --------------------------------- | ---------------------------- | --------------------------------------- | -------------------------------------- | ------------------------------- | -------------------------------------- | -------------------- |
-| Clientes                          | CRUD                         | R; U operativo¹                         | R; U operativo¹                        | R²                              | R²                                     | R²                   |
-| Entidades                         | CRUD                         | CRUD                                    | CRU                                    | R                               | R (alcance)                            | R                    |
-| Usuarios                          | CRUD                         | R³                                      | R³                                     | R⁴                              | R⁴                                     | R⁴                   |
-| Membresías                        | CRUD                         | R                                       | R                                      | R (su empresa)                  | —                                      | —                    |
-| Invitaciones                      | CRUD y aprobar               | C⁵ y aprobar (sus clientes)             | —                                      | C (su empresa, queda pendiente) | —                                      | —                    |
-| Asuntos                           | CRUD                         | CRUD                                    | CRU                                    | R compartido                    | R compartido (alcance)                 | R compartido         |
-| Tareas                            | CRUD                         | CRUD                                    | CRU                                    | R compartido; U limitado⁶       | R compartido (alcance); U limitado⁶    | R compartido         |
-| Trámites                          | CRUD                         | CRUD                                    | CRU                                    | R compartido                    | R compartido (alcance)                 | R compartido         |
-| Plantillas de trámite             | CRUD                         | R                                       | R                                      | —                               | —                                      | —                    |
-| Obligaciones (compliance)         | CRUD                         | CRUD                                    | CRU                                    | R compartido                    | R compartido (alcance)                 | R compartido         |
-| Cumplimientos (evidencia)         | CRUD y validar               | CRU y validar                           | CRU y validar                          | C evidencia⁷; R                 | C evidencia⁷; R (alcance)              | R                    |
-| Catálogo de obligaciones          | CRUD                         | R                                       | R                                      | —                               | —                                      | —                    |
-| Contratos                         | CRUD                         | CRUD                                    | CRU                                    | R compartido                    | R compartido (alcance)                 | R compartido         |
-| Documentos                        | CRUD                         | CRUD                                    | CRU                                    | C⁸; R compartido                | C⁸; R compartido (alcance)             | R compartido         |
-| Solicitudes                       | CRUD, clasificar y convertir | CRU, clasificar y convertir             | CRU, clasificar y convertir            | C; R (su empresa)               | C; R (las suyas y su alcance)          | R (su empresa)       |
-| Comentarios                       | CRUD                         | C; R (interno y compartido); UD propios | C; R (interno y compartido); U propios | C⁹; R compartido; UD propios    | C⁹; R compartido (alcance); UD propios | R compartido         |
-| Eventos de calendario             | CRUD                         | CRUD                                    | CRU                                    | R compartido                    | R compartido (alcance)                 | R compartido         |
-| Días inhábiles                    | CRUD                         | R                                       | R                                      | R                               | R                                      | R                    |
-| Notificaciones                    | R y marcar leídas (propias)  | igual                                   | igual                                  | igual                           | igual                                  | igual                |
-| Avisos de conflicto               | R y resolver                 | R y resolver (sus clientes)             | R                                      | —                               | —                                      | —                    |
-| Bitácora                          | R                            | —                                       | —                                      | —                               | —                                      | —                    |
-| Reportes                          | CRUD, generar y enviar       | C (generar), R, enviar                  | C (generar), R                         | R (enviados)                    | R (enviados)                           | R (enviados)         |
-| Configuración                     | CRUD                         | R (pública)                             | R (pública)                            | R (pública)                     | R (pública)                            | R (pública)          |
-| Modo de IA (global y por cliente) | U                            | —                                       | —                                      | —                               | —                                      | —                    |
-| Exportar respaldo                 | todo                         | sus clientes                            | sus clientes                           | lo visible de su empresa        | lo visible (alcance)                   | lo visible           |
-| Feed ICS propio                   | sí                           | sí                                      | sí                                     | sí (solo compartido)            | sí (solo compartido, alcance)          | sí (solo compartido) |
+| Recurso                           | SOCIO_ADMIN                  | ABOGADO                                 | ASISTENTE                              | CLIENTE_ADMIN                                | CLIENTE_COLABORADOR                    | CLIENTE_LECTURA      |
+| --------------------------------- | ---------------------------- | --------------------------------------- | -------------------------------------- | -------------------------------------------- | -------------------------------------- | -------------------- |
+| Clientes                          | CRUD                         | R; U operativo¹                         | R; U operativo¹                        | R²                                           | R²                                     | R²                   |
+| Entidades                         | CRUD                         | CRUD                                    | CRU                                    | R                                            | R (alcance)                            | R                    |
+| Usuarios                          | CRUD                         | R³                                      | R³                                     | R⁴                                           | R⁴                                     | R⁴                   |
+| Membresías                        | CRUD                         | R                                       | R                                      | R (su empresa)                               | —                                      | —                    |
+| Invitaciones                      | CRUD y aprobar               | C⁵ y aprobar (sus clientes)             | —                                      | C (su empresa o su alcance; queda pendiente) | —                                      | —                    |
+| Asuntos                           | CRUD                         | CRUD                                    | CRU                                    | R compartido                                 | R compartido (alcance)                 | R compartido         |
+| Tareas                            | CRUD                         | CRUD                                    | CRU                                    | R compartido; U limitado⁶                    | R compartido (alcance); U limitado⁶    | R compartido         |
+| Trámites                          | CRUD                         | CRUD                                    | CRU                                    | R compartido                                 | R compartido (alcance)                 | R compartido         |
+| Plantillas de trámite             | CRUD                         | R                                       | R                                      | —                                            | —                                      | —                    |
+| Obligaciones (compliance)         | CRUD                         | CRUD                                    | CRU                                    | R compartido                                 | R compartido (alcance)                 | R compartido         |
+| Cumplimientos (evidencia)         | CRUD y validar               | CRU y validar                           | CRU y validar                          | C evidencia⁷; R                              | C evidencia⁷; R (alcance)              | R                    |
+| Catálogo de obligaciones          | CRUD                         | R                                       | R                                      | —                                            | —                                      | —                    |
+| Contratos                         | CRUD                         | CRUD                                    | CRU                                    | R compartido                                 | R compartido (alcance)                 | R compartido         |
+| Documentos                        | CRUD                         | CRUD                                    | CRU                                    | C⁸; R compartido                             | C⁸; R compartido (alcance)             | R compartido         |
+| Solicitudes                       | CRUD, clasificar y convertir | CRU, clasificar y convertir             | CRU, clasificar y convertir            | C; R (su empresa)                            | C; R (las suyas y su alcance)          | R (su empresa)       |
+| Comentarios                       | CRUD                         | C; R (interno y compartido); UD propios | C; R (interno y compartido); U propios | C⁹; R compartido; UD propios                 | C⁹; R compartido (alcance); UD propios | R compartido         |
+| Eventos de calendario             | CRUD                         | CRUD                                    | CRU                                    | R compartido                                 | R compartido (alcance)                 | R compartido         |
+| Días inhábiles                    | CRUD                         | R                                       | R                                      | R                                            | R                                      | R                    |
+| Notificaciones                    | R y marcar leídas (propias)  | igual                                   | igual                                  | igual                                        | igual                                  | igual                |
+| Avisos de conflicto               | R y resolver                 | R y resolver (sus clientes)             | R                                      | —                                            | —                                      | —                    |
+| Bitácora                          | R                            | —                                       | —                                      | —                                            | —                                      | —                    |
+| Reportes                          | CRUD, generar y enviar       | C (generar), R, enviar                  | C (generar), R                         | R (enviados)                                 | R (enviados)                           | R (enviados)         |
+| Configuración                     | CRUD                         | R (pública)                             | R (pública)                            | R (pública)                                  | R (pública)                            | R (pública)          |
+| Modo de IA (global y por cliente) | U                            | —                                       | —                                      | —                                            | —                                      | —                    |
+| Exportar respaldo                 | todo                         | sus clientes                            | sus clientes                           | lo visible de su empresa                     | lo visible (alcance)                   | lo visible           |
+| Feed ICS propio                   | sí                           | sí                                      | sí                                     | sí (solo compartido)                         | sí (solo compartido, alcance)          | sí (solo compartido) |
 
 **Notas**
 

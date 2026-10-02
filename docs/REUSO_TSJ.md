@@ -2,6 +2,8 @@
 
 Revisión del repositorio [Jorch01/TSJ_Filing_online](https://github.com/Jorch01/TSJ_Filing_online) (commit `1dce663`, solo lectura; no se modificó). Archivos estudiados: `docs/js/database.js`, `docs/js/sync.js`, `docs/sw.js`, `docs/google-apps-script/codigo.gs`, `docs/js/app.js` (integración con Gemini y Service Worker), `docs/js/gcal-sync.js`, `test_sync_conflictos.js`, `test_sync_errores.js`, `test_offline.js`, `test_apps_script.js` y `.github/workflows/deploy.yml`.
 
+> **Decisión del socio (2026-10-02):** el portal es una app aparte, **sin vínculo con TSJ Filing y sin ninguna de sus funciones** (expedientes, estrados, calculadoras…). De TSJ solo se reutilizan técnicas internas ya probadas, copiadas aquí con sus pruebas.
+
 ## La diferencia de fondo
 
 TSJ Filing es una app **de un solo usuario**: cada persona guarda **toda** su base, cifrada con su código, como un bloque en una celda de Sheets, y la sincronización baja el bloque, lo fusiona y lo vuelve a subir. El portal es **multiusuario y multicliente**: el servidor tiene que leer cada registro para decidir quién lo ve. Por eso la _forma_ de sincronizar cambia (registro por registro, incremental, filtrado en el servidor), pero las _reglas_ que deciden qué edición gana, que ya están probadas, se conservan.
