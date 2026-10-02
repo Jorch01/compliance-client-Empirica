@@ -668,3 +668,49 @@ describe('sync.push', () => {
     expect(colab.sync().last.changes).toEqual([`Tareas:${ID.tNorte1}`]);
   });
 });
+
+describe('daily quotas of a free account', () => {
+  it('reads Script Properties once per request (50,000 a day in total)', () => {
+    const w = createWorld();
+    const device = new Device(w, ID.cColab).sync();
+    const before = w.google.propertyCalls;
+    device.sync();
+    expect(w.google.propertyCalls - before).toBe(1);
+    const beforePush = w.google.propertyCalls;
+    device.push([op('Tareas', 'update', ID.tNorte1, { estado: 'EN_CURSO' })]);
+    // one read, then reserve and commit
+    expect(w.google.propertyCalls - beforePush).toBe(3);
+  });
+
+  it('keeps each audit entry within what a sheet cell holds', () => {
+    const w = createWorld();
+    const firm = new Device(w, ID.abogado);
+    const long = (c: string) => c.repeat(19_000);
+    expect(
+      firm.push([op('Asuntos', 'update', ID.asNorte, { titulo: 'x'.repeat(900) })]),
+    ).toMatchObject([{ status: 'applied' }]);
+    const id = uid(0x60040);
+    firm.push([
+      op('Tareas', 'create', id, {
+        clienteId: A,
+        titulo: 'Con descripción larga',
+        descripcion: long('a'),
+        // With the description, more than a cell holds if logged as is.
+        checklist: [{ id: 'c1', texto: 'x'.repeat(39_000), hecho: false }],
+        ladoResponsable: 'EMPIRICA',
+        estado: 'POR_HACER',
+        visibilidad: 'COMPARTIDO',
+      }),
+    ]);
+    expect(firm.push([op('Tareas', 'update', id, { descripcion: long('b') })])).toMatchObject([
+      { status: 'applied' },
+    ]);
+    const sheet = w.google.sheet('Bitacora');
+    const longest = Math.max(
+      ...sheet.grid.flat().map((v) => (typeof v === 'string' ? v.length : 0)),
+    );
+    expect(longest).toBeLessThan(50_000);
+    const created = w.rows('Bitacora').find((b) => b.entidadId === id && b.accion === 'CREAR');
+    expect(JSON.stringify(created?.despues)).toContain('caracteres)');
+  });
+});

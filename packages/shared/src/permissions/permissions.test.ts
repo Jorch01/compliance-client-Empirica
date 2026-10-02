@@ -802,6 +802,18 @@ describe('rules inside the cells', () => {
     });
   });
 
+  it('a notification that names no client is also marked read by its recipient', () => {
+    const w = world((d) => {
+      const n = d.Notificaciones.find((x) => x.id === ID.notifColab);
+      if (n) n.clienteId = null;
+    });
+    expect(w.write(ID.cColab, 'Notificaciones', 'update', ID.notifColab, { leida: true }).ok).toBe(
+      true,
+    );
+    expect(w.sees(ID.cColab, 'Notificaciones', ID.notifColab)).toBe(true);
+    expect(w.sees(ID.cAdmin, 'Notificaciones', ID.notifColab)).toBe(false);
+  });
+
   it('notifications: their recipient marks them read and nothing else', () => {
     const w = world();
     expect(w.write(ID.cColab, 'Notificaciones', 'update', ID.notifColab, { leida: true }).ok).toBe(

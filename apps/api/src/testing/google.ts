@@ -1,7 +1,8 @@
 /**
  * Test doubles of the Apps Script services, faithful where it matters:
- * - Sheets keeps a grid with fixed dimensions (writing outside them throws,
- *   as it does for real), takes a leading apostrophe as "literal text" and
+ * - Sheets keeps a grid with fixed dimensions (writing outside them, or more
+ *   than 50,000 characters in a cell, throws, as it does for real), takes a
+ *   leading apostrophe as "literal text" and
  *   otherwise converts text the way Sheets does ("007" becomes 7, "TRUE" a
  *   boolean, "2026-10-02" a date, "=…" a formula). Every formula written is
  *   counted, so a test can prove none ever is.
@@ -130,6 +131,11 @@ export class FakeSheet implements GSheet {
 
   /** Stores a value the way Sheets interprets what setValues receives. */
   write(row: number, column: number, value: unknown): void {
+    if (typeof value === 'string' && value.length > 50_000) {
+      throw new Error(
+        'Your input contains more than the maximum of 50000 characters in a single cell.',
+      );
+    }
     const line = (this.grid[row - 1] ??= []);
     line[column - 1] = this.#google.interpret(value);
   }
@@ -408,6 +414,8 @@ export class FakeGoogle {
   formulas: string[] = [];
   lockBusy = false;
   locksTaken = 0;
+  /** Calls to PropertiesService (each one counts against the daily quota). */
+  propertyCalls = 0;
   readonly globals: GoogleGlobals & { ContentService: unknown; console: Console };
 
   constructor(now: () => number, projectId = 'empirica-portal-test', apiKey = 'test-server-key') {
@@ -480,9 +488,22 @@ export class FakeGoogle {
       },
       PropertiesService: {
         getScriptProperties: () => ({
-          getProperty: (key) => this.props.get(key) ?? null,
-          setProperty: (key, value) => this.props.set(key, value),
-          deleteProperty: (key) => this.props.delete(key),
+          getProperties: () => {
+            this.propertyCalls++;
+            return Object.fromEntries(this.props);
+          },
+          getProperty: (key) => {
+            this.propertyCalls++;
+            return this.props.get(key) ?? null;
+          },
+          setProperty: (key, value) => {
+            this.propertyCalls++;
+            this.props.set(key, value);
+          },
+          deleteProperty: (key) => {
+            this.propertyCalls++;
+            this.props.delete(key);
+          },
         }),
       },
       CacheService: {

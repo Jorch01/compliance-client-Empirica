@@ -85,6 +85,7 @@ export interface GoogleGlobals {
   };
   PropertiesService: {
     getScriptProperties(): {
+      getProperties(): Record<string, string>;
       getProperty(key: string): string | null;
       setProperty(key: string, value: string): unknown;
       deleteProperty(key: string): unknown;

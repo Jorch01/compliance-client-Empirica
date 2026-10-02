@@ -76,10 +76,15 @@ export interface WriteInput {
 const deny = (code: Denial['code'], reason: DenialReason, field?: string): Denial =>
   field ? { ok: false, code, reason, field } : { ok: false, code, reason };
 
-/** The role that applies: per client for a client's records, the base role otherwise. */
+/**
+ * The role that applies: per client for a client's records, the base role
+ * otherwise (and for a personal record, such as a notification, that names
+ * no client).
+ */
 export function roleFor(ctx: UserContext, def: TableDef, clienteId: string | null): Rol | null {
   if (!def.scope.client) return ctx.rolBase;
-  return clienteId ? (ctx.clients.get(clienteId)?.rol ?? null) : null;
+  if (clienteId) return ctx.clients.get(clienteId)?.rol ?? null;
+  return def.audience === 'everyone' ? ctx.rolBase : null;
 }
 
 const isOwner = (ctx: UserContext, table: TableName, row: Row): boolean => {

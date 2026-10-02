@@ -31,15 +31,23 @@ export interface Env {
   log(message: string, details?: unknown): void;
 }
 
+/**
+ * One Env per request. Script Properties are read once, all together: a free
+ * account allows 50,000 reads and writes a day (docs/LIMITES.md), and every
+ * request needs several of them.
+ */
 export function createEnv(g: GoogleGlobals, now: () => number = () => Date.now()): Env {
   const props = g.PropertiesService.getScriptProperties();
   const cache = g.CacheService.getScriptCache();
+  let loaded: Record<string, string> | null = null;
+  const all = (): Record<string, string> => (loaded ??= { ...props.getProperties() });
   return {
     g,
     now,
-    prop: (key) => props.getProperty(key),
+    prop: (key) => all()[key] ?? null,
     setProp: (key, value) => {
       props.setProperty(key, value);
+      all()[key] = value;
     },
     cacheGet: (key) => cache.get(key),
     cachePut: (key, value, seconds) => {

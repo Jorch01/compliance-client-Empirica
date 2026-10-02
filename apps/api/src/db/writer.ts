@@ -117,8 +117,8 @@ export class Writer {
       accion,
       entidad: table,
       entidadId,
-      antes,
-      despues,
+      antes: capForAudit(antes),
+      despues: capForAudit(despues),
       userAgent: this.meta.userAgent ?? null,
       clienteId,
       opId: this.meta.opId ?? null,
@@ -126,6 +126,26 @@ export class Writer {
       alcanceHist: null,
     });
   }
+}
+
+/** A cell holds 50,000 characters; audit values are kept well below. */
+export const MAX_AUDIT_CHARS = 20_000;
+
+/** Shortens long texts (and, if still too long, keeps only the field names). */
+export function capForAudit(value: Value): Value {
+  if (value === null || JSON.stringify(value).length <= MAX_AUDIT_CHARS) return value;
+  if (typeof value !== 'object' || Array.isArray(value)) return '[valor demasiado largo]';
+  const shortened: Record<string, Value> = {};
+  for (const [k, v] of Object.entries(value)) {
+    const json = JSON.stringify(v);
+    shortened[k] =
+      json.length > 1_000
+        ? `${(typeof v === 'string' ? v : json).slice(0, 1_000)}… (${json.length} caracteres)`
+        : v;
+  }
+  return JSON.stringify(shortened).length <= MAX_AUDIT_CHARS
+    ? shortened
+    : { truncado: true, campos: Object.keys(value) };
 }
 
 /** The fields that differ, with their values before and after (for the audit log). */
