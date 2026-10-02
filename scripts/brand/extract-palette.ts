@@ -37,6 +37,7 @@ import { PNG } from 'pngjs';
 import {
   adobeRgbToLinear,
   deltaEOk,
+  labD50ToSrgb,
   formatOklch,
   linearAdobeRgbToLinearSrgb,
   linearSrgbToOklab,
@@ -563,15 +564,53 @@ function photoClusters(png: PNG): Cluster[] {
 // Roles: which extracted color is which brand color
 // ---------------------------------------------------------------------------
 
+interface SpotColors {
+  dark: string;
+  light: string;
+  spots: { name: string; lab: number[]; paperLab: number[]; hex: string }[];
+}
+
+/** brand/spot-colors.json, written by extract-vector.ts from the vector master. */
+function readSpotColors(): SpotColors {
+  try {
+    return JSON.parse(readFileSync(join(BRAND, 'spot-colors.json'), 'utf8')) as SpotColors;
+  } catch {
+    throw new Error('Missing brand/spot-colors.json: run npm run brand:vector first.');
+  }
+}
+
+/** A tint of a spot color as Illustrator renders it: Lab interpolation paper -> ink. */
+function spotTint(spot: { lab: number[]; paperLab: number[] }, tint: number): string {
+  const lab = [0, 1, 2].map(
+    (i) => (spot.paperLab[i] ?? 0) + tint * ((spot.lab[i] ?? 0) - (spot.paperLab[i] ?? 0)),
+  ) as [number, number, number];
+  return toHex(labD50ToSrgb(lab).rgb);
+}
+
+/**
+ * Which color is which. The vector master wins: it defines the brand as two
+ * Pantone spot colors. The letterhead raster drifted slightly on export, so
+ * its clusters stay in palette.json as evidence, with their distance to the
+ * master, but they no longer set the anchors.
+ */
 function assignRoles(
   letterhead: Cluster[],
   layer: TranslucentLayer | null,
   overlays: Record<string, { hex: string }[]>,
 ) {
+  const spotFile = readSpotColors();
+  const dark = spotFile.spots.find((s) => s.name === spotFile.dark);
+  const light = spotFile.spots.find((s) => s.name === spotFile.light);
+  if (!dark || !light) throw new Error('brand/spot-colors.json is incomplete.');
+
   const darkest = [...letterhead].sort((a, b) => a.oklch.l - b.oklch.l)[0];
-  const accents = letterhead.filter((c) => c.oklch.l > 0.6).sort((a, b) => b.oklch.c - a.oklch.c);
-  const accent = accents[0];
-  const tint = layer?.onWhite[0];
+  const accent = letterhead.filter((c) => c.oklch.l > 0.6).sort((a, b) => b.oklch.c - a.oklch.c)[0];
+  const distance = (a: string | undefined, b: string): number | null =>
+    a ? round(deltaEOk(rgbToOklab(parseHex(a)), rgbToOklab(parseHex(b)))) : null;
+
+  // The watermark is the light spot printed as a tint; its opacity is measured
+  // from the letterhead's mask, not assumed.
+  const opacity = layer?.opacity ?? 0.2;
 
   const headlineTops = Object.entries(overlays)
     .filter(([name]) => name.includes('titular'))
@@ -586,18 +625,21 @@ function assignRoles(
 
   return {
     green: {
-      hex: darkest?.hex,
-      rule: 'Letterhead: darkest ink cluster (the logo).',
+      hex: dark.hex,
+      rule: `Vector master: spot color ${dark.name}, Lab (D50) to sRGB.`,
+      letterhead: darkest?.hex,
+      deltaEToLetterhead: distance(darkest?.hex, dark.hex),
     },
     peach: {
-      hex: accent?.hex,
-      rule: 'Letterhead: most chromatic cluster with OKLCH L > 0.6 (side contact text).',
+      hex: light.hex,
+      rule: `Vector master: spot color ${light.name}, Lab (D50) to sRGB.`,
+      letterhead: accent?.hex,
+      deltaEToLetterhead: distance(accent?.hex, light.hex),
     },
     blush: {
-      hex: tint?.hex,
-      rule: 'Letterhead: the translucent watermark layer composited over white (what the reader sees).',
-      opacity: layer?.opacity,
-      ink: layer?.ink[0]?.hex,
+      hex: spotTint(light, opacity),
+      rule: `${light.name} at the watermark's tint (${Math.round(opacity * 100)}%, measured from the letterhead mask).`,
+      letterhead: layer?.onWhite[0]?.hex,
     },
     salmon: {
       hex: headlineTops[0],

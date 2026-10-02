@@ -6,6 +6,7 @@
  * what the reviewer sees is what the portal will use. Fonts load from Google
  * Fonts here only for convenience; the app self-hosts them (works offline).
  */
+import logos from '../../packages/shared/src/brand/logos.json' with { type: 'json' };
 import { formatOklch, hexToOklch } from '../../packages/shared/src/brand/color.ts';
 import type {
   CategoricalReport,
@@ -23,9 +24,6 @@ import {
 
 interface PreviewInput {
   tokens: BrandTokens;
-  palette: {
-    letterhead: { clusters: { hex: string; source?: { space: string; rgb: number[] } }[] };
-  };
   wheel: number[];
   chartOrder: number[];
   chartReports: Record<
@@ -43,6 +41,14 @@ interface PreviewInput {
     use: string;
     pass: boolean;
   }[];
+}
+
+/** Official logo outlines (from the vector master), drawn in the current text color. */
+function logoSvg(name: keyof typeof logos, height: string, label: string): string {
+  const logo = logos[name];
+  return `<svg viewBox="${logo.viewBox}" style="height:${height};width:auto;display:block" fill="currentColor" role="img" aria-label="${label}">${logo.paths
+    .map((d) => `<path d="${d}"/>`)
+    .join('')}</svg>`;
 }
 
 const esc = (s: string): string =>
@@ -86,7 +92,7 @@ function swatch(hex: string, label: string, extra = ''): string {
 function mock(mode: ThemeMode): string {
   const dark = mode === 'dark';
   return `<div class="t-${mode} mock" ${dark ? 'data-mock="dark"' : ''}>
-  <div class="mock-bar"><span class="mock-brand">empírica</span><span class="mock-tag">Fractional Legal Team</span><span class="mock-dot" title="En línea · sincronizado">●</span></div>
+  <div class="mock-bar"><span class="mock-brand">${logoSvg('logotipo', '30px', 'Empírica Legal Lab')}</span><span class="mock-tag">Fractional Legal Team</span><span class="mock-dot" title="En línea · sincronizado">●</span></div>
   <div class="mock-body">
     <p class="label">Inicio del cliente · ${dark ? 'modo oscuro' : 'modo claro'}</p>
     <h3 class="mock-title">Cliente Demo, S.A. de C.V.</h3>
@@ -174,12 +180,8 @@ function chartSummary(r: CategoricalReport, all: CategoricalReport): string {
 }
 
 export function renderPreview(input: PreviewInput): string {
-  const { tokens, palette, wheel, chartOrder, chartReports, contrastRows } = input;
+  const { tokens, wheel, chartOrder, chartReports, contrastRows } = input;
   const t = tokens;
-  const adobe = (hex: string): string => {
-    const c = palette.letterhead.clusters.find((x) => x.hex === hex);
-    return c?.source ? `<small>Membrete: ${c.source.space} ${c.source.rgb.join(', ')}</small>` : '';
-  };
   const passCount = contrastRows.filter((r) => r.pass).length;
 
   const ramps = (['green', 'accent', 'neutral'] as const)
@@ -231,6 +233,7 @@ h1{font-size:clamp(2rem,4vw,2.9rem)}h2{font-size:1.9rem;margin-top:2.2em}h4{font
 .lead{color:var(--muted-foreground);max-width:70ch}
 .card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:var(--shadow-md);padding:20px}
 .grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.logo-tile{display:flex;align-items:center;justify-content:center;min-height:150px;border-radius:var(--radius-card);border:1px solid var(--border);background:#fff;color:${t.brand.green}}.logo-tile.dark{background:${t.brand.green};color:${t.brand.peach}}.logos{margin-bottom:16px}
 .swatch{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-card);padding:12px}
 .chip{width:64px;height:64px;border-radius:12px;flex:none;border:1px solid rgb(0 0 0 / .08)}
 .meta{display:flex;flex-direction:column;font-size:.85rem}.meta code{font-size:.85rem}.meta small{color:var(--muted-foreground)}
@@ -238,7 +241,7 @@ h1{font-size:clamp(2rem,4vw,2.9rem)}h2{font-size:1.9rem;margin-top:2.2em}h4{font
 .ramp-step{padding:10px 4px;font-size:.62rem;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}.ramp-step span{overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .mock{background:var(--background);color:var(--foreground);border-radius:var(--radius-card);overflow:hidden;border:1px solid var(--border)}
 .mock-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--sidebar);color:var(--sidebar-foreground);border-bottom:1px solid var(--sidebar-border)}
-.mock-brand{font:600 1.35rem var(--font-display)}.mock-tag{font:600 .62rem var(--font-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--sidebar-muted-foreground)}.mock-dot{margin-left:auto;color:var(--sidebar-accent)}
+.mock-brand{color:var(--sidebar-accent)}.mock-tag{font:600 .62rem var(--font-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--sidebar-muted-foreground)}.mock-dot{margin-left:auto;color:var(--sidebar-accent)}
 .mock-body{padding:18px;display:flex;flex-direction:column;gap:10px;background:var(--card)}
 .mock-title{font-size:1.6rem;color:var(--heading)}.mock-text{margin:0;color:var(--card-foreground)}.mock-muted{margin:0;color:var(--muted-foreground);font-size:.88rem}
 .mock a,.link{color:var(--link);text-underline-offset:3px}
@@ -278,17 +281,23 @@ footer{margin-top:48px;color:var(--muted-foreground);font-size:.85rem}
 <body>
 <button class="btn secondary toggle" type="button" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">Claro / oscuro</button>
 <main>
-<p class="label">Empírica Portal · Fase 0 · Propuesta pendiente de aprobación</p>
+<p class="label">Empírica Portal · Paleta y tipografía A aprobadas · Verde y durazno ajustados al Pantone oficial</p>
 <h1>Paleta, tokens y tipografía</h1>
-<p class="lead">Todos los colores salen de los archivos de marca (membrete y publicaciones) con un script reproducible (<code>npm run brand:palette</code>). Los tonos intermedios se calculan con reglas OKLCH documentadas en <code>scripts/brand/build-tokens.ts</code>; ningún valor está escrito a mano. Contraste WCAG 2.2 AA: <strong>${passCount} de ${contrastRows.length}</strong> combinaciones cumplen.</p>
+<p class="lead">Todos los colores salen de los archivos de marca (archivo maestro en vector, membrete y publicaciones) con scripts reproducibles (<code>npm run brand:vector</code> y <code>npm run brand:palette</code>). Los tonos intermedios se calculan con reglas OKLCH documentadas en <code>scripts/brand/build-tokens.ts</code>; ningún valor está escrito a mano. Contraste WCAG 2.2 AA: <strong>${passCount} de ${contrastRows.length}</strong> combinaciones cumplen.</p>
 
 <h2>1. Colores de la marca</h2>
-<p class="lead">El membrete está codificado en Adobe RGB (1998); se convirtió a sRGB píxel por píxel. El verde del logotipo queda apenas fuera del gamut sRGB, así que en pantalla se usa el sRGB más cercano (diferencia apenas perceptible).</p>
+<p class="lead">El archivo maestro en vector (Illustrator) define la marca con dos tintas directas: <strong>PANTONE 627 C</strong> y <strong>PANTONE 7514 C</strong>. Sus valores Lab se convierten a sRGB con un procedimiento estándar. El salmón sale de las publicaciones y el rubor es el 7514 C al 20 %, la misma tinta que usa la marca de agua del membrete.</p>
+<div class="grid g4 logos">
+<div class="logo-tile dark">${logoSvg('logo', '96px', 'Logotipo de Empírica Legal Lab')}</div>
+<div class="logo-tile">${logoSvg('logo', '96px', 'Logotipo de Empírica Legal Lab')}</div>
+<div class="logo-tile dark">${logoSvg('sello', '104px', 'Sello circular de Empírica Legal Lab')}</div>
+<div class="logo-tile">${logoSvg('simbolo', '64px', 'Símbolo de Empírica')}</div>
+</div>
 <div class="grid g4">
-${swatch(t.brand.green, 'Verde institucional', `<small>Logotipo del membrete</small>${adobe(t.brand.green)}`)}
-${swatch(t.brand.peach, 'Durazno', `<small>Texto de contacto del membrete</small>${adobe(t.brand.peach)}`)}
+${swatch(t.brand.green, 'Verde institucional', '<small>PANTONE 627 C (archivo maestro)</small>')}
+${swatch(t.brand.peach, 'Durazno', '<small>PANTONE 7514 C (archivo maestro)</small>')}
 ${swatch(t.brand.salmon, 'Salmón', '<small>Titulares de las 3 publicaciones (idéntico)</small>')}
-${swatch(t.brand.blush, 'Rubor', '<small>Marca de agua: durazno al 20 % sobre papel</small>')}
+${swatch(t.brand.blush, 'Rubor', '<small>7514 C al 20 % (como la marca de agua)</small>')}
 </div>
 
 <h2>2. Rampas derivadas</h2>
@@ -337,7 +346,7 @@ ${heatmap('light', t.themes.light)}${heatmap('dark', t.themes.dark)}
 <p class="lead">Texto ≥ 4.5:1; iconos, bordes de campos y foco ≥ 3:1. Las mismas combinaciones se prueban en cada cambio (CI), así que una edición que rompa el contraste no se publica.</p>
 <div class="card" style="overflow-x:auto"><table class="contrast"><thead><tr><th>Modo</th><th>Uso</th><th>Par</th><th>Contraste</th><th>Mínimo</th><th></th></tr></thead><tbody>${contrastTable}</tbody></table></div>
 
-<footer>Generado por <code>scripts/brand/build-tokens.ts</code> a partir de <code>brand/palette.json</code>. Para aprobar: responde “apruebo la paleta y la tipografía A” (o B), o dime qué cambiar.</footer>
+<footer>Generado por <code>scripts/brand/build-tokens.ts</code> a partir de <code>brand/palette.json</code>. Aprobada (tipografía A). Los anclajes verde y durazno se ajustaron después a los Pantone del archivo maestro.</footer>
 </main>
 </body>
 </html>

@@ -119,6 +119,11 @@ export function adobeRgbToSrgb(color: Rgb): { rgb: Rgb; clipped: boolean } {
     adobeRgbToLinear(color.g),
     adobeRgbToLinear(color.b),
   );
+  return encodeLinearSrgb(lr, lg, lb);
+}
+
+/** Clamps linear sRGB into the gamut, encodes it, and says whether it had to clamp. */
+function encodeLinearSrgb(lr: number, lg: number, lb: number): { rgb: Rgb; clipped: boolean } {
   const eps = 1e-6;
   const clipped = [lr, lg, lb].some((v) => v < -eps || v > 1 + eps);
   const clamp = (v: number): number => Math.min(1, Math.max(0, v));
@@ -126,6 +131,44 @@ export function adobeRgbToSrgb(color: Rgb): { rgb: Rgb; clipped: boolean } {
     rgb: { r: linearToSrgb(clamp(lr)), g: linearToSrgb(clamp(lg)), b: linearToSrgb(clamp(lb)) },
     clipped,
   };
+}
+
+// ---------------------------------------------------------------------------
+// CIE Lab -> sRGB (spot colors such as Pantone are defined in Lab)
+// ---------------------------------------------------------------------------
+
+/** ICC profile connection space white (D50), the reference for Lab in PDFs and Illustrator. */
+export const D50_WHITE: readonly [number, number, number] = [0.964203, 1, 0.824905];
+
+// Bradford chromatic adaptation D50 -> D65: sRGB is defined under D65, so a
+// Lab color measured under D50 must be adapted before converting.
+const BRADFORD_D50_TO_D65: Matrix3 = [
+  [0.9555766, -0.0230393, 0.0631636],
+  [-0.0282895, 1.0099416, 0.0210077],
+  [0.0122982, -0.020483, 1.3299098],
+];
+
+/**
+ * CIE Lab relative to D50 (how PDFs and Illustrator define spot colors such as
+ * Pantone) -> gamma-encoded sRGB, adapting D50 -> D65 with Bradford.
+ */
+export function labD50ToSrgb(lab: readonly [number, number, number]): {
+  rgb: Rgb;
+  clipped: boolean;
+} {
+  const [l, a, b] = lab;
+  const fy = (l + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const epsilon = 6 / 29;
+  const finv = (t: number): number => (t > epsilon ? t ** 3 : 3 * epsilon * epsilon * (t - 4 / 29));
+  const xyzD50: [number, number, number] = [
+    D50_WHITE[0] * finv(fx),
+    D50_WHITE[1] * finv(fy),
+    D50_WHITE[2] * finv(fz),
+  ];
+  const [lr, lg, lb] = multiply(XYZ_TO_LINEAR_SRGB, multiply(BRADFORD_D50_TO_D65, xyzD50));
+  return encodeLinearSrgb(lr, lg, lb);
 }
 
 // ---------------------------------------------------------------------------

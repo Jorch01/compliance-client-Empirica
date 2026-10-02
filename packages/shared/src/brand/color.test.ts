@@ -3,6 +3,7 @@ import {
   adobeRgbToSrgb,
   contrastRatio,
   hexToOklch,
+  labD50ToSrgb,
   maxChroma,
   oklchToHex,
   parseHex,
@@ -70,5 +71,17 @@ describe('Adobe RGB (1998) -> sRGB', () => {
     const logo = adobeRgbToSrgb({ r: 13 / 255, g: 50 / 255, b: 45 / 255 });
     expect(logo.clipped).toBe(true);
     expect(toHex(logo.rgb)).toBe('#002e29');
+  });
+});
+
+describe('CIE Lab (D50) -> sRGB', () => {
+  it('maps the D50 white and black to sRGB white and black', () => {
+    expect(toHex(labD50ToSrgb([100, 0, 0]).rgb)).toBe('#ffffff');
+    expect(toHex(labD50ToSrgb([0, 0, 0]).rgb)).toBe('#000000');
+  });
+
+  it('reproduces the brand Pantones from their Lab values in the vector master', () => {
+    expect(toHex(labD50ToSrgb([18.0392, -14, 0]).rgb)).toBe('#11322c'); // PANTONE 627 C
+    expect(toHex(labD50ToSrgb([71.3726, 17, 23]).rgb)).toBe('#d7a386'); // PANTONE 7514 C
   });
 });

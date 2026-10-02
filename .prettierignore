@@ -11,3 +11,5 @@ docs/design/*.html
 brand/palette.json
 packages/shared/src/brand/tokens.json
 apps/web/src/styles/tokens.css
+brand/spot-colors.json
+packages/shared/src/brand/logos.json

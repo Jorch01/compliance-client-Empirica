@@ -1,3 +1,5 @@
+import { Logo } from './components/Logo.tsx';
+
 /**
  * Phase 0 placeholder. It only proves the toolchain end to end (tokens ->
  * Tailwind -> fonts -> build); the real shell arrives in phase 2.
@@ -6,7 +8,7 @@ export function App() {
   return (
     <div className="min-h-dvh bg-background">
       <header className="flex items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3 text-sidebar-foreground">
-        <span className="font-display text-2xl font-semibold">empírica</span>
+        <Logo variant="logotipo" className="h-8 w-auto text-sidebar-accent" />
         <span className="label-caps text-sidebar-muted-foreground">Fractional Legal Team</span>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-10">

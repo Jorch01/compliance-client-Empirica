@@ -625,7 +625,7 @@ write('packages/shared/src/brand/tokens.json', `${JSON.stringify(tokens, null, 2
 write('apps/web/src/styles/tokens.css', tokensToCss(tokens));
 write(
   'docs/design/paleta-propuesta.html',
-  renderPreview({ tokens, palette, wheel, chartOrder: chart.order, chartReports, contrastRows }),
+  renderPreview({ tokens, wheel, chartOrder: chart.order, chartReports, contrastRows }),
 );
 
 if (failures.length || !chartReports.light.adjacent.ok || !chartReports.dark.adjacent.ok) {

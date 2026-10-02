@@ -481,18 +481,21 @@
   },
   "roles": {
     "green": {
-      "hex": "#002e29",
-      "rule": "Letterhead: darkest ink cluster (the logo)."
+      "hex": "#11322c",
+      "rule": "Vector master: spot color PANTONE 627 C, Lab (D50) to sRGB.",
+      "letterhead": "#002e29",
+      "deltaEToLetterhead": 0.0217
     },
     "peach": {
-      "hex": "#e5a386",
-      "rule": "Letterhead: most chromatic cluster with OKLCH L > 0.6 (side contact text)."
+      "hex": "#d7a386",
+      "rule": "Vector master: spot color PANTONE 7514 C, Lab (D50) to sRGB.",
+      "letterhead": "#e5a386",
+      "deltaEToLetterhead": 0.0225
     },
     "blush": {
-      "hex": "#fbefe7",
-      "rule": "Letterhead: the translucent watermark layer composited over white (what the reader sees).",
-      "opacity": 0.2,
-      "ink": "#e7ac86"
+      "hex": "#f8ece6",
+      "rule": "PANTONE 7514 C at the watermark's tint (20%, measured from the letterhead mask).",
+      "letterhead": "#fbefe7"
     },
     "salmon": {
       "hex": "#f4b79f",
