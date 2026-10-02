@@ -100,10 +100,16 @@ export const OpSchema = z.object({
 });
 export type Op = z.infer<typeof OpSchema>;
 
+/**
+ * Each operation is validated on its own: one malformed operation is
+ * rejected without blocking the rest of the device's queue.
+ */
 export const PushPayloadSchema = z.object({
-  ops: z.array(OpSchema).check(z.maxLength(MAX_OPS_PER_PUSH)),
+  ops: z.array(z.unknown()).check(z.maxLength(MAX_OPS_PER_PUSH)),
 });
-export type PushPayload = z.infer<typeof PushPayloadSchema>;
+export interface PushPayload {
+  ops: Op[];
+}
 
 export interface ApiSuccess<T> {
   ok: true;
@@ -170,7 +176,7 @@ export interface OpResult {
   status: OpStatus;
   /** Why it was rejected. */
   code?: 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION' | 'CONFLICT';
-  reason?: DenialReason | 'EDITED_AFTER_DELETION' | 'INVALID_FIELDS';
+  reason?: DenialReason | 'EDITED_AFTER_DELETION' | 'INVALID_FIELDS' | 'INVALID_OP' | 'OP_ID_TAKEN';
   field?: string;
   issues?: FieldIssue[];
   /** The record as it stands now, as this user may see it. */

@@ -132,7 +132,9 @@ function canReadAt(
   if (def.sync === 'snapshot' || def.sync === 'none') return false;
 
   if (def.audience === 'everyone') {
-    return def.scope.user ? row[def.scope.user] === ctx.userId : true;
+    if (def.scope.user && row[def.scope.user] !== ctx.userId) return false;
+    const clienteId = clientIdOf(def, row);
+    return clienteId === null || ctx.clients.has(clienteId);
   }
 
   if (def.audience === 'firm') {

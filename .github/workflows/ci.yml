@@ -1,9 +1,10 @@
 name: CI y publicación
 
 # Same lock as TSJ Filing: tests run on every push and pull request, and the
-# site is published only from main and only when every test passed. Publishing
-# stays off until the repository variable PAGES_ENABLED is "true" (set it once
-# GitHub Pages and the domain are configured; see docs/SETUP.md).
+# site and the backend are published only from main and only when every test
+# passed. Each publication stays off until its repository variable is "true":
+# PAGES_ENABLED for the site, API_DEPLOY_ENABLED for the backend (see
+# docs/SETUP.md, steps 7 and 8).
 on:
   push:
   pull_request:
@@ -93,3 +94,64 @@ jobs:
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@v5
+
+  desplegar-api:
+    name: Desplegar el backend (Apps Script)
+    needs: pruebas # ← the same lock: no green tests, no deploy
+    if: >-
+      vars.API_DEPLOY_ENABLED == 'true' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
+    concurrency:
+      group: apps-script
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    env:
+      # Values arrive through env, never pasted into the script: nothing in
+      # them can be run as a command.
+      SCRIPT_ID: ${{ vars.APPS_SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Instalar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar el backend
+        run: npm run build -w @empirica/api
+
+      - name: Preparar clasp
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then echo "::error::Falta el secreto CLASPRC_JSON (docs/SETUP.md, paso 8)"; exit 1; fi
+          if [ -z "$SCRIPT_ID" ]; then echo "::error::Falta la variable APPS_SCRIPT_ID (docs/SETUP.md, paso 8)"; exit 1; fi
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"build"}' "$SCRIPT_ID" > apps/api/.clasp.json
+
+      - name: Subir el código
+        working-directory: apps/api
+        run: npx clasp push --force
+
+      # Always the same deployment, so the Web App address never changes.
+      - name: Publicar en la misma dirección
+        working-directory: apps/api
+        run: |
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            npx clasp update-deployment "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7}"
+          else
+            npx clasp create-deployment --description "${GITHUB_SHA::7}"
+            echo "::notice::Primera publicación: guarda el ID de despliegue que aparece arriba en la variable APPS_SCRIPT_DEPLOYMENT_ID."
+          fi
+
+      - name: Borrar la credencial
+        if: always()
+        run: rm -f "$HOME/.clasprc.json" apps/api/.clasp.json

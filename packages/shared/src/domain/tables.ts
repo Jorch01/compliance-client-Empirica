@@ -760,7 +760,8 @@ export const TABLES: Record<TableName, TableDef> = {
     {
       sync: 'pushpull',
       audience: 'everyone',
-      scope: { user: 'usuarioId' },
+      // Each user's own; one about a client goes away with access to it.
+      scope: { user: 'usuarioId', client: 'clienteId' },
       immutable: ['usuarioId', 'clienteId', 'tipo', 'mensaje', 'link'],
     },
   ),

@@ -15,8 +15,10 @@ blob-report/
 .env.*
 !.env.example
 
-# Credenciales de clasp: viven en tu carpeta personal, nunca en el repo
+# Credenciales de clasp: viven en tu carpeta personal, nunca en el repo.
+# .clasp.json lo genera el despliegue con el ID del proyecto.
 .clasprc.json
+.clasp.json
 
 # Sistema operativo y editores
 .DS_Store

@@ -40,10 +40,11 @@ export default defineConfig([
     languageOptions: { globals: globals.node },
   },
 
-  // Shared code runs in the browser AND in Apps Script: no Node APIs outside tests.
+  // Shared code runs in the browser AND in Apps Script: no Node APIs outside
+  // tests and their test doubles (src/testing).
   {
     files: ['packages/shared/src/**/*.ts', 'apps/api/src/**/*.ts'],
-    ignores: ['**/*.test.ts'],
+    ignores: ['**/*.test.ts', '**/src/testing/**'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -16,7 +16,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(HERE, 'build');
 
 /** Functions Apps Script calls by name. Add trigger handlers here. */
-export const ENTRY_POINTS = ['doGet', 'doPost'] as const;
+export const ENTRY_POINTS = ['doGet', 'doPost', 'setup', 'nightly'] as const;
 
 export const BUNDLE_OPTIONS: BuildOptions = {
   entryPoints: [join(HERE, 'src', 'main.ts')],
@@ -24,7 +24,9 @@ export const BUNDLE_OPTIONS: BuildOptions = {
   format: 'iife',
   globalName: '__portal',
   platform: 'neutral',
-  target: 'es2020',
+  // Older syntax than Apps Script's V8 needs, to be safe with optional
+  // chaining, class fields and the like.
+  target: 'es2019',
   charset: 'utf8',
   legalComments: 'none',
   footer: {
