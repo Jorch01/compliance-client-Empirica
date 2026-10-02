@@ -15,6 +15,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 7   | URL del aviso de privacidad       | —                                                    | Sí                                                            |
 | 8   | DNS en GoDaddy                    | Paso 7, cuando publiquemos                           | —                                                             |
 | 9   | Despliegue automático del backend | Paso 8, una sola vez                                 | **No: es secreto**                                            |
+| 10  | Primera publicación del backend   | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -70,6 +71,7 @@ No hace falta Google Workspace. Solo convendría si un día el portal manda más
 1. Entra a <https://script.google.com> → **Nuevo proyecto**. Nombre: `Empírica Portal API`.
 2. Engrane ⚙ **Configuración del proyecto** → copia el **ID de la secuencia de comandos** y mándamelo.
 3. Activa la API de Apps Script (la usa el despliegue automático): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**.
+4. No escribas código ahí: lo sube el despliegue automático (paso 8).
 
 ### Paso 5 · Script Properties (aquí viven los secretos)
 
@@ -115,10 +117,38 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 3. Abre el enlace que aparece, entra con la cuenta del paso 1, acepta los permisos, copia el código que te da Google y pégalo en la terminal.
 4. Escribe `cat ~/.clasprc.json` y copia todo el texto que aparece.
 5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
-6. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
-7. Avísame: dejo configurados el ID del proyecto y la dirección fija del Web App.
+6. En la misma página, pestaña **Variables → New repository variable**, crea dos:
+
+   | Nombre               | Valor                                      |
+   | -------------------- | ------------------------------------------ |
+   | `APPS_SCRIPT_ID`     | El ID de la secuencia de comandos (paso 4) |
+   | `API_DEPLOY_ENABLED` | `true`                                     |
+
+7. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
+8. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
 
 Si algún día quieres retirar este acceso: borra el secreto en GitHub y revoca "clasp" en <https://myaccount.google.com/permissions> con la cuenta del paso 1.
+
+### Paso 9 · Primera publicación del backend (una sola vez, cuando te avise)
+
+Cuando el código ya esté en Apps Script:
+
+1. Abre el proyecto `Empírica Portal API` en <https://script.google.com> con la cuenta del paso 1.
+2. Arriba, en la lista de funciones, elige **`setup`** y pulsa **Ejecutar**.
+3. Google pedirá autorización (es normal: el proyecto es tuyo y no está publicado en ninguna tienda):
+   **Revisar permisos** → elige la cuenta del paso 1 → "Google no verificó esta app" → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**.
+   Los permisos que pide son exactamente estos: tus hojas de cálculo, tu Drive, conectarse a servicios externos (para verificar las sesiones con Firebase) y programar tareas (el respaldo nocturno).
+4. Abajo, en el registro de ejecución, debe aparecer `Hoja: https://docs.google.com/…` con lo que se creó: el libro `EMPIRICA_PORTAL_DB`, la carpeta `Empírica Portal` con `Clientes` y `Respaldos`, los dos socios como administradores y el respaldo de las 3:00. Si dice "Aviso: ADMIN_EMAILS está vacío", revisa el paso 5 y vuelve a ejecutar `setup` (puede ejecutarse las veces que sea: solo crea lo que falta).
+5. Arriba a la derecha: **Implementar → Nueva implementación** → engrane ⚙ junto a "Seleccionar tipo" → **Aplicación web**:
+   - Descripción: `Empírica Portal API`
+   - Ejecutar como: **Yo** (la cuenta del paso 1)
+   - Quién tiene acceso: **Cualquier usuario**
+   - Pulsa **Implementar**.
+
+   "Cualquier usuario" es correcto: la puerta la cuida el propio backend, que pide en cada petición una sesión válida de Firebase y que el correo esté dado de alta en el portal.
+
+6. Copia el **ID de implementación** y créalo en GitHub como variable `APPS_SCRIPT_DEPLOYMENT_ID` (igual que en el paso 8). Con eso, cada versión nueva se publica en esta misma dirección.
+7. Copia la **URL de la aplicación web** (termina en `/exec`) y mándamela: no es secreta, el portal la necesita para llamar al backend. Si la abres en el navegador verás `{"ok":true,…}`.
 
 ---
 

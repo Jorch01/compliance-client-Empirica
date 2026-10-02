@@ -4,7 +4,7 @@ Portal de clientes de **Empírica Legal Lab** · _Fractional Legal Team: an exte
 
 Un solo lugar, en tiempo casi real, para que el cliente y el despacho vean tareas conjuntas, trámites, el calendario de cumplimiento, documentos, contratos, solicitudes y reportes. Funciona sin internet (local-first) y sincroniza con Google Sheets.
 
-> **Estado: Fase 0 (plan y fundamentos), en revisión.** Empieza por [`docs/PLAN.md`](docs/PLAN.md).
+> **Estado: Fase 1 (backend núcleo) entregada, en revisión; Fase 0 aprobada.** Empieza por [`docs/PLAN.md`](docs/PLAN.md) (resumen de la Fase 1 en la § 14).
 
 |                                     |                                                                                                                             |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |

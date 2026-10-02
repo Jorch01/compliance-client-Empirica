@@ -1,6 +1,6 @@
 # Matriz de permisos
 
-> Estado: **aprobada con el plan (2026-10-02)** y ampliada con el alcance por unidad (D13). En la Fase 1 se escribe en código (`packages/shared/src/permissions`), la misma para el frontend y el backend, y cada regla se cubre con pruebas automáticas.
+> Estado: **aprobada con el plan (2026-10-02)**, ampliada con el alcance por unidad (D13) y **escrita en código en la Fase 1** (`packages/shared/src/permissions`): la misma para el frontend y el backend. Cada celda de la matriz tiene su prueba (`permissions.test.ts`) y el aislamiento y la visibilidad se prueban además sobre la sincronización (`apps/api/src/sync.test.ts`).
 
 ## Principios
 
@@ -30,7 +30,10 @@ Cualquier membresía de cliente puede llevar un **alcance**: una lista de unidad
 - **Sin alcance** = usuario del **hub**: ve todas las unidades y el consolidado.
 - **Con alcance** = usuario de **unidad**: ve los registros de sus unidades, los que tiene asignados y los que él creó; nada del resto del cliente, ni en conteos ni en el consolidado.
 - Un `CLIENTE_ADMIN` con alcance solo invita usuarios **dentro** de su alcance, y la invitación queda pendiente de aprobación del despacho.
-- Cambiar el rol o el alcance de alguien obliga a sus dispositivos a borrar y volver a descargar ese cliente, para que no quede nada que ya no le corresponde.
+- Cambiar el rol o el alcance de alguien, o mover una unidad dentro del árbol, obliga a los dispositivos a borrar y volver a descargar ese cliente, para que no quede nada que ya no le corresponde.
+- Lo que cuelga de otro registro (comentarios, documentos, evidencias, eventos) lo ve quien ve ese registro, y nadie más: un usuario de unidad ve los comentarios de la tarea que le asignaron aunque la tarea sea de otra unidad.
+- Las tareas y trámites de un asunto conservan su propio alcance (su unidad, su asignado), pero **ningún** usuario de cliente los ve mientras el asunto sea `INTERNO`.
+- Un usuario de unidad solo crea registros dentro de sus unidades.
 
 ## Matriz
 
@@ -67,15 +70,23 @@ C = crear · R = leer · U = editar · D = borrar (lógico, con fecha) · — = 
 
 **Notas**
 
-1. _U operativo_: idioma, logotipo, contacto. Servicio, perímetro de la iguala y estado del cliente solo los cambia el `SOCIO_ADMIN`.
+1. _U operativo_: nombre comercial, idioma y logotipo. Servicio, perímetro de la iguala y estado del cliente solo los cambia el `SOCIO_ADMIN`, igual que abrir un cliente nuevo.
 2. El cliente ve su razón social, su servicio, **el perímetro de la iguala** (encargos cubiertos y excluidos), su equipo asignado y su logotipo. No ve campos internos.
 3. Usuarios del despacho y de los clientes asignados.
 4. Usuarios de su empresa y el equipo del despacho asignado (nombre, correo, rol): es la tarjeta "Su Fractional Legal Team".
 5. El abogado invita usuarios de cliente a sus clientes; los usuarios del despacho solo los da de alta el `SOCIO_ADMIN`.
-6. En tareas con `ladoResponsable` `CLIENTE` o `AMBOS`, el usuario de cliente solo puede cambiar `estado` (ver la pregunta abierta sobre `HECHO` frente a `EN_REVISION`) y marcar puntos del `checklist`. Ningún otro campo.
-7. Carga evidencia de una obligación; queda "en revisión" hasta que el despacho la valida. Validar es exclusivo del despacho.
+6. En tareas con `ladoResponsable` `CLIENTE` o `AMBOS`, el usuario de cliente solo puede cambiar `estado` a `POR_HACER`, `EN_CURSO`, `BLOQUEADA` o `EN_REVISION` (nunca `HECHO`: el despacho la cierra, D18) y marcar o desmarcar puntos del `checklist` (no agregarlos, quitarlos ni reescribirlos). Ningún otro campo, y nada en una tarea ya cerrada.
+7. Carga evidencia de una obligación; queda `EN_REVISION` hasta que el despacho la valida. Validar es exclusivo del despacho.
 8. Lo que sube un usuario de cliente siempre es `COMPARTIDO` y cae en la carpeta de su cliente, nunca en `Interno`.
 9. Los comentarios de usuarios de cliente siempre son `COMPARTIDO`. La pestaña "Interno" del detalle solo existe para el despacho.
+
+## Reglas que valen para todos
+
+- **Lo que fija el servidor**: quién creó y editó, la versión, la autora de un comentario, quién subió un documento, los ids de archivos de Drive y de eventos de Calendar, el avance de un asunto. Si el dispositivo manda otro valor, la operación se rechaza.
+- **Referencias**: un registro solo apunta a registros vivos del mismo cliente que el usuario pueda ver, y solo puede asignarse a personas con acceso a ese cliente. Una unidad no puede quedar dentro de sí misma.
+- **Lo que nunca sale del servidor**: el token del calendario de cada usuario, su cuenta de Firebase, el historial de alcance y las columnas internas del cliente (carpeta de Drive, calendario, modo de IA).
+- **Directorio**: cada usuario de cliente ve a "su Fractional Legal Team" (los socios y los abogados asignados) y a sus compañeros (desde el hub, a todos; desde una unidad, al hub y a los de su unidad), solo con nombre, correo y rol. Ve únicamente su propia membresía, salvo el `CLIENTE_ADMIN`, que ve las de su empresa (o de sus unidades).
+- **Notificaciones**: cada quien las suyas; las de un cliente desaparecen si pierde el acceso a ese cliente.
 
 ## Campos jurídicamente sensibles
 

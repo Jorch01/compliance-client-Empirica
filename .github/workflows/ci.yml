@@ -141,15 +141,15 @@ jobs:
         working-directory: apps/api
         run: npx clasp push --force
 
-      # Always the same deployment, so the Web App address never changes.
+      # Always the same deployment, so the Web App address never changes. The
+      # first one is created by hand in the editor (docs/SETUP.md, step 9).
       - name: Publicar en la misma dirección
         working-directory: apps/api
         run: |
           if [ -n "$DEPLOYMENT_ID" ]; then
             npx clasp update-deployment "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7}"
           else
-            npx clasp create-deployment --description "${GITHUB_SHA::7}"
-            echo "::notice::Primera publicación: guarda el ID de despliegue que aparece arriba en la variable APPS_SCRIPT_DEPLOYMENT_ID."
+            echo "::notice::Código subido. Falta la variable APPS_SCRIPT_DEPLOYMENT_ID para publicarlo (docs/SETUP.md, paso 9)."
           fi
 
       - name: Borrar la credencial

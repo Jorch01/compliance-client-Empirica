@@ -13,7 +13,7 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 ## Estado
 
 - **F0 aprobada** (2026-10-02): paleta y tipografía A; respuestas del socio en `docs/PLAN.md` § 13.
-- **F1 en curso**: backend núcleo (ver `docs/PLAN.md` § 11). Al cerrarla: pruebas en verde, resumen y detenerse.
+- **F1 entregada, en revisión** (2026-10-02): backend núcleo, resumen en `docs/PLAN.md` § 14. No empezar F2 sin el visto bueno del socio.
 
 ## Comandos
 
@@ -32,14 +32,15 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 
 ## Estructura
 
-| Ruta              | Qué es                                                                                                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------ |
-| `apps/web`        | React 19 + Vite 8 + Tailwind 4. Local-first (Dexie) y PWA a partir de F2                               |
-| `apps/api`        | Apps Script en TypeScript; `build.ts` lo empaqueta con esbuild en `build/Code.js`; se sube con clasp 3 |
-| `packages/shared` | Código común a web y API: tokens y color (`src/brand`); desde F1, tipos, zod, permisos y contrato      |
-| `brand/`          | Logos, membrete y `palette.json` extraída (generada)                                                   |
-| `scripts/brand`   | Extracción de paleta y generación de tokens                                                            |
-| `docs/`           | Plan y anexos (en español)                                                                             |
+| Ruta              | Qué es                                                                                                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`        | React 19 + Vite 8 + Tailwind 4. Local-first (Dexie) y PWA a partir de F2                                                                                                                                    |
+| `apps/api`        | Apps Script en TypeScript; `build.ts` lo empaqueta con esbuild en `build/Code.js`; se sube con clasp 3                                                                                                      |
+| `apps/api/src`    | `router.ts` (sobre y despacho), `auth.ts`, `actions/` (bootstrap, pull, push), `db/` (hoja, secuencia, historial, escritor con bitácora), `setup.ts`, `maintenance.ts`; `testing/` con los dobles de Google |
+| `packages/shared` | Código común a web y API: tokens y color (`src/brand`); modelo (`domain`), permisos, sincronización y contrato                                                                                              |
+| `brand/`          | Logos, membrete y `palette.json` extraída (generada)                                                                                                                                                        |
+| `scripts/brand`   | Extracción de paleta y generación de tokens                                                                                                                                                                 |
+| `docs/`           | Plan y anexos (en español)                                                                                                                                                                                  |
 
 ## Convenciones
 
@@ -53,6 +54,10 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - **Nada jurídico se inventa** (fundamentos, plazos, fechas): las semillas van marcadas "BORRADOR: validar".
 - **Sin métricas de horas** de la iguala en ningún lado.
 - Pruebas que ejecutan lo que se despliega: el `Code.js` empaquetado se prueba en un sandbox con servicios de Google simulados.
+- **Toda escritura a la hoja** pasa por `SheetTable`/`Writer` (`apps/api/src/db`): el texto lleva `'` delante (sin fórmulas), cada cambio se numera con la secuencia (reserva y publicación), guarda su historial de alcance y deja rastro en `Bitacora`. Nunca `setValues` directo desde una acción.
+- **Permisos en un solo lugar**: `packages/shared/src/permissions`. Una regla nueva va ahí, con su prueba en `permissions.test.ts`; si afecta lo que viaja, también en `apps/api/src/sync.test.ts`.
+- Las pruebas del backend usan `createWorld()` (`apps/api/src/testing/harness.ts`): servicios de Google simulados, `setup()` ya corrido y el conjunto ficticio de `@empirica/shared/testing`. Un `Device` simula el navegador que sincroniza.
+- Se usa `zod/mini`, no `zod`: el `Code.js` debe seguir pequeño. Nada de APIs que Apps Script no tiene (`TextEncoder`, `URL`, `crypto.randomUUID`, `structuredClone`): el sandbox de pruebas no las trae, así que fallan las pruebas antes que producción.
 
 ## Decisiones tomadas (registro)
 
@@ -69,6 +74,11 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-02 | Clientes con hub y unidades: `Entidades.parentId` + alcance por unidad en cualquier rol de cliente | Piloto corporativo con varias unidades de negocio                                    |
 | 2026-10-02 | Resumen diario para todos; tour guiado con instalación por sistema; botones "¿Cómo se lee?"        | Pedido del socio                                                                     |
 | 2026-10-02 | Despliegue del backend automatizado (clasp en GitHub Actions) con cuenta propietaria dedicada      | Pregunta 15; recomendación D12                                                       |
+| 2026-10-02 | `zod/mini` para validar en navegador y servidor                                                    | 22 KB en el `Code.js` frente a 454 KB de `zod`                                       |
+| 2026-10-02 | `alcanceHist` + `seqAlta` en lugar de `ocultadoEnSeq`                                              | Cubre ocultar, mover, reasignar y borrar sin delatar lo que siempre fue interno      |
+| 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                       |
+| 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar     |
+| 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                               |
 
 ## Gotchas del entorno
 
