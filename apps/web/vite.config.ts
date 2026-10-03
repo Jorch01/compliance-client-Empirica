@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
@@ -20,6 +21,16 @@ export default defineConfig({
   // "/" for portal.empirica.mx; "/<repo>/" if served from <user>.github.io/<repo>/.
   base: process.env.VITE_BASE ?? '/',
   plugins: [react(), tailwindcss(), brandHtml()],
+  build: {
+    rolldownOptions: {
+      // One HTML file per public address: /privacidad/ answers on its own,
+      // without depending on a redirect to the app.
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        privacidad: fileURLToPath(new URL('privacidad/index.html', import.meta.url)),
+      },
+    },
+  },
   test: {
     name: 'web',
     environment: 'jsdom',

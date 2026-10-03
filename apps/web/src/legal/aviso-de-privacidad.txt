@@ -1,0 +1,111 @@
+Aviso de Privacidad Integral
+
+Última actualización: 21 de marzo de 2026
+
+En cumplimiento con lo dispuesto por la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), su Reglamento, los Lineamientos del Aviso de Privacidad y demás disposiciones aplicables, Empírica Legal Lab (en adelante, "el Responsable"), con domicilio para oír y recibir notificaciones en el correo electrónico frida@empirica.mx, pone a su disposición el presente Aviso de Privacidad Integral.
+I. Identidad y domicilio del Responsable
+
+Empírica Legal Lab es responsable del tratamiento de sus datos personales, con los siguientes datos de contacto:
+
+    Correo electrónico: frida@empirica.mx
+    WhatsApp: +52 998 257 0828
+    Sitio web: https://empirica.mx
+
+II. Datos personales que se recaban
+
+Para las finalidades señaladas en el presente Aviso de Privacidad, podemos recabar las siguientes categorías de datos personales:
+a) Datos de identificación
+
+    Nombre completo
+    Correo electrónico
+    Número telefónico
+
+b) Datos de contacto
+
+    Dirección de correo electrónico
+    Número de WhatsApp
+
+c) Datos recabados de forma automática
+
+Al visitar nuestro sitio web, podemos recabar de forma automática:
+
+    Dirección IP
+    Tipo de navegador
+    Sistema operativo
+    Páginas visitadas dentro del sitio
+    Fecha y hora de acceso
+
+Datos personales sensibles: Le informamos que para las finalidades descritas en este Aviso de Privacidad, no recabamos datos personales sensibles.
+III. Finalidades del tratamiento
+
+Sus datos personales serán tratados para las siguientes finalidades:
+Finalidades primarias (necesarias para la prestación de nuestros servicios):
+
+    Prestación de servicios legales contratados
+    Contacto y comunicación con clientes y prospectos
+    Elaboración de contratos, convenios y documentos legales
+    Representación legal ante autoridades judiciales y administrativas
+    Facturación y administración de pagos
+    Atención de consultas, dudas y solicitudes
+    Cumplimiento de obligaciones legales y regulatorias
+
+Finalidades secundarias (no necesarias, pero que nos permiten mejorar nuestros servicios):
+
+    Envío de boletines informativos, tips legales y promociones (newsletter)
+    Envío de comunicaciones de mercadotecnia y publicidad
+    Realización de encuestas de satisfacción
+    Estadísticas y análisis interno de uso del sitio web
+
+Si usted no desea que sus datos personales sean tratados para las finalidades secundarias, puede manifestar su negativa enviando un correo electrónico a frida@empirica.mx con el asunto "Negativa finalidades secundarias". La negativa para el uso de sus datos personales para finalidades secundarias no podrá ser motivo para que le neguemos los servicios que solicita.
+IV. Transferencias de datos personales
+
+Le informamos que sus datos personales pueden ser transferidos y tratados dentro y fuera del país por las siguientes personas o entidades:
+Destinatario	Finalidad	Consentimiento
+Autoridades judiciales y administrativas	Cumplimiento de obligaciones legales y representación legal	No necesario (Art. 37 LFPDPPP)
+Corresponsales jurídicos	Prestación de servicios legales en otras entidades federativas	Necesario
+Proveedores de servicios tecnológicos	Almacenamiento de datos, envío de comunicaciones electrónicas	Necesario
+V. Mecanismos y medios para ejercer los derechos ARCO
+
+Usted tiene derecho a conocer qué datos personales tenemos de usted, para qué los utilizamos y las condiciones de su uso (Acceso). Asimismo, es su derecho solicitar la corrección de su información personal si está desactualizada, es inexacta o está incompleta (Rectificación); que la eliminemos de nuestros registros o bases de datos cuando considere que no está siendo utilizada adecuadamente (Cancelación); así como oponerse al uso de sus datos personales para fines específicos (Oposición). Estos derechos se conocen como derechos ARCO.
+
+Para ejercer cualquiera de los derechos ARCO, deberá presentar su solicitud a través del correo electrónico frida@empirica.mx con el asunto "Solicitud de derechos ARCO", conteniendo la siguiente información:
+
+    Nombre completo del titular
+    Domicilio u otro medio para comunicar la respuesta a su solicitud
+    Documentos que acrediten su identidad o, en su caso, la representación legal del titular
+    Descripción clara y precisa de los datos personales respecto de los que se busca ejercer alguno de los derechos ARCO
+    Cualquier elemento o documento que facilite la localización de los datos personales
+
+El Responsable comunicará al titular, en un plazo máximo de 20 (veinte) días hábiles contados desde la fecha en que se recibió la solicitud, la determinación adoptada, a efecto de que, si resulta procedente, se haga efectiva la misma dentro de los 15 (quince) días hábiles siguientes a la fecha en que se comunique la respuesta.
+VI. Mecanismos para revocar el consentimiento
+
+Usted puede revocar el consentimiento que, en su caso, nos haya otorgado para el tratamiento de sus datos personales. Sin embargo, es importante que tenga en cuenta que no en todos los casos podremos atender su solicitud o concluir el uso de forma inmediata, ya que es posible que por alguna obligación legal requiramos seguir tratando sus datos personales.
+
+Para revocar su consentimiento, deberá enviar un correo electrónico a frida@empirica.mx con el asunto "Revocación de consentimiento", indicando claramente su nombre completo y los datos personales cuyo tratamiento desea revocar.
+VII. Uso de cookies y tecnologías de rastreo
+
+Le informamos que nuestro sitio web utiliza cookies y otras tecnologías de rastreo con las siguientes finalidades:
+
+    Cookies funcionales: para recordar sus preferencias de navegación y mejorar su experiencia en el sitio (por ejemplo, recordar si ya cerró el modal de suscripción)
+    Almacenamiento local (localStorage): para guardar información de suscripción al newsletter
+
+Estas tecnologías no recaban datos personales sensibles. Usted puede deshabilitarlas a través de la configuración de su navegador, lo que podría afectar la funcionalidad de algunas características del sitio.
+VIII. Limitación de uso y divulgación de datos personales
+
+Si usted desea limitar el uso o divulgación de sus datos personales, podrá enviar su solicitud a frida@empirica.mx con el asunto "Limitación de uso de datos". Asimismo, usted podrá inscribirse en el Registro Público para Evitar Publicidad (REPEP) de la Procuraduría Federal del Consumidor (PROFECO), disponible en https://repep.profeco.gob.mx.
+IX. Modificaciones al Aviso de Privacidad
+
+El presente Aviso de Privacidad puede sufrir modificaciones, cambios o actualizaciones derivados de nuevos requerimientos legales, de nuestras propias necesidades por los servicios que ofrecemos, de nuestras prácticas de privacidad, de cambios en nuestro modelo de negocio o por otras causas.
+
+Nos comprometemos a mantenerlo informado sobre los cambios que pueda sufrir el presente Aviso de Privacidad a través de nuestro sitio web https://empirica.mx.
+X. Autoridad competente
+
+Si usted considera que su derecho a la protección de datos personales ha sido lesionado por alguna conducta u omisión de nuestra parte, o presume alguna violación a las disposiciones previstas en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, su Reglamento y demás ordenamientos aplicables, podrá interponer su inconformidad o denuncia ante el organismo autónomo Transparencia para el Pueblo (antes Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales), así como ante las demás autoridades competentes en materia de protección de datos personales conforme a la legislación vigente.
+XI. Consentimiento
+
+Al proporcionar sus datos personales a través de nuestro sitio web, formularios de contacto, correo electrónico, WhatsApp u otros medios, usted manifiesta su consentimiento para que sus datos personales sean tratados conforme a los términos y condiciones del presente Aviso de Privacidad.
+
+Empírica Legal Lab
+Correo: frida@empirica.mx
+WhatsApp: +52 998 257 0828
+Fecha de última actualización: 21 de marzo de 2026

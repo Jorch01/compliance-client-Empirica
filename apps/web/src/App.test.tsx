@@ -10,4 +10,12 @@ describe('App (public placeholder until phase 2)', () => {
     expect(screen.getByText(/acceso es por invitación/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/fase|plan|paleta/i);
   });
+
+  it('links the privacy notice', () => {
+    render(<App />);
+    expect(screen.getByRole('link', { name: 'Aviso de privacidad' })).toHaveAttribute(
+      'href',
+      '/privacidad/',
+    );
+  });
 });
