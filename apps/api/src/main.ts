@@ -49,6 +49,7 @@ export function setup(): SetupReport {
       report.created.length
         ? `Creado: ${report.created.join('; ')}`
         : 'Nada nuevo: todo estaba listo.',
+      ...report.checked.map((c) => `Revisado: ${c}`),
       ...report.warnings.map((w) => `Aviso: ${w}`),
     ].join('\n'),
   );

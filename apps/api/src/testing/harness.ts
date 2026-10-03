@@ -60,6 +60,8 @@ export function createWorld(options: { data?: Dataset | null; adminEmails?: stri
   const freshEnv = (): Env => createEnv(google.globals, clock.now);
   const env = freshEnv();
   const setupReport = runSetup(env);
+  // setup() tries the server key once; the tests count only their own lookups.
+  google.firebase.lookups = 0;
   const data = options.data === null ? null : (options.data ?? demoData());
   if (data) seed(env, data);
 
