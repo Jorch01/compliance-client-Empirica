@@ -111,8 +111,13 @@ Fuentes: [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits), [Pric
 | Modelos con nivel gratuito (página de precios) | Gemini 3 Flash, 3.1 Flash-Lite, entre otros                                                              | ✅  |
 | Peticiones por día, Flash                      | ~20 (reportes de septiembre de 2026)                                                                     | ⚠   |
 | Peticiones por día, Flash-Lite                 | ~500 (reportes de terceros)                                                                              | ⚠   |
-| Reinicio de la cuota diaria                    | Medianoche, hora del Pacífico                                                                            | ✅  |
+| Reinicio de la cuota diaria                    | Medianoche, hora del Pacífico (2:00 o 3:00 en Cancún, según el horario de verano de California)          | ✅  |
 | Dónde ver la cifra exacta                      | Google la muestra por proyecto en AI Studio; cambia sin aviso (en diciembre de 2025 se recortó de golpe) | ✅  |
+| A qué se aplica el límite                      | Al **proyecto**, no a la key: todas las keys del proyecto comparten la misma cuota                       | ✅  |
+| Tope de gasto en el nivel gratuito             | No aplica (no hay cobro); el nivel 1 exige vincular facturación                                          | ✅  |
+| Modelos en vista previa o experimentales       | Límites más bajos que los estables                                                                       | ✅  |
+
+Las filas sobre proyecto, tope de gasto y vista previa se verificaron el **3 de octubre de 2026** con la página [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) que compartió el socio. Esa página no trae las cifras del nivel gratuito por modelo: Google las muestra solo en AI Studio, por proyecto.
 
 **Términos del nivel gratuito ("Unpaid Services"):** revisores humanos pueden leer, anotar y procesar las entradas y salidas para mejorar los productos (Google las desvincula antes de la cuenta, la API key y el proyecto), y los términos piden expresamente **no enviar información sensible, confidencial ni personal**. ✅ Detalle y consecuencias en `IA.md`.
 

@@ -123,11 +123,14 @@ No toques los demás registros: el correo de `empirica.mx` sigue igual.
 Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma dirección y solo si todas las pruebas pasaron. Necesitas iniciar sesión una vez con la cuenta del paso 1 y guardar esa credencial en GitHub. Sin instalar nada en tu computadora:
 
 1. En la página del repositorio en GitHub: botón verde **Code → Codespaces → Create codespace on main**. Se abre un editor en el navegador (gratis dentro de las horas mensuales de GitHub).
-2. En la terminal de abajo escribe `npx @google/clasp login --no-localhost` y pulsa Enter.
-3. Abre el enlace que aparece, entra con la cuenta del paso 1, acepta los permisos, copia el código que te da Google y pégalo en la terminal.
-4. Escribe `cat ~/.clasprc.json` y copia todo el texto que aparece.
-5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
-6. En la misma página, pestaña **Variables → New repository variable**, crea dos:
+2. En la terminal de abajo escribe `npx @google/clasp login --no-localhost` y pulsa Enter. Si pregunta `Ok to proceed? (y)`, escribe `y` y Enter.
+3. Aparece `🔑 Authorize clasp by visiting this url:` y un enlace muy largo que ocupa varias líneas. **No lo copies a mano** (si copias solo una parte, el navegador no encuentra nada): mantén presionada **Ctrl** (Windows) o **Cmd** (Mac) y haz clic sobre el enlace. Un clic normal no hace nada. Si el editor pregunta si quieres abrir el sitio externo, elige **Abrir**.
+4. En la pestaña nueva, elige la **cuenta del paso 1** y pulsa **Permitir**. Quien pide los permisos es "clasp", la herramienta oficial de Google para Apps Script; son amplios sobre esa cuenta, y por eso la cuenta es solo del portal.
+5. Al final el navegador muestra un error, **"No se puede acceder a este sitio"**, con una dirección que empieza con `http://localhost:8888/?state=`. **Es lo esperado.** Haz clic en la barra de direcciones y copia la dirección completa (Ctrl+A y Ctrl+C; en Mac, Cmd).
+6. Regresa a la pestaña del Codespace. La terminal dice `After authorizing, copy the URL from your browser and paste it here:`: haz clic en la terminal, pega (Ctrl+V o Cmd+V) y pulsa Enter. Debe responder `You are logged in as` seguido del correo de la cuenta del paso 1.
+7. Para copiar la credencial sin errores, ábrela en el editor: escribe `code ~/.clasprc.json` y Enter. Se abre una pestaña con el texto: selecciónalo todo y cópialo (Ctrl+A y Ctrl+C).
+8. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
+9. En la misma página, pestaña **Variables → New repository variable**, crea dos:
 
    | Nombre                 | Valor                                                                |
    | ---------------------- | -------------------------------------------------------------------- |
@@ -136,8 +139,10 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 
    `FIREBASE_WEB_API_KEY` no es secreta (va en el navegador), pero no se guarda en el repositorio para que los detectores de secretos de GitHub no marquen el repositorio público.
 
-7. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
-8. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
+10. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
+11. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
+
+Si algo se traba a la mitad, haz clic en la terminal, pulsa **Ctrl+C** y vuelve a empezar desde el punto 2.
 
 Si algún día quieres retirar este acceso: borra el secreto en GitHub y revoca "clasp" en <https://myaccount.google.com/permissions> con la cuenta del paso 1.
 

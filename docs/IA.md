@@ -40,12 +40,14 @@ Todas las respuestas siguen un esquema JSON (`responseSchema`) validado con zod 
 ## Modelos
 
 - **El modelo no va fijo en el código** (lección de TSJ Filing): se guarda en `Config`, se elige de la lista real que devuelve la API (`models.list`) y, si el configurado responde que no existe o fue retirado (404 o "not found"), el servidor elige uno vivo, lo guarda, sigue funcionando y **avisa al administrador**.
-- Preferencia: Flash-Lite → Flash → Pro. Flash-Lite tiene bastante más cuota gratuita y alcanza para estas tareas.
+- Preferencia: Flash-Lite → Flash → Pro, siempre en versiones estables: los modelos en vista previa o experimentales tienen límites más bajos y pueden desaparecer. Flash-Lite tiene bastante más cuota gratuita y alcanza para estas tareas.
 - **Al 2 de octubre de 2026** Google recomienda Gemini 3.8 Flash y 3.5 Flash-Lite para proyectos nuevos, y los modelos 2.5 solo están disponibles para quien ya los usaba. El modelo por defecto de TSJ (`gemini-2.5-flash`) **no funcionaría** con una cuenta nueva del despacho; la autodetección lo resuelve sin tocar código.
 
 ## Cuotas y degradación
 
 - Reintentos con espera exponencial ante 429; contador diario de uso en el servidor; aviso al administrador al 80 %.
+- La cuota es **del proyecto, no de la key**: cualquier key del proyecto la gasta. Por eso la key del navegador queda restringida solo a inicio de sesión (`SETUP.md`, paso 3) y la de Gemini vive solo en el servidor.
+- El contador diario se reinicia cuando lo hace Google, a medianoche del Pacífico (2:00 o 3:00 en Cancún), no a medianoche de Cancún.
 - Al agotarse la cuota, las funciones de IA muestran "Disponible de nuevo mañana" y el resto del portal sigue igual.
 - **Sin conexión, la IA no está disponible**: la interfaz lo indica y no encola peticiones de IA.
 - La cuota gratuita exacta la muestra Google por proyecto en AI Studio (se reportan ~20 peticiones al día para Flash y ~500 para Flash-Lite). Hay que confirmarla con la cuenta del despacho antes de la Fase 6.
