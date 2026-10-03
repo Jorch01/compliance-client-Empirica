@@ -4,12 +4,13 @@ import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import { mockApi } from './mock/plugin.ts';
 
 // The brand color comes from the generated tokens, never typed twice.
 const tokens = JSON.parse(
   readFileSync(new URL('../../packages/shared/src/brand/tokens.json', import.meta.url), 'utf8'),
-) as { brand: { green: string } };
+) as { brand: { green: string }; themes: { light: { colors: { background: string } } } };
 
 const pkg = JSON.parse(readFileSync(new URL('package.json', import.meta.url), 'utf8')) as {
   version: string;
@@ -30,6 +31,48 @@ export default defineConfig(({ mode }) => ({
     react(),
     tailwindcss(),
     brandHtml(),
+    // Installable and usable offline (PLAN.md § 5): our own service worker
+    // (sw/sw.ts) keeps the app on the device; it registers in builds only.
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'sw',
+      filename: 'sw.ts',
+      injectRegister: false,
+      registerType: 'prompt',
+      injectManifest: {
+        globPatterns: ['**/*.{html,js,css,woff2,svg,png}'],
+        // Spanish and English need the Latin fonts only.
+        globIgnores: [
+          '**/*-{cyrillic,cyrillic-ext,greek,vietnamese}-*.woff2',
+          // The demo sign-in is never loaded by the real portal.
+          ...(mode === 'mock' ? [] : ['**/MockSignIn-*.js', '**/mock-*.js']),
+        ],
+        // The fonts and the Firebase chunk are large but needed offline.
+        maximumFileSizeToCacheInBytes: 3_000_000,
+      },
+      manifest: {
+        id: '/',
+        name: 'Empírica Portal',
+        short_name: 'Empírica',
+        description: 'Portal de clientes de Empírica Legal Lab · Fractional Legal Team',
+        lang: 'es-MX',
+        start_url: '.',
+        scope: '.',
+        display: 'standalone',
+        background_color: tokens.themes.light.colors.background,
+        theme_color: tokens.brand.green,
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+    }),
     // The real backend with fictitious data, only in mock mode (npm run dev:mock).
     ...(mode === 'mock' ? [mockApi(fileURLToPath(new URL('../api/src', import.meta.url)))] : []),
   ],

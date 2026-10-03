@@ -70,7 +70,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={current ? 'page' : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-control px-3 font-medium transition ${
+                className={`flex min-h-11 items-center gap-3 rounded-control px-3 font-medium ${
                   current
                     ? 'bg-sidebar-accent text-sidebar'
                     : 'text-sidebar-foreground hover:bg-sidebar-border'

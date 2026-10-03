@@ -1,12 +1,15 @@
-import { useEffect, useState, type SubmitEvent } from 'react';
+import { lazy, Suspense, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
-import { listDemoUsers, type DemoUser } from '../auth/mock.ts';
 import { AuthError } from '../auth/types.ts';
 import googleG from '../assets/google-g.svg';
 import { MOCK_MODE } from '../config/api.ts';
 import { Button } from '../ui/Button.tsx';
+import { Spinner } from '../ui/Card.tsx';
 import { TextField } from '../ui/Field.tsx';
+
+// Demo accounts exist only in mock mode: their code never reaches the real portal.
+const MockSignIn = lazy(() => import('./MockSignIn.tsx').then((m) => ({ default: m.MockSignIn })));
 
 type Mode = 'signIn' | 'signUp' | 'reset';
 
@@ -15,7 +18,14 @@ type Mode = 'signIn' | 'signUp' | 'reset';
  * invited people); and resetting a password. In mock mode, demo users.
  */
 export function AuthForm({ initialMode = 'signIn' }: { initialMode?: 'signIn' | 'signUp' }) {
-  if (MOCK_MODE) return <MockSignIn />;
+  const { t } = useTranslation();
+  if (MOCK_MODE) {
+    return (
+      <Suspense fallback={<Spinner label={t('app.loading')} />}>
+        <MockSignIn />
+      </Suspense>
+    );
+  }
   return <FirebaseForm initialMode={initialMode} />;
 }
 
@@ -211,69 +221,4 @@ function LinkButton({ onClick, children }: { onClick: () => void; children: stri
 /** Google's "G" (a third-party mark in its own colors: src/assets, not our palette). */
 function GoogleMark() {
   return <img src={googleG} alt="" className="size-5" />;
-}
-
-function MockSignIn() {
-  const { t } = useTranslation();
-  const { client } = useAuth();
-  const [users, setUsers] = useState<DemoUser[]>([]);
-  const [email, setEmail] = useState('');
-  const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => {
-    void listDemoUsers().then(setUsers);
-  }, []);
-  const enter = async (address: string): Promise<void> => {
-    setBusy(address);
-    try {
-      await client.signInWithPassword(address, 'demo');
-    } finally {
-      setBusy(null);
-    }
-  };
-  return (
-    <div className="rounded-card border border-border bg-card p-6 text-card-foreground shadow-card">
-      <p className="label-caps text-muted-foreground">{t('auth.mock.title')}</p>
-      <h1 className="mt-1 text-3xl font-semibold">{t('auth.title')}</h1>
-      <p className="mt-2 text-muted-foreground">{t('auth.mock.subtitle')}</p>
-      <ul className="mt-4 divide-y divide-border rounded-control border border-border">
-        {users.map((u) => (
-          <li key={u.id}>
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted"
-              onClick={() => void enter(u.email)}
-              disabled={busy !== null}
-            >
-              <span>
-                <span className="block font-medium">{u.nombre}</span>
-                <span className="block text-sm text-muted-foreground">{u.email}</span>
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {t(`roles.${u.rolBase as 'SOCIO_ADMIN'}`)}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <form
-        className="mt-5 space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void enter(email);
-        }}
-      >
-        <TextField
-          label={t('auth.mock.other')}
-          type="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
-        />
-        <Button type="submit" variant="secondary" busy={busy === email && email !== ''}>
-          {t('auth.mock.enter')}
-        </Button>
-      </form>
-    </div>
-  );
 }

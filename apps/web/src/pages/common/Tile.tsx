@@ -53,7 +53,7 @@ export function Tile({
       {hint ? <span className="mt-1 block text-xs opacity-80">{hint}</span> : null}
     </>
   );
-  const className = `block w-full rounded-card border p-4 text-left shadow-subtle transition hover:shadow-card ${TONES[active]}`;
+  const className = `block w-full rounded-card border p-4 text-left shadow-subtle transition-shadow hover:shadow-card ${TONES[active]}`;
   if (href) {
     return (
       <Link href={href} className={className} data-tour={tour}>

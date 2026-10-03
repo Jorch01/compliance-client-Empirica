@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { text, type Row } from '@empirica/shared';
 import { useNames } from '../../data/names.ts';
 import { taskSemaforo } from '../../domain/deadlines.ts';
+import { taskStateLabel } from '../../i18n/labels.ts';
 import { useScope } from '../../portal/scope.ts';
 import { EmptyState } from '../../ui/Card.tsx';
 import { Icon } from '../../ui/Icon.tsx';
@@ -30,6 +31,7 @@ export function TaskList({
         const where = [
           scope.clientId ? '' : names.client(text(task, 'clienteId')),
           names.unit(text(task, 'entidadId')),
+          taskStateLabel(t, task.estado),
         ]
           .filter(Boolean)
           .join(' · ');

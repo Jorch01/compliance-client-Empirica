@@ -68,7 +68,7 @@ function ClientsList({ onNew }: { onNew: (() => void) | null }) {
               onClick={() => {
                 setClient(c.id);
               }}
-              className="flex h-full w-full flex-col gap-2 rounded-card border border-border bg-card p-5 text-left text-card-foreground shadow-subtle transition hover:shadow-card"
+              className="flex h-full w-full flex-col gap-2 rounded-card border border-border bg-card p-5 text-left text-card-foreground shadow-subtle transition-shadow hover:shadow-card"
             >
               <span className="flex w-full items-start justify-between gap-3">
                 <span className="font-display text-2xl font-semibold text-heading">

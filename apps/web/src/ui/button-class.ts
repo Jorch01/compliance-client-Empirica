@@ -10,7 +10,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
 
 export function buttonClass(variant: ButtonVariant = 'primary', size: 'sm' | 'md' = 'md'): string {
   return [
-    'inline-flex items-center justify-center gap-2 rounded-control font-medium transition',
+    'inline-flex items-center justify-center gap-2 rounded-control font-medium',
     'disabled:cursor-not-allowed disabled:opacity-60',
     size === 'sm' ? 'min-h-9 px-3 text-sm' : 'min-h-11 px-4',
     VARIANTS[variant],

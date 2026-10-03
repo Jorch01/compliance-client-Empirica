@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
 import { AuthError, type AuthUser } from '../auth/types.ts';
 import { MOCK_MODE } from '../config/api.ts';
+import { reloadToNewVersion } from '../pwa/update.ts';
 import { useSession } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
 import { Spinner } from '../ui/Card.tsx';
@@ -174,12 +175,7 @@ export function OutdatedScreen() {
     <MessageScreen
       title={t('session.outdatedTitle')}
       actions={
-        <Button
-          icon="refresh"
-          onClick={() => {
-            location.reload();
-          }}
-        >
+        <Button icon="refresh" onClick={() => void reloadToNewVersion()}>
           {t('session.reload')}
         </Button>
       }

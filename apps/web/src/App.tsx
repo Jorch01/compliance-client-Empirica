@@ -4,6 +4,7 @@ import { useHashLocation } from 'wouter/use-hash-location';
 import { AuthProvider } from './auth/AuthProvider.tsx';
 import type { AuthClient } from './auth/types.ts';
 import { Portal } from './portal/Portal.tsx';
+import { UpdatePrompt } from './pwa/UpdatePrompt.tsx';
 import { AcceptInvitation } from './screens/AcceptInvitation.tsx';
 import {
   FailedScreen,
@@ -69,6 +70,7 @@ export function App({ authClient }: { authClient: AuthClient }) {
         <Router hook={useHashLocation}>
           <Root />
         </Router>
+        <UpdatePrompt />
       </SessionProvider>
     </AuthProvider>
   );
