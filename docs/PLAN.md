@@ -395,7 +395,7 @@ Ambos valores se pueden cambiar después en Configuración.
 
 **Pendientes para producción** (no bloquean la Fase 1):
 
-1. Decidir la cuenta propietaria (D12) y, con ella, crear Firebase, Apps Script y la key de Gemini (`SETUP.md`).
+1. Decidir la cuenta propietaria (D12) y, con ella, crear Apps Script y la key de Gemini (`SETUP.md`). Firebase ya está: proyecto `empirica-portal-d86b4` (3 de octubre); falta restringir su key (paso 3).
 2. La URL del aviso de privacidad.
 3. El registro DNS en GoDaddy cuando publiquemos (`SETUP.md`, paso 7).
 

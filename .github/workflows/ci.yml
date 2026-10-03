@@ -82,6 +82,10 @@ jobs:
 
       - name: Compilar el portal
         run: npm run build -w @empirica/web
+        env:
+          # Public by design (it ships to the browser), but kept out of the
+          # repository so secret scanners do not flag it. docs/SETUP.md, step 8.
+          VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
 
       - name: Configurar Pages
         uses: actions/configure-pages@v6
