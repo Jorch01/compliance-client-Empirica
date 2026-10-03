@@ -134,7 +134,9 @@ class PushRun {
       if (prior.usuarioId !== this.#ctx.userId) {
         return { opId: op.opId, status: 'rejected', code: 'VALIDATION', reason: 'OP_ID_TAKEN' };
       }
-      if (prior.result.status === 'rejected') return { ...prior.result, opId: op.opId };
+      if (prior.result.status === 'rejected') {
+        return { ...this.#current(op.table, op.id), ...prior.result, opId: op.opId };
+      }
       return { ...this.#current(op.table, op.id), opId: op.opId, status: 'duplicate' };
     }
     const result = this.#evaluate(op);
@@ -157,7 +159,15 @@ class PushRun {
     reason: NonNullable<OpResult['reason']>,
     extra: Partial<OpResult> = {},
   ): OpResult {
-    return { opId: op.opId, status: 'rejected', code, reason, ...extra };
+    // With the record as it stands, so the device can undo what it showed.
+    return {
+      ...this.#current(op.table, op.id),
+      opId: op.opId,
+      status: 'rejected',
+      code,
+      reason,
+      ...extra,
+    };
   }
 
   #evaluate(op: Op): OpResult {

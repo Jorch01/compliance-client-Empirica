@@ -1,6 +1,7 @@
 # Dependencias y salidas de compilación
 node_modules/
 dist/
+dist-mock/
 build/
 coverage/
 *.tsbuildinfo
@@ -14,6 +15,8 @@ blob-report/
 .env
 .env.*
 !.env.example
+# The portal with fictitious data (npm run dev:mock): nothing secret in it
+!apps/web/.env.mock
 
 # Credenciales de clasp: viven en tu carpeta personal, nunca en el repo.
 # (apps/api/.clasp.json sí se sube: solo dice qué proyecto es, no da acceso.)

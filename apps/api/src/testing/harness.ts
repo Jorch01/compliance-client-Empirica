@@ -40,15 +40,23 @@ export interface CallOptions {
   userAgent?: string;
 }
 
-export function createWorld(options: { data?: Dataset | null; adminEmails?: string } = {}) {
-  let nowMs = Date.parse(START);
+export function createWorld(
+  options: {
+    data?: Dataset | null;
+    adminEmails?: string;
+    /** A clock that runs (the mock API of the web app); by default it stands at START. */
+    now?: () => number;
+  } = {},
+) {
+  const base = options.now ?? (() => Date.parse(START));
+  let offset = 0;
   const clock = {
-    now: () => nowMs,
+    now: () => base() + offset,
     advance: (ms: number) => {
-      nowMs += ms;
+      offset += ms;
     },
     set: (iso: string) => {
-      nowMs = Date.parse(iso);
+      offset = Date.parse(iso) - base();
     },
   };
   const google = new FakeGoogle(clock.now);

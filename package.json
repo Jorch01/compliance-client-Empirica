@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @empirica/web",
+    "dev:mock": "npm run dev:mock -w @empirica/web",
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
