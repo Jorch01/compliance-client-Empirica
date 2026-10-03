@@ -14,8 +14,8 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                   |
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                   |
 | 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | Pendiente                                                   |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Más adelante                                                |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script               |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Siguiente: el código ya está en Apps Script                 |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
