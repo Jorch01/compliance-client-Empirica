@@ -6,11 +6,14 @@ import { describe, expect, it } from 'vitest';
 import { firebaseConfig } from './firebase.ts';
 
 // Every source file of the web app, as text (Vite reads them; no Node APIs).
-const sources = import.meta.glob<string>(['../**/*', '../../index.html', '../../public/**/*'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+const sources = import.meta.glob<string>(
+  ['../**/*', '../../index.html', '../../privacidad/**/*', '../../public/**/*'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+);
 
 describe('Firebase configuration', () => {
   it('points to the portal project, whose tokens the server accepts', () => {

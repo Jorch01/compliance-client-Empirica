@@ -1,4 +1,4 @@
-import { Logo } from './components/Logo.tsx';
+import { PublicHeader } from './components/PublicHeader.tsx';
 
 /**
  * Public placeholder until the portal itself arrives (phase 2). It speaks to
@@ -7,10 +7,7 @@ import { Logo } from './components/Logo.tsx';
 export function App() {
   return (
     <div className="min-h-dvh bg-background">
-      <header className="flex items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3 text-sidebar-foreground">
-        <Logo variant="logotipo" className="h-8 w-auto text-sidebar-accent" />
-        <span className="label-caps text-sidebar-muted-foreground">Fractional Legal Team</span>
-      </header>
+      <PublicHeader />
       <main className="mx-auto max-w-3xl px-4 py-10">
         <p className="label-caps text-muted-foreground">Portal de clientes</p>
         <h1 className="mt-2 text-4xl font-semibold">Muy pronto</h1>
@@ -26,6 +23,14 @@ export function App() {
           </p>
         </div>
       </main>
+      <footer className="mx-auto max-w-3xl px-4 pb-10 text-sm">
+        <a
+          href={`${import.meta.env.BASE_URL}privacidad/`}
+          className="text-link underline underline-offset-2"
+        >
+          Aviso de privacidad
+        </a>
+      </footer>
     </div>
   );
 }

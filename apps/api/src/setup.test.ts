@@ -75,6 +75,40 @@ describe('setup()', () => {
   it('warns when there is no administrator configured', () => {
     expect(createWorld({ data: null }).setupReport.warnings.join(' ')).toContain('ADMIN_EMAILS');
   });
+
+  it('confirms that sign-in will work: both Firebase properties and a server key that works', () => {
+    expect(w.setupReport.checked).toEqual([
+      `Firebase: proyecto ${w.google.firebase.projectId}; la key del servidor funciona.`,
+    ]);
+    expect(w.setupReport.warnings.join(' ')).not.toMatch(/FIREBASE/);
+  });
+
+  it('says which Firebase property is missing', () => {
+    const v = createWorld({ data: null });
+    v.google.props.delete(PROP.firebaseApiKey);
+    const report = runSetup(v.env);
+    expect(report.checked).toEqual([]);
+    expect(report.warnings.join(' ')).toContain(
+      'Falta FIREBASE_SERVER_API_KEY en Script Properties',
+    );
+  });
+
+  it('tells a key that does not work (the browser one, say) without writing it in the log', () => {
+    const v = createWorld({ data: null });
+    const wrongKey = `AIza${'x'.repeat(35)}`;
+    v.google.props.set(PROP.firebaseApiKey, wrongKey);
+    const report = runSetup(v.env);
+    const warnings = report.warnings.join(' ');
+    expect(warnings).toContain(
+      'FIREBASE_SERVER_API_KEY no funciona con Identity Toolkit (400: API key not valid.)',
+    );
+    expect(warnings).not.toContain(wrongKey);
+    expect(report.checked).toEqual([]);
+
+    v.google.props.set(PROP.firebaseApiKey, v.google.firebase.apiKey);
+    v.google.firebase.failWith = 503;
+    expect(runSetup(v.env).warnings.join(' ')).toContain('(503: BACKEND_ERROR)');
+  });
 });
 
 describe('daily backup', () => {

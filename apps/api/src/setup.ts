@@ -9,8 +9,10 @@
  * - the initial SOCIO_ADMIN users from the ADMIN_EMAILS property;
  * - the default settings;
  * - the nightly trigger (backup and cleanup).
+ * It also checks the Firebase properties sign-in needs (checkFirebase).
  */
 import { TABLES, TABLE_NAMES, allColumns, text, toProjectIso, type Row } from '@empirica/shared';
+import { lookupAccount } from './auth.ts';
 import { CONFIG_DEFAULTS } from './config.ts';
 import { Database, Sequence } from './db/database.ts';
 import { Writer } from './db/writer.ts';
@@ -38,7 +40,40 @@ const TEXT_TYPES = new Set([
 export interface SetupReport {
   spreadsheetId: string;
   created: string[];
+  /** What was checked and is fine. */
+  checked: string[];
   warnings: string[];
+}
+
+/**
+ * Sign-in needs both Firebase properties. The server key is tried against
+ * Identity Toolkit with a token that cannot exist: a key that works answers
+ * INVALID_ID_TOKEN. Neither value is ever written to the log.
+ */
+export function checkFirebase(env: Env, report: SetupReport): void {
+  const projectId = env.prop(PROP.firebaseProjectId);
+  const apiKey = env.prop(PROP.firebaseApiKey);
+  if (!projectId || !apiKey) {
+    const missing = [PROP.firebaseProjectId, PROP.firebaseApiKey].filter((k) => !env.prop(k));
+    report.warnings.push(
+      `Falta ${missing.join(' y ')} en Script Properties: nadie podrá iniciar sesión en el portal (docs/SETUP.md, paso 5).`,
+    );
+    return;
+  }
+  let answer: string;
+  try {
+    const { status, body } = lookupAccount(env, apiKey, 'setup-check');
+    if (status === 400 && body.error?.message?.startsWith('INVALID_ID_TOKEN')) {
+      report.checked.push(`Firebase: proyecto ${projectId}; la key del servidor funciona.`);
+      return;
+    }
+    answer = `${status}: ${body.error?.message ?? 'sin detalle'}`;
+  } catch (error) {
+    answer = String(error);
+  }
+  report.warnings.push(
+    `FIREBASE_SERVER_API_KEY no funciona con Identity Toolkit (${answer}). Debe ser la key "portal-servidor" del paso 3, sin restricción de sitios web: la del navegador no sirve aquí.`,
+  );
 }
 
 function openOrCreateSpreadsheet(env: Env, report: SetupReport): GSpreadsheet {
@@ -146,7 +181,7 @@ function base(id: string, serverNow: string, by: string): Row {
 }
 
 export function runSetup(env: Env): SetupReport {
-  const report: SetupReport = { spreadsheetId: '', created: [], warnings: [] };
+  const report: SetupReport = { spreadsheetId: '', created: [], checked: [], warnings: [] };
   const lock = env.g.LockService.getScriptLock();
   if (!lock.tryLock(30_000))
     throw new Error('Otro proceso está usando el portal; intenta de nuevo en un minuto.');
@@ -225,6 +260,7 @@ export function runSetup(env: Env): SetupReport {
         .create();
       report.created.push('tareas nocturnas a las 3:00 (respaldo y limpieza)');
     }
+    checkFirebase(env, report);
     return report;
   } finally {
     lock.releaseLock();

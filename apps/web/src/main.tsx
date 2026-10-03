@@ -1,15 +1,4 @@
-import '@fontsource-variable/cormorant-garamond';
-import '@fontsource-variable/montserrat';
-import './styles/app.css';
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
+import { mount } from './mount.tsx';
 
-const root = document.getElementById('root');
-if (!root) throw new Error('Missing #root element');
-
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+mount(<App />);

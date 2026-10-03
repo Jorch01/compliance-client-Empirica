@@ -83,23 +83,7 @@ export function verifyIdToken(env: Env, token: string | undefined): Identity {
     }
   }
 
-  const response = env.g.UrlFetchApp.fetch(LOOKUP_URL, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify({ idToken: token }),
-    headers: { 'x-goog-api-key': apiKey },
-    muteHttpExceptions: true,
-  });
-  const status = response.getResponseCode();
-  let body: {
-    users?: { localId?: string; email?: string; emailVerified?: boolean; disabled?: boolean }[];
-    error?: { message?: string };
-  };
-  try {
-    body = JSON.parse(response.getContentText()) as typeof body;
-  } catch {
-    body = {};
-  }
+  const { status, body } = lookupAccount(env, apiKey, token);
   if (status === 400) throw unauthenticated(body.error?.message ?? 'INVALID_ID_TOKEN');
   if (status !== 200) {
     env.log('Identity Toolkit respondió con error', { status, message: body.error?.message });
@@ -121,6 +105,33 @@ export function verifyIdToken(env: Env, token: string | undefined): Identity {
   const ttl = Math.min(MAX_CACHE_SECONDS, identity.exp - nowSeconds);
   if (ttl >= 1) env.cachePut(cacheKey, JSON.stringify(identity), ttl);
   return identity;
+}
+
+interface LookupBody {
+  users?: { localId?: string; email?: string; emailVerified?: boolean; disabled?: boolean }[];
+  error?: { message?: string };
+}
+
+/** Identity Toolkit's accounts:lookup, answered as is (its errors included). */
+export function lookupAccount(
+  env: Env,
+  apiKey: string,
+  idToken: string,
+): { status: number; body: LookupBody } {
+  const response = env.g.UrlFetchApp.fetch(LOOKUP_URL, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ idToken }),
+    headers: { 'x-goog-api-key': apiKey },
+    muteHttpExceptions: true,
+  });
+  let body: LookupBody;
+  try {
+    body = JSON.parse(response.getContentText()) as LookupBody;
+  } catch {
+    body = {};
+  }
+  return { status: response.getResponseCode(), body };
 }
 
 /** The whitelist: an active user with this email in the Usuarios tab. */
