@@ -453,10 +453,17 @@ Ambos valores se pueden cambiar después en Configuración.
 | `apps/api/src/actions` | Invitaciones, administración de usuarios y membresías, perfil; un cliente creado sin conexión y sus unidades ya entran en el mismo envío                   |
 | `scripts/brand`        | `npm run brand:icons`: íconos de la app dibujados desde los tokens y el símbolo vectorial                                                                  |
 
-**Cómo probarla sin cuentas** (en tu computadora, con Node 22):
+**Cómo probarla sin cuentas y sin instalar nada** (GitHub Codespaces, como en el paso 8 de `SETUP.md`; tarda unos 3 minutos en arrancar):
 
-1. `npm install` y `npm run dev:mock`. Abre <http://localhost:5173>: aparece "Modo de demostración" con los usuarios ficticios (socia, abogados, administradores y colaboradores de "Cliente Demo"). Entra como **Socia Demo**: verás el recorrido y el Centro de control.
-2. Abre una **ventana de incógnito** en la misma dirección y entra como **Encargada Norte**: es otro dispositivo, de una usuaria de cliente limitada a la Unidad Norte.
+1. En la página del repositorio en GitHub, cambia la rama (el botón que dice `main`) a `claude/zen-franklin-44f0kw`. Luego **Code → Codespaces → Create codespace on claude/zen-franklin-44f0kw**.
+2. En la terminal de abajo escribe `npm install` y Enter (un minuto); después `npm run dev:mock` y Enter.
+3. Aparece el aviso "Your application running on port 5173 is available": pulsa **Open in Browser**. Se abre el portal en "Modo de demostración", con los usuarios ficticios (socia, abogados, administradores y colaboradores de "Cliente Demo"). Entra como **Socia Demo**: verás el recorrido y el Centro de control.
+4. Sigue con los puntos 2 a 5 de abajo. Al terminar, borra el Codespace (**Code → Codespaces → ⋯ → Delete**) para no gastar las horas gratuitas.
+
+En tu computadora, con Node 22, es lo mismo: `npm install`, `npm run dev:mock` y abre <http://localhost:5173>. Después:
+
+1. Entra como **Socia Demo**: verás el recorrido y el Centro de control.
+2. Abre una **ventana de incógnito** en la misma dirección y entra como **Encargada Norte**: es otro dispositivo, de una usuaria de cliente limitada a la Unidad Norte. (En Codespaces, la ventana de incógnito pide entrar a GitHub primero: hazlo con tu cuenta.)
 3. En la ventana de la encargada, abre las herramientas del navegador (F12) → **Red** → **Sin conexión**. Ve a **Pendientes** y pulsa "Empezar" en "Entregar acta constitutiva"; en **Solicitudes**, crea una nueva. El indicador dice "Sin conexión · 2".
 4. Quita "Sin conexión": en segundos el indicador vuelve a "Al día". En la ventana de la socia, pulsa el indicador → **Sincronizar ahora**: la solicitud aparece; cámbiale el estado y sincroniza en la otra ventana para verlo llegar.
 5. Como socia, en **Usuarios → Invitar**, invita a `nueva@cliente-a.example` solo a la Unidad Norte, copia el enlace y ábrelo en otra ventana de incógnito; en "O entra con otro correo" escribe ese correo: la invitación se acepta y la persona ve solo su unidad.

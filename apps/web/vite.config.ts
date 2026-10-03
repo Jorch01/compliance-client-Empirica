@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => ({
   // "/" for portal.empirica.mx; "/<repo>/" if served from <user>.github.io/<repo>/.
   base: process.env.VITE_BASE ?? '/',
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  // The demo also runs in GitHub Codespaces (docs/PLAN.md § 15), whose
+  // forwarded address is a subdomain of app.github.dev.
+  server: { allowedHosts: ['.app.github.dev'] },
   plugins: [
     react(),
     tailwindcss(),
