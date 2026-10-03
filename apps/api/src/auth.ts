@@ -145,7 +145,11 @@ export function authenticate(env: Env, db: Database, token: string | undefined):
   const identity = verifyIdToken(env, token);
   if (!identity.emailVerified) throw new ApiError('EMAIL_NOT_VERIFIED');
   const user = findUser(db, identity.email);
-  if (user?.estado !== 'ACTIVO') throw new ApiError('NOT_WHITELISTED');
+  // The caller proved they own this e-mail: they may learn their own status
+  // (an invitation waiting to be accepted, or access withdrawn).
+  if (user?.estado !== 'ACTIVO') {
+    throw new ApiError('NOT_WHITELISTED', undefined, user ? { reason: user.estado } : undefined);
+  }
   const boundUid = text(user, 'firebaseUid');
   // Once bound, a different Firebase account with the same email (deleted and
   // re-created, or taken over) is refused until the firm resets it.
