@@ -4,18 +4,18 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 ## 1. Lo que falta, todo junto
 
-| #   | Qué                               | Cómo                                                 | Se manda por el chat                                          |
-| --- | --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria     | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    |
-| 2   | Proyecto de Firebase              | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                |
-| 3   | Restringir las API keys           | Paso 3                                               | No                                                            |
-| 4   | Proyecto de Apps Script           | Paso 4                                               | Sí: el ID de la secuencia de comandos                         |
-| 5   | Script Properties                 | Paso 5                                               | **No: son secretos**                                          |
-| 6   | API key de Gemini                 | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio |
-| 7   | URL del aviso de privacidad       | —                                                    | Sí                                                            |
-| 8   | DNS en GoDaddy                    | Paso 7, cuando publiquemos                           | —                                                             |
-| 9   | Despliegue automático del backend | Paso 8, una sola vez                                 | **No: es secreto**                                            |
-| 10  | Primera publicación del backend   | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        |
+| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                      |
+| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | Pendiente                                                   |
+| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                   |
+| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | Pendiente (la key del navegador aún no tiene restricciones) |
+| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | Pendiente                                                   |
+| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | Pendiente                                                   |
+| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                   |
+| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                   |
+| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | Pendiente                                                   |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Más adelante                                                |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -51,11 +51,12 @@ No hace falta Google Workspace. Solo convendría si un día el portal manda más
 3. **Authentication → Configuración → Dominios autorizados**: agrega `portal.empirica.mx`.
 4. **Authentication → Plantillas**: en cada plantilla de correo cambia el nombre del remitente a **Empírica Portal**.
 5. Engrane ⚙ → **Configuración del proyecto → General → Tus apps** → ícono web `</>`. Apodo: `portal-web`. **No** marques Firebase Hosting. Pulsa **Registrar app**.
-6. Copia el bloque `firebaseConfig` y mándamelo.
+6. Copia el bloque `firebaseConfig` y mándamelo. ✔ Recibido el 3 de octubre: el proyecto es **`empirica-portal-d86b4`** (Firebase le agregó ese sufijo al nombre).
+7. En **Configuración del proyecto → General**, revisa **Nombre público del proyecto** (`Empírica Portal`) y **Correo de asistencia** (la cuenta del paso 1): es lo que los usuarios ven al entrar con Google y en los correos de Firebase.
 
 ### Paso 3 · Restringir las API keys (Google Cloud)
 
-1. Entra a <https://console.cloud.google.com/apis/credentials> y elige el proyecto `empirica-portal` arriba.
+1. Entra a <https://console.cloud.google.com/apis/credentials> y elige arriba el proyecto `empirica-portal` (ID `empirica-portal-d86b4`).
 2. Abre **Browser key (auto created by Firebase)**:
    - _Restricciones de aplicaciones_: **Sitios web**. Agrega `https://portal.empirica.mx/*`, `http://localhost:5173/*` y `http://localhost:4173/*`.
    - _Restricciones de API_: **Restringir clave**. Marca **Identity Toolkit API** y **Token Service API**.
@@ -80,7 +81,7 @@ En el editor del proyecto `Empírica Portal API`: ⚙ **Configuración del proye
 | Propiedad                 | Valor                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------- |
 | `FIREBASE_SERVER_API_KEY` | La clave `portal-servidor` del paso 3                                                          |
-| `FIREBASE_PROJECT_ID`     | `empirica-portal` (o el id que te dio Firebase)                                                |
+| `FIREBASE_PROJECT_ID`     | `empirica-portal-d86b4`                                                                        |
 | `GEMINI_API_KEY`          | La clave del paso 6                                                                            |
 | `ADMIN_EMAILS`            | Los correos de los dos socios titulares, separados por coma: serán los `SOCIO_ADMIN` iniciales |
 
@@ -88,7 +89,7 @@ Guarda. Estos valores no aparecen en el repositorio ni en el navegador.
 
 ### Paso 6 · API key de Gemini
 
-1. Entra a <https://aistudio.google.com/apikey> con la cuenta del paso 1 → **Crear clave de API** → proyecto `empirica-portal`.
+1. Entra a <https://aistudio.google.com/apikey> con la cuenta del paso 1 → **Crear clave de API** → proyecto `empirica-portal` (ID `empirica-portal-d86b4`). Antes, haz el paso 3: así la key del navegador no puede usar Gemini.
 2. Pégala en Script Properties como `GEMINI_API_KEY` (paso 5). **No me la mandes.**
 3. En AI Studio, abre la página de límites de uso del proyecto y mándame cuántas peticiones por día da para Flash y Flash-Lite.
 4. No actives facturación: el modo `METADATA_ONLY` está pensado para el nivel gratuito (`IA.md`).
@@ -117,12 +118,15 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 3. Abre el enlace que aparece, entra con la cuenta del paso 1, acepta los permisos, copia el código que te da Google y pégalo en la terminal.
 4. Escribe `cat ~/.clasprc.json` y copia todo el texto que aparece.
 5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
-6. En la misma página, pestaña **Variables → New repository variable**, crea dos:
+6. En la misma página, pestaña **Variables → New repository variable**, crea tres:
 
-   | Nombre               | Valor                                      |
-   | -------------------- | ------------------------------------------ |
-   | `APPS_SCRIPT_ID`     | El ID de la secuencia de comandos (paso 4) |
-   | `API_DEPLOY_ENABLED` | `true`                                     |
+   | Nombre                 | Valor                                                                |
+   | ---------------------- | -------------------------------------------------------------------- |
+   | `APPS_SCRIPT_ID`       | El ID de la secuencia de comandos (paso 4)                           |
+   | `API_DEPLOY_ENABLED`   | `true`                                                               |
+   | `FIREBASE_WEB_API_KEY` | El `apiKey` del bloque `firebaseConfig` (el que empieza con `AIza…`) |
+
+   `FIREBASE_WEB_API_KEY` no es secreta (va en el navegador), pero no se guarda en el repositorio para que los detectores de secretos de GitHub no marquen el repositorio público.
 
 7. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
 8. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
