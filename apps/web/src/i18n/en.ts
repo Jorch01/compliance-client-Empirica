@@ -89,6 +89,8 @@ export const en: Messages = {
     resetSent:
       'If the email has an account, a link will arrive in a few minutes. Check your spam folder too.',
     google: 'Continue with Google',
+    googleIosHint:
+      'In the app installed on an iPhone or iPad, if the Google window does not respond, sign in with your email and password.',
     or: 'or',
     privacy: 'Privacy notice',
     invitationOnly: 'Access is by invitation from the firm.',
@@ -106,8 +108,10 @@ export const en: Messages = {
       'weak-password': 'The password is too weak: use at least 8 characters.',
       'invalid-email': 'The email is not valid.',
       'too-many-requests': 'Too many attempts. Please wait a few minutes.',
-      'popup-blocked': 'The browser blocked the Google window. Please try again.',
-      'popup-closed': 'The Google window was closed before finishing.',
+      'popup-blocked':
+        'The browser blocked the Google window. Allow pop-ups for this site, or sign in with your email and password.',
+      'popup-closed':
+        'The Google window was closed before finishing. Try again, or sign in with your email and password.',
       network: 'No connection. Check your network and try again.',
       'not-allowed': 'This sign-in method is not enabled.',
       unknown: 'Could not sign in. Please try again.',

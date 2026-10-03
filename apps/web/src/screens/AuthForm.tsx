@@ -4,6 +4,7 @@ import { useAuth } from '../auth/context.ts';
 import { AuthError } from '../auth/types.ts';
 import googleG from '../assets/google-g.svg';
 import { MOCK_MODE } from '../config/api.ts';
+import { detectPlatform, isInstalled } from '../portal/install.ts';
 import { Button } from '../ui/Button.tsx';
 import { Spinner } from '../ui/Card.tsx';
 import { TextField } from '../ui/Field.tsx';
@@ -31,6 +32,7 @@ export function AuthForm({ initialMode = 'signIn' }: { initialMode?: 'signIn' | 
 
 function FirebaseForm({ initialMode }: { initialMode: Mode }) {
   const { t } = useTranslation();
+  const onInstalledIos = isInstalled() && detectPlatform() === 'ios';
   const { client } = useAuth();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
@@ -104,6 +106,9 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
             <GoogleMark />
             {t('auth.google')}
           </Button>
+          {onInstalledIos ? (
+            <p className="mt-2 text-sm text-muted-foreground">{t('auth.googleIosHint')}</p>
+          ) : null}
           <div className="my-5 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
             {t('auth.or')}

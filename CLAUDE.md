@@ -13,21 +13,25 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 ## Estado
 
 - **F0 aprobada** (2026-10-02): paleta y tipografía A; respuestas del socio en `docs/PLAN.md` § 13.
-- **F1 entregada, en revisión** (2026-10-02): backend núcleo, resumen en `docs/PLAN.md` § 14. No empezar F2 sin el visto bueno del socio.
+- **F1 aprobada** (2026-10-03): backend núcleo, resumen en `docs/PLAN.md` § 14.
+- **F2 entregada, en revisión** (2026-10-03): el portal en el navegador, resumen y cómo probarla en `docs/PLAN.md` § 15. No empezar F3 sin el visto bueno del socio.
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
-- **Sitio** en `portal.empirica.mx` (GitHub Pages; falta que el socio active Enforce HTTPS): portada provisional y aviso de privacidad en `/privacidad/` (2026-10-03).
+- **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): portada provisional y aviso de privacidad en `/privacidad/` (2026-10-03). Al fusionar F2, la portada se sustituye por el portal; antes, el socio hace `docs/SETUP.md` paso 10.
 
 ## Comandos
 
 ```bash
 npm install            # todo el monorepo (npm workspaces)
 npm run dev            # portal en http://localhost:5173
+npm run dev:mock       # portal con datos ficticios: el backend real (apps/api) dentro de Vite, sin cuentas
 npm run check          # formato + lint + tipos + pruebas (igual que el CI)
+npm run test:e2e       # Playwright sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
 npm run build          # web (apps/web/dist) y Apps Script (apps/api/build/Code.js)
 npm test               # solo pruebas (Vitest, todos los paquetes)
 npm run brand:vector   # Pantone y logos desde brand/private/EMPIRICA_FIRMAS.ai (requiere pdftocairo)
 npm run brand:palette  # extrae colores de /brand -> brand/palette.json (requiere pdfimages/poppler)
 npm run brand:tokens   # tokens.json, tokens.css y docs/design/paleta-propuesta.html
+npm run brand:icons    # íconos de la PWA desde tokens y logos.json (Chromium; CHROMIUM_PATH)
 ```
 
 Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan con `node` directamente).
@@ -36,7 +40,8 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 
 | Ruta              | Qué es                                                                                                                                                                                                      |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web`        | React 19 + Vite 8 + Tailwind 4. Local-first (Dexie) y PWA a partir de F2                                                                                                                                    |
+| `apps/web`        | React 19 + Vite 8 + Tailwind 4, local-first (Dexie) y PWA. `src/session` (estados de la sesión), `src/sync` (cola y motor), `src/portal` (marco), `src/pages` (pantallas), `src/ui` (componentes)           |
+| `apps/web/…`      | `sw/` Service Worker (Workbox), `mock/` backend real para `dev:mock`, `integration/` motor contra el backend real (Vitest), `e2e/` Playwright con axe                                                       |
 | `apps/api`        | Apps Script en TypeScript; `build.ts` lo empaqueta con esbuild en `build/Code.js`; se sube con clasp 3 y `deploy.ts` lo publica (CI)                                                                        |
 | `apps/api/src`    | `router.ts` (sobre y despacho), `auth.ts`, `actions/` (bootstrap, pull, push), `db/` (hoja, secuencia, historial, escritor con bitácora), `setup.ts`, `maintenance.ts`; `testing/` con los dobles de Google |
 | `packages/shared` | Código común a web y API: tokens y color (`src/brand`); modelo (`domain`), permisos, sincronización y contrato                                                                                              |
@@ -64,30 +69,36 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 
 ## Decisiones tomadas (registro)
 
-| Fecha      | Decisión                                                                                           | Motivo                                                                               |
-| ---------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 2026-10-02 | npm workspaces, Node 22                                                                            | Sin herramientas extra para el CI ni para el socio                                   |
-| 2026-10-02 | TypeScript 6.0, no 7                                                                               | `typescript-eslint` aún exige `<6.1`                                                 |
-| 2026-10-02 | GitHub Pages                                                                                       | El repo es público; Pages en plan gratuito solo admite repos públicos                |
-| 2026-10-02 | Sin enlace mágico de Firebase                                                                      | Spark lo limita a 5 correos al día; invitaciones propias por MailApp                 |
-| 2026-10-02 | Dos API keys (navegador con dominio; servidor solo Identity Toolkit)                               | Con una sola, la restricción por dominio bloquearía la verificación en el servidor   |
-| 2026-10-02 | Paleta extraída por script; membrete en Adobe RGB convertido a sRGB                                | "No inventes hex": todo color sale de `/brand` o de una regla documentada            |
-| 2026-10-02 | Publicación desactivada hasta `PAGES_ENABLED=true`                                                 | Que el CI no intente publicar antes de configurar Pages y el dominio                 |
-| 2026-10-02 | Verde y durazno = PANTONE 627 C y 7514 C del archivo maestro                                       | El maestro define la marca con Lab exactos; el membrete se había desviado (ΔE 0.022) |
-| 2026-10-02 | Clientes con hub y unidades: `Entidades.parentId` + alcance por unidad en cualquier rol de cliente | Piloto corporativo con varias unidades de negocio                                    |
-| 2026-10-02 | Resumen diario para todos; tour guiado con instalación por sistema; botones "¿Cómo se lee?"        | Pedido del socio                                                                     |
-| 2026-10-02 | Despliegue del backend automatizado (clasp en GitHub Actions) con cuenta propietaria dedicada      | Pregunta 15; recomendación D12                                                       |
-| 2026-10-02 | `zod/mini` para validar en navegador y servidor                                                    | 22 KB en el `Code.js` frente a 454 KB de `zod`                                       |
-| 2026-10-02 | `alcanceHist` + `seqAlta` en lugar de `ocultadoEnSeq`                                              | Cubre ocultar, mover, reasignar y borrar sin delatar lo que siempre fue interno      |
-| 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                       |
-| 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar     |
-| 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                               |
-| 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                  |
-| 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`) |
-| 2026-10-03 | Aviso de privacidad propio en `/privacidad/`, con su propio HTML y el texto del socio sin cambios  | Pedido del socio; dirección propia, útil también para el consentimiento de Google    |
+| Fecha      | Decisión                                                                                           | Motivo                                                                                |
+| ---------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 2026-10-02 | npm workspaces, Node 22                                                                            | Sin herramientas extra para el CI ni para el socio                                    |
+| 2026-10-02 | TypeScript 6.0, no 7                                                                               | `typescript-eslint` aún exige `<6.1`                                                  |
+| 2026-10-02 | GitHub Pages                                                                                       | El repo es público; Pages en plan gratuito solo admite repos públicos                 |
+| 2026-10-02 | Sin enlace mágico de Firebase                                                                      | Spark lo limita a 5 correos al día; invitaciones propias por MailApp                  |
+| 2026-10-02 | Dos API keys (navegador con dominio; servidor solo Identity Toolkit)                               | Con una sola, la restricción por dominio bloquearía la verificación en el servidor    |
+| 2026-10-02 | Paleta extraída por script; membrete en Adobe RGB convertido a sRGB                                | "No inventes hex": todo color sale de `/brand` o de una regla documentada             |
+| 2026-10-02 | Publicación desactivada hasta `PAGES_ENABLED=true`                                                 | Que el CI no intente publicar antes de configurar Pages y el dominio                  |
+| 2026-10-02 | Verde y durazno = PANTONE 627 C y 7514 C del archivo maestro                                       | El maestro define la marca con Lab exactos; el membrete se había desviado (ΔE 0.022)  |
+| 2026-10-02 | Clientes con hub y unidades: `Entidades.parentId` + alcance por unidad en cualquier rol de cliente | Piloto corporativo con varias unidades de negocio                                     |
+| 2026-10-02 | Resumen diario para todos; tour guiado con instalación por sistema; botones "¿Cómo se lee?"        | Pedido del socio                                                                      |
+| 2026-10-02 | Despliegue del backend automatizado (clasp en GitHub Actions) con cuenta propietaria dedicada      | Pregunta 15; recomendación D12                                                        |
+| 2026-10-02 | `zod/mini` para validar en navegador y servidor                                                    | 22 KB en el `Code.js` frente a 454 KB de `zod`                                        |
+| 2026-10-02 | `alcanceHist` + `seqAlta` en lugar de `ocultadoEnSeq`                                              | Cubre ocultar, mover, reasignar y borrar sin delatar lo que siempre fue interno       |
+| 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                        |
+| 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar      |
+| 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                                |
+| 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                   |
+| 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`)  |
+| 2026-10-03 | Aviso de privacidad propio en `/privacidad/`, con su propio HTML y el texto del socio sin cambios  | Pedido del socio; dirección propia, útil también para el consentimiento de Google     |
+| 2026-10-03 | F2 sin correos: quien invita comparte el enlace (D26)                                              | Agregar Gmail a Apps Script obliga a reautorizar la cuenta propietaria; se hace en F5 |
+| 2026-10-03 | Modo mock = backend real dentro de Vite, no MSW (D27)                                              | Se prueba el código que se despliega; dos ventanas son dos dispositivos               |
+| 2026-10-03 | Rutas con `#` (D28); Google solo con ventana emergente (D29)                                       | GitHub Pages sin reglas; la redirección de Firebase falla fuera de Firebase Hosting   |
+| 2026-10-03 | Una base IndexedDB por cuenta; Service Worker que guarda solo la app, nunca la API                 | Computadoras compartidas; los datos solo los decide el motor de sincronización        |
 
 ## Gotchas del entorno
 
 - Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`.
 - La red del entorno de desarrollo bloquea Drive y los dominios de Google Docs; los archivos de marca se trajeron con el conector de Drive.
-- También bloquea `script.google.com` y `developers.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
+- También bloquea `script.google.com`, `developers.google.com`, `firebase.google.com` y `docs.cloud.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
+- Prettier se corre **desde la raíz** del repo: desde `apps/web` no lee `.prettierignore` y reformatea `tokens.css` (generado).
+- Reglas nuevas de `eslint-plugin-react-hooks` 7: nada de `setState` síncrono dentro de un efecto (derivar en el render o medir con refs) y nada de `Date.now()` en el render; los archivos de componentes solo exportan componentes (hooks y utilidades van en `.ts`).

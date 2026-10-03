@@ -1,6 +1,6 @@
 # Límites técnicos y cuotas
 
-**Fecha de verificación: 2 de octubre de 2026.**
+**Fecha de verificación: 2 de octubre de 2026.** Agregados el 3 de octubre de 2026: versiones de Apps Script (§ 1), inicio de sesión con Google fuera de Firebase Hosting (§ 4) y la pantalla de consentimiento de Google (§ 4).
 
 **Cómo se verificó.** Cada cifra se consultó en la documentación oficial vigente (Google Developers, Firebase, Google AI for Developers, GitHub Docs, WebKit) mediante búsqueda web el día indicado. El entorno de desarrollo bloquea la descarga directa de esas páginas, así que cada cifra se tomó del extracto de la página oficial que devolvió la búsqueda, con su enlace. Antes de la Fase 1 conviene abrir los enlaces y confirmar las cifras marcadas con ⚠, porque Google cambia algunas sin aviso.
 
@@ -110,6 +110,22 @@ Fuente: [Firebase Authentication Limits](https://firebase.google.com/docs/auth/l
 
 Verificación del token en el servidor: `POST https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=…` con `{ idToken }`; la API key solo identifica el proyecto, no autoriza ([Identity Toolkit REST](https://cloud.google.com/identity-platform/docs/reference/rest/v1/projects.accounts/lookup)). ✅
 
+### Entrar con Google fuera de Firebase Hosting (verificado el 3 de octubre de 2026)
+
+Fuente: [Best practices for using signInWithRedirect on browsers that block third-party storage access](https://firebase.google.com/docs/auth/web/redirect-best-practices).
+
+- `signInWithRedirect()` usa un `iframe` del dominio `*.firebaseapp.com`; **no funciona en navegadores que bloquean el almacenamiento de terceros** (Safari, también en iPhone; Firefox; y Chrome conforme avanza su bloqueo) cuando la app no está en Firebase Hosting. El portal está en GitHub Pages. ✅
+- Opciones de Google para apps fuera de Firebase Hosting: usar `signInWithPopup()` (la que se adoptó, D29), un proxy inverso hacia `firebaseapp.com` (GitHub Pages no lo permite), **servir los archivos del asistente de inicio de sesión desde el propio dominio** (se propone para F7) o implementar el inicio de sesión de Google por separado. ✅
+- La ventana emergente puede no responder en una app instalada en la pantalla de inicio de iPhone o iPad: ahí se recomienda correo y contraseña hasta F7. ⚠ Depende de la versión de iOS; se confirmará con un iPhone real.
+
+### Pantalla de consentimiento de Google (verificado el 3 de octubre de 2026)
+
+Fuente: [Manage OAuth App Branding](https://support.google.com/cloud/answer/15549049) y [Get started with the Google Auth Platform](https://support.google.com/cloud/answer/15544987).
+
+- La antigua "Pantalla de consentimiento de OAuth" ahora es **Google Auth Platform**, con las secciones **Desarrollo de la marca** (nombre, logo, correo de asistencia, enlaces y dominios), **Público** (tipo de usuario, usuarios de prueba y estado de publicación) y **Clientes**. ✅
+- En estado **Prueba** solo entran las cuentas registradas como usuarios de prueba; **Publicar app** la pasa a **En producción**. ✅
+- El nombre de la app aparece en la pantalla de Google solo con la marca verificada; sin verificar, Google muestra el dominio técnico. La verificación de marca es gratuita. ✅
+
 ## 5. Gemini API (nivel gratuito)
 
 Fuentes: [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits), [Pricing](https://ai.google.dev/gemini-api/docs/pricing), [Models](https://ai.google.dev/gemini-api/docs/models), [Deprecations](https://ai.google.dev/gemini-api/docs/deprecations), [Additional Terms](https://ai.google.dev/gemini-api/terms).
@@ -144,7 +160,8 @@ Las filas sobre proyecto, tope de gasto y vista previa se verificaron el **3 de 
 Fuente: [Tracking Prevention in WebKit](https://webkit.org/tracking-prevention/).
 
 - **iOS/macOS Safari borra IndexedDB, localStorage, el Service Worker y su caché tras 7 días sin interacción con el sitio.** Las apps agregadas a la pantalla de inicio están exentas y llevan su propio contador. ✅
-- Safari no implementa Background Sync; la cola se vacía al abrir, al volver a primer plano y al recuperar la red (como en TSJ Filing).
+- Safari no implementa Background Sync; la cola se vacía al abrir, al volver a primer plano, al recuperar la red, cada minuto con la app visible y poco después de cada cambio (como en TSJ Filing).
+- La app guardada por el Service Worker pesa alrededor de **1 MB** (código, fuentes latinas e íconos; se excluyen las variantes de las fuentes para otros alfabetos). Los datos de cada usuario viven en IndexedDB; con el volumen previsto (decenas de clientes) son unos pocos MB, muy por debajo del espacio que los navegadores dan a cada sitio. ⚠ La cifra exacta varía por navegador; se medirá en F7.
 
 ---
 

@@ -88,6 +88,8 @@ export const es = {
     resetSent:
       'Si el correo tiene cuenta, te llegará un enlace en unos minutos. Revisa también spam.',
     google: 'Continuar con Google',
+    googleIosHint:
+      'En la app instalada en iPhone o iPad, si la ventana de Google no responde, entra con tu correo y contraseña.',
     or: 'o',
     privacy: 'Aviso de privacidad',
     invitationOnly: 'El acceso es por invitación del despacho.',
@@ -106,8 +108,10 @@ export const es = {
       'weak-password': 'La contraseña es muy débil: usa al menos 8 caracteres.',
       'invalid-email': 'El correo no es válido.',
       'too-many-requests': 'Demasiados intentos. Espera unos minutos.',
-      'popup-blocked': 'El navegador bloqueó la ventana de Google. Intenta de nuevo.',
-      'popup-closed': 'Se cerró la ventana de Google antes de terminar.',
+      'popup-blocked':
+        'El navegador bloqueó la ventana de Google. Permite las ventanas emergentes de este sitio o entra con tu correo y contraseña.',
+      'popup-closed':
+        'Se cerró la ventana de Google antes de terminar. Intenta de nuevo o entra con tu correo y contraseña.',
       network: 'Sin conexión. Revisa tu red e intenta de nuevo.',
       'not-allowed': 'Este método de acceso no está activado.',
       unknown: 'No se pudo iniciar sesión. Intenta de nuevo.',

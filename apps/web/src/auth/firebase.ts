@@ -2,8 +2,9 @@
  * Firebase Auth (Spark, free): email and password, or Google. Only the app
  * and auth modules are loaded, never Firestore.
  *
- * Google opens in a popup; if the browser blocks it (or in an app installed
- * on iOS, where popups misbehave) it falls back to a full-page redirect.
+ * Google opens in a popup, never a full-page redirect: the portal is not on
+ * Firebase Hosting, and browsers that block third-party storage (Safari,
+ * soon Chrome) break the redirect flow there (docs/LIMITES.md § 4).
  * Verification and reset emails come back to the portal.
  */
 import { initializeApp } from '@firebase/app';
@@ -13,7 +14,6 @@ import {
   browserLocalPersistence,
   browserPopupRedirectResolver,
   createUserWithEmailAndPassword,
-  getRedirectResult,
   indexedDBLocalPersistence,
   initializeAuth,
   onIdTokenChanged,
@@ -23,7 +23,6 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   updateProfile,
   type Auth,
@@ -67,11 +66,12 @@ const toAuthUser = (user: User | null): AuthUser | null =>
       }
     : null;
 
-/** Where verification and reset links lead back to. */
-const continueUrl = (): string => `${location.origin}${import.meta.env.BASE_URL}`;
-
-const installedOnIos = (): boolean =>
-  'standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true;
+/**
+ * Where verification and reset links lead back to: the portal, or the
+ * invitation the person was accepting, so it finishes on its own.
+ */
+const continueUrl = (): string =>
+  `${location.origin}${import.meta.env.BASE_URL}${location.hash.startsWith('#/invitacion/') ? location.hash : ''}`;
 
 export function createFirebaseAuth(): AuthClient {
   const app = initializeApp(firebaseConfig);
@@ -79,9 +79,6 @@ export function createFirebaseAuth(): AuthClient {
     persistence: [indexedDBLocalPersistence, browserLocalPersistence],
     popupRedirectResolver: browserPopupRedirectResolver,
   });
-  // Coming back from a Google redirect: its errors surface on the next attempt.
-  getRedirectResult(auth).catch(() => undefined);
-
   const run = async (fn: () => Promise<unknown>): Promise<void> => {
     auth.languageCode = currentLanguage();
     try {
@@ -112,19 +109,7 @@ export function createFirebaseAuth(): AuthClient {
       run(async () => {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        if (installedOnIos()) {
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-        try {
-          await signInWithPopup(auth, provider);
-        } catch (error) {
-          if ((error as { code?: unknown }).code === 'auth/popup-blocked') {
-            await signInWithRedirect(auth, provider);
-            return;
-          }
-          throw error;
-        }
+        await signInWithPopup(auth, provider);
       }),
     sendVerification: () =>
       run(async () => {
