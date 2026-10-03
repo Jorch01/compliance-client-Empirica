@@ -6,7 +6,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 | #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                      |
 | --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | Pendiente                                                   |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                             |
 | 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                   |
 | 3   | Restringir las API keys         | Paso 3                                               | No                                                            | Pendiente (la key del navegador aún no tiene restricciones) |
 | 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: guardado en `apps/api/.clasp.json`                 |
@@ -25,9 +25,11 @@ La hoja de cálculo, las carpetas de Drive y los calendarios **no** se crean a m
 
 ## 2. Paso a paso
 
-### Paso 1 · Cuenta propietaria dedicada (recomendado)
+### Paso 1 · Cuenta propietaria dedicada ✔
 
-Todo lo del portal (hoja, Drive, Apps Script, Firebase) vivirá en esta cuenta. Que sea **una cuenta nueva y solo para el portal**, no `enlilh@gmail.com`:
+> ✔ Creada el 3 de octubre de 2026. Su dirección no se escribe en el repositorio (es público): basta con que tú la tengas.
+
+Todo lo del portal (hoja, Drive, Apps Script, Firebase) vivirá en esta cuenta. Que sea **una cuenta nueva y solo para el portal**, no tu cuenta personal:
 
 - tus usuarios no verán tu correo personal como remitente, en "Continuar con Google" ni en calendarios compartidos;
 - la credencial del despliegue automático (paso 8) solo tendrá acceso a esa cuenta, no a tus otros proyectos;
@@ -41,6 +43,11 @@ Cómo:
 4. Usa esa cuenta en todos los pasos siguientes. Si tienes varias cuentas abiertas, revisa el avatar de arriba a la derecha antes de crear cada cosa.
 
 No hace falta Google Workspace. Solo convendría si un día el portal manda más de 100 correos al día de forma sostenida; el sistema avisa antes.
+
+**Si creaste Firebase o Apps Script antes, con otra cuenta**, pásalos a la dedicada:
+
+- **Firebase** no se rehace (la configuración que me mandaste sigue igual): con la cuenta con la que lo creaste, entra a ⚙ **Configuración del proyecto → Usuarios y permisos → Agregar miembro**, escribe la cuenta dedicada con el rol **Propietario** y acepta la invitación desde la cuenta dedicada. Después, ya con la cuenta dedicada, pon su correo como **correo de asistencia** (paso 2, punto 7). Cuando todo funcione, puedes quitar tu otra cuenta del proyecto.
+- **Apps Script** sí se crea de nuevo: entra con la cuenta dedicada, haz el paso 4 y mándame el ID nuevo. El proyecto anterior está vacío; puedes borrarlo.
 
 ### Paso 2 · Proyecto de Firebase (plan Spark, gratuito)
 
