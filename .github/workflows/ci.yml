@@ -112,8 +112,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Values arrive through env, never pasted into the script: nothing in
-      # them can be run as a command.
-      SCRIPT_ID: ${{ vars.APPS_SCRIPT_ID }}
+      # them can be run as a command. The project itself is named in
+      # apps/api/.clasp.json.
       DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
     steps:
       - name: Checkout
@@ -136,10 +136,8 @@ jobs:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
           if [ -z "$CLASPRC_JSON" ]; then echo "::error::Falta el secreto CLASPRC_JSON (docs/SETUP.md, paso 8)"; exit 1; fi
-          if [ -z "$SCRIPT_ID" ]; then echo "::error::Falta la variable APPS_SCRIPT_ID (docs/SETUP.md, paso 8)"; exit 1; fi
           umask 077
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
-          printf '{"scriptId":"%s","rootDir":"build"}' "$SCRIPT_ID" > apps/api/.clasp.json
 
       - name: Subir el código
         working-directory: apps/api
@@ -158,4 +156,4 @@ jobs:
 
       - name: Borrar la credencial
         if: always()
-        run: rm -f "$HOME/.clasprc.json" apps/api/.clasp.json
+        run: rm -f "$HOME/.clasprc.json"
