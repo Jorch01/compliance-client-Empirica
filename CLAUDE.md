@@ -15,6 +15,7 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F0 aprobada** (2026-10-02): paleta y tipografía A; respuestas del socio en `docs/PLAN.md` § 13.
 - **F1 entregada, en revisión** (2026-10-02): backend núcleo, resumen en `docs/PLAN.md` § 14. No empezar F2 sin el visto bueno del socio.
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
+- **Sitio** en `portal.empirica.mx` (GitHub Pages; falta que el socio active Enforce HTTPS): portada provisional y aviso de privacidad en `/privacidad/` (2026-10-03).
 
 ## Comandos
 
@@ -51,6 +52,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - **Colores**: solo tokens. Tailwind no tiene paleta por defecto. Ningún hex se escribe a mano: se cambia la regla en `scripts/brand/build-tokens.ts` y se regenera. Los archivos generados (`palette.json`, `tokens.json`, `tokens.css`) no se formatean con Prettier ni se editan a mano.
 - **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI.
 - **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales ni el de la cuenta propietaria: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
+- Excepción: el aviso de privacidad (`apps/web/src/legal/aviso-de-privacidad.txt`) publica tal cual el contacto que el despacho ya publica en empirica.mx. Es texto jurídico: solo cambia con el texto que mande el socio, y una prueba compara la página con el archivo palabra por palabra.
 - `brand/private/` (ignorado por git) guarda el archivo maestro de la marca: tiene datos de contacto personales. Solo se publican sus derivados (`spot-colors.json`, `brand/logo/*.svg`).
 - **Nada jurídico se inventa** (fundamentos, plazos, fechas): las semillas van marcadas "BORRADOR: validar".
 - **Sin métricas de horas** de la iguala en ningún lado.
@@ -82,6 +84,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                               |
 | 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                  |
 | 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`) |
+| 2026-10-03 | Aviso de privacidad propio en `/privacidad/`, con su propio HTML y el texto del socio sin cambios  | Pedido del socio; dirección propia, útil también para el consentimiento de Google    |
 
 ## Gotchas del entorno
 

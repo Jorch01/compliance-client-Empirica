@@ -381,7 +381,7 @@ Por fase se agregan: modo mock con MSW y datos 100 % ficticios ("Cliente Demo, S
 | 9   | Sin conexión            | No quedó clara la pregunta                                                                                                                                  | Explicada abajo; se adopta lo propuesto (D20), ajustable después en Configuración                |
 | 10  | Tareas del cliente      | `EN_REVISION`                                                                                                                                               | D18                                                                                              |
 | 11  | Visibilidad por defecto | La propuesta, con opción de cambiarla                                                                                                                       | D19                                                                                              |
-| 12  | Aviso de privacidad     | Será una liga                                                                                                                                               | **Pendiente: la URL**                                                                            |
+| 12  | Aviso de privacidad     | Será una liga                                                                                                                                               | ✔ 3 oct: lo mandaste y el portal lo publica tal cual en `/privacidad/`                           |
 | 13  | Paleta y tipografía     | Aprobadas, tipografía A; mandaste el archivo maestro en vector                                                                                              | D9                                                                                               |
 | 14  | Repo público            | Sí                                                                                                                                                          | D2                                                                                               |
 | 15  | Despliegue del backend  | Automatizado o por comandos, a mi criterio                                                                                                                  | D17: automatizado                                                                                |
@@ -395,9 +395,9 @@ Ambos valores se pueden cambiar después en Configuración.
 
 **Pendientes para producción** (no bloquean la Fase 1):
 
-1. Con la cuenta dedicada (D12, creada el 3 de octubre): crear la key de Gemini y, si Firebase y Apps Script se crearon con otra cuenta, pasarlos a ella (`SETUP.md`, paso 1). Firebase: proyecto `empirica-portal-d86b4`; falta restringir su key (paso 3).
-2. La URL del aviso de privacidad.
-3. El registro DNS en GoDaddy cuando publiquemos (`SETUP.md`, paso 7).
+1. Con la cuenta dedicada (D12, creada el 3 de octubre): crear la key de Gemini y, si Firebase se creó con otra cuenta, pasarlo a ella (`SETUP.md`, paso 1). Apps Script ya es de la cuenta dedicada y las keys de Firebase están restringidas (paso 3, 3 de octubre).
+2. ~~La URL del aviso de privacidad~~: publicado el 3 de octubre en `/privacidad/`.
+3. ~~El registro DNS~~: `portal.empirica.mx` ya apunta a GitHub Pages (3 de octubre); falta activar **Enforce HTTPS** (`SETUP.md`, paso 7).
 
 ## 14. Fase 1: qué quedó y cómo probarla
 
