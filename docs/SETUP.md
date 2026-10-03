@@ -15,7 +15,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                       |
 | 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                    |
 | 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                   |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Siguiente: el código ya está en Apps Script                     |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                      |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -142,6 +142,8 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 10. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
 11. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
 
+**Versiones de Apps Script.** Cada vez que el backend cambia, la publicación crea una versión nueva en Apps Script; si solo cambió el portal o la documentación, no crea ninguna. Apps Script guarda como máximo 200 versiones por proyecto y solo se borran a mano. Desde la versión 180, la ejecución de GitHub muestra un aviso amarillo; en 200 se detiene. Para liberar espacio: abre el proyecto en una ventana de incógnito con la cuenta del paso 1 → en el menú de la izquierda, **Historial del proyecto** → borra las versiones más viejas. La versión publicada no se puede borrar, y no hace falta.
+
 Si algo se traba a la mitad, haz clic en la terminal, pulsa **Ctrl+C** y vuelve a empezar desde el punto 2.
 
 Si algún día quieres retirar este acceso: borra el secreto en GitHub y revoca "clasp" en <https://myaccount.google.com/permissions> con la cuenta del paso 1.
@@ -174,8 +176,8 @@ Cuando el código ya esté en Apps Script:
 
    "Cualquier usuario" es correcto: la puerta la cuida el propio backend, que pide en cada petición una sesión válida de Firebase y que el correo esté dado de alta en el portal.
 
-6. Copia el **ID de implementación** y créalo en GitHub como variable `APPS_SCRIPT_DEPLOYMENT_ID` (igual que en el paso 8). Con eso, cada versión nueva se publica en esta misma dirección.
-7. Copia la **URL de la aplicación web** (termina en `/exec`) y mándamela: no es secreta, el portal la necesita para llamar al backend. Si la abres en el navegador verás `{"ok":true,…}`.
+6. Copia el **ID de implementación** y créalo en GitHub como variable `APPS_SCRIPT_DEPLOYMENT_ID` (igual que en el paso 8). Es la parte de la URL entre `/s/` y `/exec`. Con eso, cada versión nueva se publica en esta misma dirección, y después de publicar GitHub comprueba que el Web App responde.
+7. Copia la **URL de la aplicación web** (termina en `/exec`) y mándamela: no es secreta, el portal la necesita para llamar al backend. Si la abres en el navegador verás `{"ok":true,…}`. ✔ Recibida el 3 de octubre.
 
 ---
 
