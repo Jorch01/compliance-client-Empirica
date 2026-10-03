@@ -14,8 +14,8 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                   |
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                   |
 | 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | Pendiente                                                   |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Más adelante                                                |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script               |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Siguiente: el código ya está en Apps Script                 |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -134,7 +134,7 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 
    | Nombre                 | Valor                                                                |
    | ---------------------- | -------------------------------------------------------------------- |
-   | `API_DEPLOY_ENABLED`   | `true`                                                               |
+   | `API_DEPLOY_ENABLED`   | `true` (en minúsculas)                                               |
    | `FIREBASE_WEB_API_KEY` | El `apiKey` del bloque `firebaseConfig` (el que empieza con `AIza…`) |
 
    `FIREBASE_WEB_API_KEY` no es secreta (va en el navegador), pero no se guarda en el repositorio para que los detectores de secretos de GitHub no marquen el repositorio público.
@@ -147,6 +147,14 @@ Si algo se traba a la mitad, haz clic en la terminal, pulsa **Ctrl+C** y vuelve 
 Si algún día quieres retirar este acceso: borra el secreto en GitHub y revoca "clasp" en <https://myaccount.google.com/permissions> con la cuenta del paso 1.
 
 ### Paso 9 · Primera publicación del backend (una sola vez, cuando te avise)
+
+**Antes de empezar, comprueba que el código ya llegó.** Abre el proyecto `Empírica Portal API` en <https://script.google.com> con la cuenta del paso 1: debe haber un archivo **`Code`** y, arriba, la lista de funciones debe ofrecer `setup`. Si solo ves `Código.gs` con `myFunction` y "No hay funciones", el código todavía no se ha subido. No es un error tuyo, pero el paso 9 aún no se puede hacer. Revisa:
+
+- que en GitHub existan el secreto `CLASPRC_JSON` y la variable `API_DEPLOY_ENABLED` con el valor `true`, escrita exactamente así (paso 8);
+- que la API de Apps Script esté activada con la cuenta del paso 1 (paso 4, punto 3);
+- que el **ID de la secuencia de comandos** del proyecto (⚙ Configuración del proyecto) sea el que me mandaste; si creaste otro proyecto, mándame el ID nuevo.
+
+Luego lanza la subida: en GitHub, **Actions → CI y publicación → Run workflow → Run workflow** (rama `main`). En unos dos minutos el paso "Desplegar el backend (Apps Script)" debe quedar en verde; recarga el editor y aparecerá `Code`.
 
 Cuando el código ya esté en Apps Script:
 
