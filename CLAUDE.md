@@ -49,7 +49,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - `packages/shared/src` y `apps/api/src` también corren en Apps Script: **sin APIs de Node** fuera de las pruebas (lo vigila ESLint).
 - **Colores**: solo tokens. Tailwind no tiene paleta por defecto. Ningún hex se escribe a mano: se cambia la regla en `scripts/brand/build-tokens.ts` y se regenera. Los archivos generados (`palette.json`, `tokens.json`, `tokens.css`) no se formatean con Prettier ni se editan a mano.
 - **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI.
-- **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
+- **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales ni el de la cuenta propietaria: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
 - `brand/private/` (ignorado por git) guarda el archivo maestro de la marca: tiene datos de contacto personales. Solo se publican sus derivados (`spot-colors.json`, `brand/logo/*.svg`).
 - **Nada jurídico se inventa** (fundamentos, plazos, fechas): las semillas van marcadas "BORRADOR: validar".
 - **Sin métricas de horas** de la iguala en ningún lado.
@@ -79,6 +79,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                       |
 | 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar     |
 | 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                               |
+| 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                  |
 
 ## Gotchas del entorno
 

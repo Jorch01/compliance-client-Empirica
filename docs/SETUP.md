@@ -6,10 +6,10 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 | #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                      |
 | --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | Pendiente                                                   |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                             |
 | 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                   |
 | 3   | Restringir las API keys         | Paso 3                                               | No                                                            | Pendiente (la key del navegador aún no tiene restricciones) |
-| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | Pendiente                                                   |
+| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: guardado en `apps/api/.clasp.json`                 |
 | 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | Pendiente                                                   |
 | 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                   |
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                   |
@@ -25,9 +25,11 @@ La hoja de cálculo, las carpetas de Drive y los calendarios **no** se crean a m
 
 ## 2. Paso a paso
 
-### Paso 1 · Cuenta propietaria dedicada (recomendado)
+### Paso 1 · Cuenta propietaria dedicada ✔
 
-Todo lo del portal (hoja, Drive, Apps Script, Firebase) vivirá en esta cuenta. Que sea **una cuenta nueva y solo para el portal**, no `enlilh@gmail.com`:
+> ✔ Creada el 3 de octubre de 2026. Su dirección no se escribe en el repositorio (es público): basta con que tú la tengas.
+
+Todo lo del portal (hoja, Drive, Apps Script, Firebase) vivirá en esta cuenta. Que sea **una cuenta nueva y solo para el portal**, no tu cuenta personal:
 
 - tus usuarios no verán tu correo personal como remitente, en "Continuar con Google" ni en calendarios compartidos;
 - la credencial del despliegue automático (paso 8) solo tendrá acceso a esa cuenta, no a tus otros proyectos;
@@ -41,6 +43,11 @@ Cómo:
 4. Usa esa cuenta en todos los pasos siguientes. Si tienes varias cuentas abiertas, revisa el avatar de arriba a la derecha antes de crear cada cosa.
 
 No hace falta Google Workspace. Solo convendría si un día el portal manda más de 100 correos al día de forma sostenida; el sistema avisa antes.
+
+**Si creaste Firebase o Apps Script antes, con otra cuenta**, pásalos a la dedicada:
+
+- **Firebase** no se rehace (la configuración que me mandaste sigue igual): con la cuenta con la que lo creaste, entra a ⚙ **Configuración del proyecto → Usuarios y permisos → Agregar miembro**, escribe la cuenta dedicada con el rol **Propietario** y acepta la invitación desde la cuenta dedicada. Después, ya con la cuenta dedicada, pon su correo como **correo de asistencia** (paso 2, punto 7). Cuando todo funcione, puedes quitar tu otra cuenta del proyecto.
+- **Apps Script** sí se crea de nuevo: entra con la cuenta dedicada, haz el paso 4 y mándame el ID nuevo. El proyecto anterior está vacío; puedes borrarlo.
 
 ### Paso 2 · Proyecto de Firebase (plan Spark, gratuito)
 
@@ -70,9 +77,11 @@ No hace falta Google Workspace. Solo convendría si un día el portal manda más
 ### Paso 4 · Proyecto de Apps Script
 
 1. Entra a <https://script.google.com> → **Nuevo proyecto**. Nombre: `Empírica Portal API`.
-2. Engrane ⚙ **Configuración del proyecto** → copia el **ID de la secuencia de comandos** y mándamelo.
-3. Activa la API de Apps Script (la usa el despliegue automático): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**.
+2. Engrane ⚙ **Configuración del proyecto** → copia el **ID de la secuencia de comandos** y mándamelo. ✔ Recibido el 3 de octubre: quedó en `apps/api/.clasp.json` (no es secreto: con el ID nadie puede abrir el proyecto si no le diste acceso), así que no hace falta ponerlo en GitHub.
+3. Activa la API de Apps Script (la usa el despliegue automático): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**. Hazlo con la misma cuenta dueña del proyecto.
 4. No escribas código ahí: lo sube el despliegue automático (paso 8).
+
+El proyecto corre como la cuenta que lo creó: de ella salen los correos y en su Drive viven la hoja y las carpetas. Si al final eliges otra cuenta propietaria (paso 1), se crea un proyecto nuevo con esa cuenta y me mandas su ID; no cuesta nada rehacerlo antes de publicar.
 
 ### Paso 5 · Script Properties (aquí viven los secretos)
 
@@ -118,11 +127,10 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
 3. Abre el enlace que aparece, entra con la cuenta del paso 1, acepta los permisos, copia el código que te da Google y pégalo en la terminal.
 4. Escribe `cat ~/.clasprc.json` y copia todo el texto que aparece.
 5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Nombre: `CLASPRC_JSON`. Valor: lo que copiaste. Guarda.
-6. En la misma página, pestaña **Variables → New repository variable**, crea tres:
+6. En la misma página, pestaña **Variables → New repository variable**, crea dos:
 
    | Nombre                 | Valor                                                                |
    | ---------------------- | -------------------------------------------------------------------- |
-   | `APPS_SCRIPT_ID`       | El ID de la secuencia de comandos (paso 4)                           |
    | `API_DEPLOY_ENABLED`   | `true`                                                               |
    | `FIREBASE_WEB_API_KEY` | El `apiKey` del bloque `firebaseConfig` (el que empieza con `AIza…`) |
 
