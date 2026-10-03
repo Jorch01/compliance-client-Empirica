@@ -14,6 +14,7 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 
 - **F0 aprobada** (2026-10-02): paleta y tipografía A; respuestas del socio en `docs/PLAN.md` § 13.
 - **F1 entregada, en revisión** (2026-10-02): backend núcleo, resumen en `docs/PLAN.md` § 14. No empezar F2 sin el visto bueno del socio.
+- **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
 
 ## Comandos
 
@@ -35,7 +36,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | Ruta              | Qué es                                                                                                                                                                                                      |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/web`        | React 19 + Vite 8 + Tailwind 4. Local-first (Dexie) y PWA a partir de F2                                                                                                                                    |
-| `apps/api`        | Apps Script en TypeScript; `build.ts` lo empaqueta con esbuild en `build/Code.js`; se sube con clasp 3                                                                                                      |
+| `apps/api`        | Apps Script en TypeScript; `build.ts` lo empaqueta con esbuild en `build/Code.js`; se sube con clasp 3 y `deploy.ts` lo publica (CI)                                                                        |
 | `apps/api/src`    | `router.ts` (sobre y despacho), `auth.ts`, `actions/` (bootstrap, pull, push), `db/` (hoja, secuencia, historial, escritor con bitácora), `setup.ts`, `maintenance.ts`; `testing/` con los dobles de Google |
 | `packages/shared` | Código común a web y API: tokens y color (`src/brand`); modelo (`domain`), permisos, sincronización y contrato                                                                                              |
 | `brand/`          | Logos, membrete y `palette.json` extraída (generada)                                                                                                                                                        |
@@ -80,8 +81,10 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar     |
 | 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                               |
 | 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                  |
+| 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`) |
 
 ## Gotchas del entorno
 
 - Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`.
 - La red del entorno de desarrollo bloquea Drive y los dominios de Google Docs; los archivos de marca se trajeron con el conector de Drive.
+- También bloquea `script.google.com` y `developers.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.

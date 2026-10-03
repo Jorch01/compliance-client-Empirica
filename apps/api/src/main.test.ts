@@ -9,6 +9,7 @@ import { ID, demoData } from '@empirica/shared/testing';
 import { build } from 'esbuild';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { BUNDLE_OPTIONS, ENTRY_POINTS } from '../build.ts';
+import { isHealthy } from '../deploy.ts';
 import { PROP, createEnv } from './env.ts';
 import { FakeGoogle } from './testing/google.ts';
 import { seed } from './testing/harness.ts';
@@ -62,6 +63,8 @@ describe('bundled Apps Script', () => {
     };
     expect(body).toMatchObject({ ok: true, data: { apiVersion: 1 } });
     expect(body.serverNow).toMatch(/-05:00$/);
+    // What CI checks after each publication.
+    expect(isHealthy(out.content)).toBe(true);
   });
 
   it('setup() creates the database from inside the bundle', () => {

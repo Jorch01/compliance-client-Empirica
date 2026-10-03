@@ -143,16 +143,13 @@ jobs:
         working-directory: apps/api
         run: npx clasp push --force
 
-      # Always the same deployment, so the Web App address never changes. The
-      # first one is created by hand in the editor (docs/SETUP.md, step 9).
+      # Always the same deployment, so the Web App address never changes (the
+      # first one is created by hand in the editor, docs/SETUP.md step 9). A
+      # new version only when the backend changed: a project keeps at most 200
+      # (docs/LIMITES.md). Then the Web App must answer its health check.
       - name: Publicar en la misma dirección
         working-directory: apps/api
-        run: |
-          if [ -n "$DEPLOYMENT_ID" ]; then
-            npx clasp update-deployment "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7}"
-          else
-            echo "::notice::Código subido. Falta la variable APPS_SCRIPT_DEPLOYMENT_ID para publicarlo (docs/SETUP.md, paso 9)."
-          fi
+        run: node deploy.ts
 
       - name: Borrar la credencial
         if: always()
