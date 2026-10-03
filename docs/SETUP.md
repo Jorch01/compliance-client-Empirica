@@ -4,18 +4,18 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 ## 1. Lo que falta, todo junto
 
-| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                      |
-| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                             |
-| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                   |
-| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | Pendiente (la key del navegador aún no tiene restricciones) |
-| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: guardado en `apps/api/.clasp.json`                 |
-| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | Pendiente                                                   |
-| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                   |
-| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                   |
-| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script               |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Siguiente: el código ya está en Apps Script                 |
+| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                          |
+| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                                 |
+| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                       |
+| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | Pendiente (la key del navegador aún no tiene restricciones)     |
+| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json` |
+| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | Pendiente                                                       |
+| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                       |
+| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | Pendiente                                                       |
+| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | Más adelante                                                    |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                   |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | Siguiente: el código ya está en Apps Script                     |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -81,7 +81,7 @@ No hace falta Google Workspace. Solo convendría si un día el portal manda más
 3. Activa la API de Apps Script (la usa el despliegue automático): <https://script.google.com/home/usersettings> → **API de Google Apps Script: Activada**. Hazlo con la misma cuenta dueña del proyecto.
 4. No escribas código ahí: lo sube el despliegue automático (paso 8).
 
-El proyecto corre como la cuenta que lo creó: de ella salen los correos y en su Drive viven la hoja y las carpetas. Si al final eliges otra cuenta propietaria (paso 1), se crea un proyecto nuevo con esa cuenta y me mandas su ID; no cuesta nada rehacerlo antes de publicar.
+El proyecto corre como la cuenta que lo creó: de ella salen los correos y en su Drive viven la hoja y las carpetas. ✔ Confirmado el 3 de octubre: el proyecto es de la cuenta dedicada del paso 1.
 
 ### Paso 5 · Script Properties (aquí viven los secretos)
 
@@ -158,11 +158,13 @@ Luego lanza la subida: en GitHub, **Actions → CI y publicación → Run workfl
 
 Cuando el código ya esté en Apps Script:
 
-1. Abre el proyecto `Empírica Portal API` en <https://script.google.com> con la cuenta del paso 1.
+1. Abre una **ventana de incógnito** (Chrome: Ctrl+Shift+N; en Mac, Cmd+Shift+N), entra a <https://script.google.com> **solo** con la cuenta del paso 1 y abre el proyecto `Empírica Portal API`. Hazlo así aunque tu navegador normal ya tenga esa cuenta: Apps Script no admite varias cuentas de Google abiertas a la vez en el mismo navegador. Si hay más de una, al autorizar Google aprueba con una y regresa al editor con otra, y la página dice "No se pudo abrir el archivo en este momento".
 2. Arriba, en la lista de funciones, elige **`setup`** y pulsa **Ejecutar**.
 3. Google pedirá autorización (es normal: el proyecto es tuyo y no está publicado en ninguna tienda):
    **Revisar permisos** → elige la cuenta del paso 1 → "Google no verificó esta app" → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**.
    Los permisos que pide son exactamente estos: tus hojas de cálculo, tu Drive, conectarse a servicios externos (para verificar las sesiones con Firebase) y programar tareas (el respaldo nocturno).
+   El aviso de que Google no verificó la app no es un problema: la verificación es para apps que autorizan otras personas, y esta solo la autoriza la cuenta del paso 1. Los usuarios del portal nunca ven esta pantalla.
+   Si después de **Permitir** aparece "No se pudo abrir el archivo en este momento", había otra cuenta abierta: cierra esa pestaña y repite desde el punto 1 en una ventana de incógnito nueva. Los permisos ya quedaron dados; por eso, la segunda vez Google dice que la app "ya tiene acceso" a 4 servicios.
 4. Abajo, en el registro de ejecución, debe aparecer `Hoja: https://docs.google.com/…` con lo que se creó: el libro `EMPIRICA_PORTAL_DB`, la carpeta `Empírica Portal` con `Clientes` y `Respaldos`, los dos socios como administradores y el respaldo de las 3:00. Si dice "Aviso: ADMIN_EMAILS está vacío", revisa el paso 5 y vuelve a ejecutar `setup` (puede ejecutarse las veces que sea: solo crea lo que falta).
 5. Arriba a la derecha: **Implementar → Nueva implementación** → engrane ⚙ junto a "Seleccionar tipo" → **Aplicación web**:
    - Descripción: `Empírica Portal API`
