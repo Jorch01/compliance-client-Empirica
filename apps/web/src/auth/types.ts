@@ -48,5 +48,7 @@ export interface AuthClient {
   /** Reads the user again (after they confirm their email in another tab). */
   reload(): Promise<AuthUser | null>;
   resetPassword(email: string): Promise<void>;
+  /** Proves again who is at the keyboard (unlocking after inactivity). */
+  reauthenticate(password?: string): Promise<void>;
   signOut(): Promise<void>;
 }

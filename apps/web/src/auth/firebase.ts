@@ -8,6 +8,7 @@
  */
 import { initializeApp } from '@firebase/app';
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   browserLocalPersistence,
   browserPopupRedirectResolver,
@@ -16,6 +17,8 @@ import {
   indexedDBLocalPersistence,
   initializeAuth,
   onIdTokenChanged,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -140,6 +143,19 @@ export function createFirebaseAuth(): AuthClient {
     },
     resetPassword: (email) =>
       run(() => sendPasswordResetEmail(auth, email.trim(), { url: continueUrl() })),
+    reauthenticate: (password) =>
+      run(async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+        if (password !== undefined && user.email) {
+          await reauthenticateWithCredential(
+            user,
+            EmailAuthProvider.credential(user.email, password),
+          );
+        } else {
+          await reauthenticateWithPopup(user, new GoogleAuthProvider());
+        }
+      }),
     signOut: () => run(() => signOut(auth)),
   };
 }

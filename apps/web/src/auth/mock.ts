@@ -107,6 +107,7 @@ export function createMockAuth(): AuthClient {
     sendVerification: () => Promise.resolve(),
     reload: () => Promise.resolve(current?.user ?? null),
     resetPassword: () => Promise.resolve(),
+    reauthenticate: () => Promise.resolve(),
     signOut: () => {
       save(null);
       return Promise.resolve();
