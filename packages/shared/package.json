@@ -1,0 +1,18 @@
+{
+  "name": "@empirica/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tipos, enums, contrato de la API, matriz de permisos y tokens de marca compartidos por el frontend y el backend.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./brand": "./src/brand/index.ts",
+    "./testing": "./src/testing/fixtures.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}
