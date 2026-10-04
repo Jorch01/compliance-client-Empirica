@@ -449,6 +449,7 @@ export function demoData(): Dataset {
         campo: 'fechaLimite',
         valorVigente: '"2026-10-15"',
         valorPropuesto: '"2026-10-20"',
+        propuestoPor: ID.socio,
         estado: 'PENDIENTE',
       }),
     ],

@@ -66,4 +66,28 @@ describe('a matter’s progress', () => {
       expect(asunto).not.toHaveProperty('avance');
     }
   });
+
+  it('is counted once per push, however many of its tasks changed', () => {
+    const w = createWorld();
+    const before = w.rows('Bitacora').length;
+    new Device(w, ID.abogado).push(
+      [ID.tNorte1, ID.tInterna, ID.tDespacho].map((id, i) =>
+        op(
+          'Tareas',
+          'update',
+          id,
+          { estado: 'HECHO' },
+          {
+            at: `2026-10-02T12:00:0${String(i)}.000-05:00`,
+          },
+        ),
+      ),
+    );
+    expect(w.row('Asuntos', ID.asNorte)?.avance).toBe(100);
+    const progress = w
+      .rows('Bitacora')
+      .slice(before)
+      .filter((b) => b.accion === 'SISTEMA' && b.entidadId === ID.asNorte);
+    expect(progress).toHaveLength(1);
+  });
 });

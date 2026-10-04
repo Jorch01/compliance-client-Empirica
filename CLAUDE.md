@@ -15,9 +15,9 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F0 aprobada** (2026-10-02): paleta y tipografía A; respuestas del socio en `docs/PLAN.md` § 13.
 - **F1 aprobada** (2026-10-03): backend núcleo, resumen en `docs/PLAN.md` § 14.
 - **F2 aprobada** (2026-10-04): el portal en el navegador, resumen en `docs/PLAN.md` § 15. Al aprobarla, el socio pidió el botón "Sugerencias o errores" (D30, § 16).
-- **F3 en curso**: asuntos, tareas, comentarios y documentos con CRUD completo, y la pantalla de conflictos. Al cerrarla, detenerse hasta el visto bueno del socio.
+- **F3 entregada, en revisión** (2026-10-04): asuntos, tareas, comentarios, documentos (archivos en Drive) y conflictos; resumen y cómo probarla en `docs/PLAN.md` § 17. No empezar F4 sin el visto bueno del socio.
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
-- **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): portada provisional y aviso de privacidad en `/privacidad/` (2026-10-03). Al fusionar F2, la portada se sustituye por el portal; antes, el socio hace `docs/SETUP.md` paso 10.
+- **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): el portal desde la fusión de F2 (2026-10-04) y el aviso de privacidad en `/privacidad/`. Cada fusión a `main` publica el portal y el backend.
 
 ## Comandos
 
@@ -70,33 +70,37 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 
 ## Decisiones tomadas (registro)
 
-| Fecha      | Decisión                                                                                           | Motivo                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 2026-10-02 | npm workspaces, Node 22                                                                            | Sin herramientas extra para el CI ni para el socio                                     |
-| 2026-10-02 | TypeScript 6.0, no 7                                                                               | `typescript-eslint` aún exige `<6.1`                                                   |
-| 2026-10-02 | GitHub Pages                                                                                       | El repo es público; Pages en plan gratuito solo admite repos públicos                  |
-| 2026-10-02 | Sin enlace mágico de Firebase                                                                      | Spark lo limita a 5 correos al día; invitaciones propias por MailApp                   |
-| 2026-10-02 | Dos API keys (navegador con dominio; servidor solo Identity Toolkit)                               | Con una sola, la restricción por dominio bloquearía la verificación en el servidor     |
-| 2026-10-02 | Paleta extraída por script; membrete en Adobe RGB convertido a sRGB                                | "No inventes hex": todo color sale de `/brand` o de una regla documentada              |
-| 2026-10-02 | Publicación desactivada hasta `PAGES_ENABLED=true`                                                 | Que el CI no intente publicar antes de configurar Pages y el dominio                   |
-| 2026-10-02 | Verde y durazno = PANTONE 627 C y 7514 C del archivo maestro                                       | El maestro define la marca con Lab exactos; el membrete se había desviado (ΔE 0.022)   |
-| 2026-10-02 | Clientes con hub y unidades: `Entidades.parentId` + alcance por unidad en cualquier rol de cliente | Piloto corporativo con varias unidades de negocio                                      |
-| 2026-10-02 | Resumen diario para todos; tour guiado con instalación por sistema; botones "¿Cómo se lee?"        | Pedido del socio                                                                       |
-| 2026-10-02 | Despliegue del backend automatizado (clasp en GitHub Actions) con cuenta propietaria dedicada      | Pregunta 15; recomendación D12                                                         |
-| 2026-10-02 | `zod/mini` para validar en navegador y servidor                                                    | 22 KB en el `Code.js` frente a 454 KB de `zod`                                         |
-| 2026-10-02 | `alcanceHist` + `seqAlta` en lugar de `ocultadoEnSeq`                                              | Cubre ocultar, mover, reasignar y borrar sin delatar lo que siempre fue interno        |
-| 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                         |
-| 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar       |
-| 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                                 |
-| 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                    |
-| 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`)   |
-| 2026-10-03 | Aviso de privacidad propio en `/privacidad/`, con su propio HTML y el texto del socio sin cambios  | Pedido del socio; dirección propia, útil también para el consentimiento de Google      |
-| 2026-10-03 | F2 sin correos: quien invita comparte el enlace (D26)                                              | Agregar Gmail a Apps Script obliga a reautorizar la cuenta propietaria; se hace en F5  |
-| 2026-10-03 | Modo mock = backend real dentro de Vite, no MSW (D27)                                              | Se prueba el código que se despliega; dos ventanas son dos dispositivos                |
-| 2026-10-03 | Rutas con `#` (D28); Google solo con ventana emergente (D29)                                       | GitHub Pages sin reglas; la redirección de Firebase falla fuera de Firebase Hosting    |
-| 2026-10-03 | Una base IndexedDB por cuenta; Service Worker que guarda solo la app, nunca la API                 | Computadoras compartidas; los datos solo los decide el motor de sincronización         |
-| 2026-10-04 | Sugerencias y errores en la pestaña `Sugerencias`, audiencia `own` (D30)                           | Pedido del socio; la ve su autor y los `SOCIO_ADMIN`, sin cliente ni datos de clientes |
-| 2026-10-04 | Pestañas y columnas nuevas se crean solas en la primera petición (`SCHEMA_VERSION`, D31)           | El CI publica sin volver a correr `setup()`; una pestaña faltante no tumba el portal   |
+| Fecha      | Decisión                                                                                           | Motivo                                                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 2026-10-02 | npm workspaces, Node 22                                                                            | Sin herramientas extra para el CI ni para el socio                                      |
+| 2026-10-02 | TypeScript 6.0, no 7                                                                               | `typescript-eslint` aún exige `<6.1`                                                    |
+| 2026-10-02 | GitHub Pages                                                                                       | El repo es público; Pages en plan gratuito solo admite repos públicos                   |
+| 2026-10-02 | Sin enlace mágico de Firebase                                                                      | Spark lo limita a 5 correos al día; invitaciones propias por MailApp                    |
+| 2026-10-02 | Dos API keys (navegador con dominio; servidor solo Identity Toolkit)                               | Con una sola, la restricción por dominio bloquearía la verificación en el servidor      |
+| 2026-10-02 | Paleta extraída por script; membrete en Adobe RGB convertido a sRGB                                | "No inventes hex": todo color sale de `/brand` o de una regla documentada               |
+| 2026-10-02 | Publicación desactivada hasta `PAGES_ENABLED=true`                                                 | Que el CI no intente publicar antes de configurar Pages y el dominio                    |
+| 2026-10-02 | Verde y durazno = PANTONE 627 C y 7514 C del archivo maestro                                       | El maestro define la marca con Lab exactos; el membrete se había desviado (ΔE 0.022)    |
+| 2026-10-02 | Clientes con hub y unidades: `Entidades.parentId` + alcance por unidad en cualquier rol de cliente | Piloto corporativo con varias unidades de negocio                                       |
+| 2026-10-02 | Resumen diario para todos; tour guiado con instalación por sistema; botones "¿Cómo se lee?"        | Pedido del socio                                                                        |
+| 2026-10-02 | Despliegue del backend automatizado (clasp en GitHub Actions) con cuenta propietaria dedicada      | Pregunta 15; recomendación D12                                                          |
+| 2026-10-02 | `zod/mini` para validar en navegador y servidor                                                    | 22 KB en el `Code.js` frente a 454 KB de `zod`                                          |
+| 2026-10-02 | `alcanceHist` + `seqAlta` en lugar de `ocultadoEnSeq`                                              | Cubre ocultar, mover, reasignar y borrar sin delatar lo que siempre fue interno         |
+| 2026-10-02 | Anexos siguen a su registro; tareas conservan su alcance pero se ocultan bajo asunto interno       | Un usuario de unidad ve los comentarios de lo que le asignaron                          |
+| 2026-10-02 | Permisos OAuth explícitos en `appsscript.json`                                                     | El código usa los servicios vía un objeto; la detección automática podría fallar        |
+| 2026-10-02 | Primera implementación del Web App a mano; el CI solo actualiza esa                                | La URL nunca cambia y el socio no lee registros del CI                                  |
+| 2026-10-03 | Cuenta propietaria: Gmail gratuita dedicada al portal; su dirección no va en el repo               | D12: los usuarios no ven datos personales del socio                                     |
+| 2026-10-03 | Versión nueva de Apps Script solo si cambió el backend; comprobación de salud tras publicar        | Apps Script guarda 200 versiones por proyecto y solo se borran a mano (`LIMITES.md`)    |
+| 2026-10-03 | Aviso de privacidad propio en `/privacidad/`, con su propio HTML y el texto del socio sin cambios  | Pedido del socio; dirección propia, útil también para el consentimiento de Google       |
+| 2026-10-03 | F2 sin correos: quien invita comparte el enlace (D26)                                              | Agregar Gmail a Apps Script obliga a reautorizar la cuenta propietaria; se hace en F5   |
+| 2026-10-03 | Modo mock = backend real dentro de Vite, no MSW (D27)                                              | Se prueba el código que se despliega; dos ventanas son dos dispositivos                 |
+| 2026-10-03 | Rutas con `#` (D28); Google solo con ventana emergente (D29)                                       | GitHub Pages sin reglas; la redirección de Firebase falla fuera de Firebase Hosting     |
+| 2026-10-03 | Una base IndexedDB por cuenta; Service Worker que guarda solo la app, nunca la API                 | Computadoras compartidas; los datos solo los decide el motor de sincronización          |
+| 2026-10-04 | Sugerencias y errores en la pestaña `Sugerencias`, audiencia `own` (D30)                           | Pedido del socio; la ve su autor y los `SOCIO_ADMIN`, sin cliente ni datos de clientes  |
+| 2026-10-04 | Pestañas y columnas nuevas se crean solas en la primera petición (`SCHEMA_VERSION`, D31)           | El CI publica sin volver a correr `setup()`; una pestaña faltante no tumba el portal    |
+| 2026-10-04 | Archivos: el registro por `sync.push`, el archivo después con `files.upload` (D32)                 | Igual sin red; tipo por extensión, nada ejecutable; Drive por cliente, área e `Interno` |
+| 2026-10-04 | Borrar un asunto borra sus tareas; restaurarlo las devuelve (D33)                                  | Nada suelto en las listas                                                               |
+| 2026-10-04 | `Asuntos.avance` solo para el despacho; cada pantalla cuenta las tareas que ve (D34)               | El cliente no deduce tareas internas                                                    |
+| 2026-10-04 | Conflictos: deciden `SOCIO_ADMIN` o `ABOGADO` del cliente, en línea (D35)                          | La matriz de permisos                                                                   |
 
 ## Gotchas del entorno
 

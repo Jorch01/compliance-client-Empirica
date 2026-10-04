@@ -1,6 +1,6 @@
 # Límites técnicos y cuotas
 
-**Fecha de verificación: 2 de octubre de 2026.** Agregados el 3 de octubre de 2026: versiones de Apps Script (§ 1), inicio de sesión con Google fuera de Firebase Hosting (§ 4) y la pantalla de consentimiento de Google (§ 4).
+**Fecha de verificación: 2 de octubre de 2026.** Agregados el 3 de octubre de 2026: versiones de Apps Script (§ 1), inicio de sesión con Google fuera de Firebase Hosting (§ 4) y la pantalla de consentimiento de Google (§ 4). Agregado el 4 de octubre de 2026: archivos de los documentos (§ 1).
 
 **Cómo se verificó.** Cada cifra se consultó en la documentación oficial vigente (Google Developers, Firebase, Google AI for Developers, GitHub Docs, WebKit) mediante búsqueda web el día indicado. El entorno de desarrollo bloquea la descarga directa de esas páginas, así que cada cifra se tomó del extracto de la página oficial que devolvió la búsqueda, con su enlace. Antes de la Fase 1 conviene abrir los enlaces y confirmar las cifras marcadas con ⚠, porque Google cambia algunas sin aviso.
 
@@ -67,6 +67,18 @@ Fuentes: [Versions](https://developers.google.com/apps-script/guides/versions), 
 | Versiones por proyecto                   | 200 (para todos los proyectos desde el 1 de junio de 2024). Cada publicación del Web App con `clasp update-deployment` crea una                                          | ✅  |
 | Borrar versiones                         | Solo a mano, en el editor (**Historial del proyecto**), y solo las que no usa una implementación activa. La API de Apps Script crea, lee y lista versiones; no las borra | ✅  |
 | Varias cuentas de Google en un navegador | No lo admiten ni Apps Script ni los Web Apps. Al autorizar, el editor regresa con otra cuenta y dice "No se pudo abrir el archivo en este momento"                       | ✅  |
+
+### Archivos de los documentos (verificado el 4 de octubre de 2026)
+
+Fuentes: [Class DriveApp](https://developers.google.com/apps-script/reference/drive/drive-app) y [Quotas for Google Services](https://developers.google.com/apps-script/guides/services/quotas).
+
+| Límite                                        | Valor                                                                                                                                                     |     |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Archivo creado desde Apps Script (`DriveApp`) | 50 MB por archivo; más grande, la llamada falla                                                                                                           | ✅  |
+| Petición entrante al Web App (`doPost`)       | Google no publica un tope; la comunidad reporta cerca de 50 MB. El portal manda el archivo en base64 (un tercio más grande) y lo limita a **30 MB** (D32) | ⚠   |
+| Tope del portal                               | `Config.mbMaxArchivo` (10 MB por defecto), nunca más de 30 MB; el navegador lo revisa antes de guardar el archivo y el servidor otra vez                  | ✅  |
+
+⚠ Pendiente para F7: subir un archivo de 30 MB al Web App publicado y confirmar que pasa; mientras tanto, el tope de 10 MB queda muy por debajo.
 
 ## 2. Google Sheets
 

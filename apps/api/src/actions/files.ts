@@ -152,8 +152,11 @@ export function uploadFile(
     const documento = r.db.table('Documentos').get(input.documentoId);
     const by = appliedBy(r.db, input.uploadId);
     if (by !== null) {
-      if (by !== userId || !documento) throw invalid('UPLOAD_ID_TAKEN', 'Envío repetido.');
-      // Already stored; the answer had not arrived.
+      if (by !== userId) throw invalid('UPLOAD_ID_TAKEN', 'Envío repetido.');
+      // Already stored; the answer had not arrived. Only if it is still theirs to see.
+      if (!documento || !canRead(ctx, 'Documentos', documento, r.db.lookup())) {
+        throw new ApiError('NOT_FOUND');
+      }
       return { kind: 'done', row: projectRow(ctx, 'Documentos', documento) };
     }
     const verdict = authorizeUpload(ctx, documento, r.db.lookup());
@@ -228,9 +231,7 @@ export function downloadFile(
   const documento = db.table('Documentos').get(input.documentoId);
   const verdict = authorizeDownload(ctx, documento, db.lookup());
   if (!verdict.ok) throw denied(verdict);
-  if (!documento || !canRead(ctx, 'Documentos', documento, db.lookup())) {
-    throw new ApiError('NOT_FOUND');
-  }
+  if (!documento) throw new ApiError('NOT_FOUND');
   let file: GFile;
   try {
     file = env.g.DriveApp.getFileById(text(documento, 'driveFileId') ?? '');

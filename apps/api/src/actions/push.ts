@@ -79,6 +79,7 @@ export function push(
         reason: 'INVALID_OP',
       } satisfies OpResult;
     });
+    run.finish();
     seq.reserve();
     db.flush();
     seq.commit();
@@ -106,6 +107,8 @@ class PushRun {
   readonly #nowMs: number;
   readonly #serverNow: string;
   readonly #done = new Map<string, { usuarioId: string; result: StoredResult }>();
+  /** Matters whose tasks changed in this run (asuntoId → clienteId): their progress, at the end. */
+  readonly #matters = new Map<string, string | null>();
 
   constructor(
     env: Env,
@@ -279,6 +282,17 @@ class PushRun {
     };
   }
 
+  /**
+   * After every operation of the run: the progress of the matters whose
+   * tasks changed, once each (deleting a matter with 50 tasks is one write).
+   */
+  finish(): void {
+    const { opId: _last, ...meta } = this.#writer.meta;
+    this.#writer.meta = meta;
+    for (const [asuntoId, clienteId] of this.#matters) this.#refreshProgress(asuntoId, clienteId);
+    this.#matters.clear();
+  }
+
   /** A matter's progress, counted again after one of its tasks changed. */
   #refreshProgress(asuntoId: string, clienteId: string | null): void {
     const asunto = this.#db.table('Asuntos').get(asuntoId);
@@ -311,8 +325,9 @@ class PushRun {
         before.asuntoId !== after.asuntoId ||
         Boolean(before.deleted) !== Boolean(after.deleted))
     ) {
-      const asuntos = new Set([text(before ?? after, 'asuntoId'), text(after, 'asuntoId')]);
-      for (const id of asuntos) if (id) this.#refreshProgress(id, clienteId);
+      for (const id of [text(before ?? after, 'asuntoId'), text(after, 'asuntoId')]) {
+        if (id) this.#matters.set(id, clienteId);
+      }
     }
     // A document now seen by others (or of another area): its file changes folder.
     if (

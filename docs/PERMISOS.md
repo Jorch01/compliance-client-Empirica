@@ -78,7 +78,7 @@ C = crear · R = leer · U = editar · D = borrar (lógico, con fecha) · — = 
 5. El abogado invita usuarios de cliente a sus clientes; los usuarios del despacho solo los da de alta el `SOCIO_ADMIN`.
 6. En tareas con `ladoResponsable` `CLIENTE` o `AMBOS`, el usuario de cliente solo puede cambiar `estado` a `POR_HACER`, `EN_CURSO`, `BLOQUEADA` o `EN_REVISION` (nunca `HECHO`: el despacho la cierra, D18) y marcar o desmarcar puntos del `checklist` (no agregarlos, quitarlos ni reescribirlos). Ningún otro campo, y nada en una tarea ya cerrada.
 7. Carga evidencia de una obligación; queda `EN_REVISION` hasta que el despacho la valida. Validar es exclusivo del despacho.
-8. Lo que sube un usuario de cliente siempre es `COMPARTIDO` y cae en la carpeta de su cliente, nunca en `Interno`.
+8. Lo que sube un usuario de cliente siempre es `COMPARTIDO` y cae en la carpeta de su cliente, nunca en `Interno`. Sube el archivo de su documento una vez; una versión nueva la sube el despacho. El archivo lo descarga quien ve el documento (D32).
 9. Los comentarios de usuarios de cliente siempre son `COMPARTIDO`. La pestaña "Interno" del detalle solo existe para el despacho.
 10. Cualquiera manda una sugerencia o avisa de un error, también quien solo lee: no toca datos de ningún cliente. La ve quien la envió y los `SOCIO_ADMIN`; nadie más, ni del despacho ni de su empresa. El servidor fija quién la envió y que nace `NUEVA` sin respuesta; el mensaje, el tipo y los detalles técnicos no cambian después. Solo el `SOCIO_ADMIN` cambia el estado y escribe la respuesta. No pertenece a un cliente (`clienteContexto` solo dice desde dónde se envió), así que no se pierde si la persona deja de tener acceso a ese cliente.
 
@@ -89,6 +89,8 @@ C = crear · R = leer · U = editar · D = borrar (lógico, con fecha) · — = 
 - **Lo que nunca sale del servidor**: el token del calendario de cada usuario, su cuenta de Firebase, el historial de alcance y las columnas internas del cliente (carpeta de Drive, calendario, modo de IA).
 - **Directorio**: cada usuario de cliente ve a "su Fractional Legal Team" (los socios y los abogados asignados) y a sus compañeros (desde el hub, a todos; desde una unidad, al hub y a los de su unidad), solo con nombre, correo y rol. Ve únicamente su propia membresía, salvo el `CLIENTE_ADMIN`, que ve las de su empresa (o de sus unidades).
 - **Notificaciones**: cada quien las suyas; las de un cliente desaparecen si pierde el acceso a ese cliente.
+- **Archivos**: nadie recibe permisos sobre Drive. Se suben y descargan por la API, solo si el documento se ve; se descargan como archivo y nunca se abren dentro del portal. El tipo lo decide la extensión y no se acepta nada que un navegador ejecute (HTML, SVG, scripts).
+- **Conflictos**: los decide el `SOCIO_ADMIN` o un `ABOGADO` del cliente, con conexión; el asistente solo los ve. Al decidir, los avisos de ese conflicto quedan leídos para todos (D35).
 
 ## Campos jurídicamente sensibles
 
