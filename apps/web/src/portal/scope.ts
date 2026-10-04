@@ -1,6 +1,6 @@
 import { createContext, use, useMemo } from 'react';
 import type { ClientSummary, Row, TableName } from '@empirica/shared';
-import { useRows } from '../data/hooks.ts';
+import { useAllRows, useRows } from '../data/hooks.ts';
 import { inScope, type Scope } from '../domain/scope.ts';
 
 export interface ScopeContextValue {
@@ -29,6 +29,16 @@ export function useScope(): ScopeContextValue {
 export function useScopedRows(table: TableName): Row[] | undefined {
   const { scope, units } = useScope();
   const rows = useRows(table, scope.clientId);
+  return useMemo(
+    () => rows?.filter((row) => inScope(table, row, scope, units)),
+    [rows, table, scope, units],
+  );
+}
+
+/** The same, with the deleted rows too (to show and restore them). */
+export function useScopedAllRows(table: TableName): Row[] | undefined {
+  const { scope, units } = useScope();
+  const rows = useAllRows(table, scope.clientId);
   return useMemo(
     () => rows?.filter((row) => inScope(table, row, scope, units)),
     [rows, table, scope, units],

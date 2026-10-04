@@ -493,6 +493,13 @@ export class FakeGoogle {
     this.globals = this.#buildGlobals();
   }
 
+  /** A file already in Drive, as the demo data says (a document's file). */
+  seedFile(id: string, name: string, content: string, mimeType: string): void {
+    if (!this.files.has(id)) {
+      new FakeFile(this, id, name, null, Buffer.from(content, 'utf8'), mimeType);
+    }
+  }
+
   /** What Sheets stores for a value given to setValues. */
   interpret(value: unknown): unknown {
     if (value === null || value === undefined) return '';

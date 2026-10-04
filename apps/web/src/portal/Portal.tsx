@@ -2,13 +2,19 @@ import { Route, Switch } from 'wouter';
 import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
 import { ClientHome } from '../pages/ClientHome.tsx';
 import { ClientsPage } from '../pages/Clients.tsx';
+import { ConflictsPage } from '../pages/Conflicts.tsx';
 import { ControlCenter } from '../pages/ControlCenter.tsx';
+import { DocumentsPage } from '../pages/Documents.tsx';
 import { FeedbackPage } from '../pages/Feedback.tsx';
 import { HelpPage } from '../pages/Help.tsx';
+import { MatterDetailPage } from '../pages/MatterDetail.tsx';
+import { MattersPage } from '../pages/Matters.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
 import { PendingPage } from '../pages/Pending.tsx';
 import { PeoplePage } from '../pages/People.tsx';
 import { RequestsPage } from '../pages/Requests.tsx';
+import { TaskDetailPage } from '../pages/TaskDetail.tsx';
+import { TasksPage } from '../pages/Tasks.tsx';
 import { TeamPage } from '../pages/Team.tsx';
 import { usePortal } from '../session/context.ts';
 import { ScopeProvider } from './ScopeProvider.tsx';
@@ -23,6 +29,33 @@ function Routes() {
   return (
     <Switch>
       <Route path="/">{me.isFirm ? <ControlCenter /> : <ClientHome />}</Route>
+      <Route path="/asuntos">
+        <MattersPage />
+      </Route>
+      <Route path="/asuntos/:id">
+        <MatterDetailPage />
+      </Route>
+      {me.isFirm ? (
+        <Route path="/tareas">
+          <TasksPage />
+        </Route>
+      ) : null}
+      <Route path="/tareas/:id">
+        <TaskDetailPage />
+      </Route>
+      <Route path="/documentos">
+        <DocumentsPage />
+      </Route>
+      {me.isFirm ? (
+        <Route path="/conflictos">
+          <ConflictsPage />
+        </Route>
+      ) : null}
+      {me.isFirm ? (
+        <Route path="/conflictos/:id">
+          <ConflictsPage />
+        </Route>
+      ) : null}
       <Route path="/solicitudes">
         <RequestsPage />
       </Route>

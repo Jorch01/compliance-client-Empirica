@@ -31,6 +31,7 @@ function useNavItems(): NavItem[] {
   const { access } = useScope();
   const tareas = useScopedRows('Tareas');
   const sugerencias = useRows('Sugerencias');
+  const conflictos = useScopedRows('Conflictos');
   // The administrators answer what arrives; anyone else sees theirs once they sent something.
   const nuevas = (sugerencias ?? []).filter((s) => s.estado === 'NUEVA').length;
   const feedback: NavItem[] = me.isAdmin
@@ -46,10 +47,26 @@ function useNavItems(): NavItem[] {
       ? [{ href: '/sugerencias', label: t('nav.feedback'), icon: 'message' }]
       : [];
   if (me.isFirm) {
+    // Conflicts show up once there are any; the badge counts those to decide.
+    const porResolver = (conflictos ?? []).filter((c) => c.estado === 'PENDIENTE').length;
+    const conflicts: NavItem[] = conflictos?.length
+      ? [
+          {
+            href: '/conflictos',
+            label: t('nav.conflicts'),
+            icon: 'scale',
+            ...(porResolver > 0 ? { badge: porResolver } : {}),
+          },
+        ]
+      : [];
     return [
       { href: '/', label: t('nav.controlCenter'), icon: 'home' },
       { href: '/clientes', label: t('nav.clients'), icon: 'building' },
+      { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+      { href: '/tareas', label: t('nav.tasks'), icon: 'list' },
+      { href: '/documentos', label: t('nav.documents'), icon: 'file' },
       { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
+      ...conflicts,
       { href: '/usuarios', label: t('nav.people'), icon: 'users' },
       ...feedback,
       { href: '/ayuda', label: t('nav.help'), icon: 'help' },
@@ -64,6 +81,8 @@ function useNavItems(): NavItem[] {
       icon: 'list',
       ...(pending > 0 ? { badge: pending } : {}),
     },
+    { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+    { href: '/documentos', label: t('nav.documents'), icon: 'file' },
     { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
     { href: '/equipo', label: t('nav.team'), icon: 'users' },
     ...(access?.rol === 'CLIENTE_ADMIN'

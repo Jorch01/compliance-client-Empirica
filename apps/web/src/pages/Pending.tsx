@@ -1,46 +1,20 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { text, type EstadoTarea, type Row, type Value } from '@empirica/shared';
+import { Link } from 'wouter';
+import { text, type EstadoTarea, type Row } from '@empirica/shared';
 import { usePendingIds, useRows } from '../data/hooks.ts';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
 import { onClientSide, taskSemaforo, todayInCancun } from '../domain/deadlines.ts';
+import { CLIENT_NEXT } from '../domain/work.ts';
 import { taskStateLabel } from '../i18n/labels.ts';
 import { useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
 import { Card, EmptyState, PageHeader } from '../ui/Card.tsx';
 import { Icon } from '../ui/Icon.tsx';
+import { Checklist } from './common/Checklist.tsx';
 import { DueDate, SemaforoBadge } from './common/Semaforo.tsx';
-
-interface ChecklistItem {
-  id: string;
-  texto: string;
-  hecho: boolean;
-}
-
-function checklistOf(value: Value | undefined): ChecklistItem[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) =>
-    item && typeof item === 'object' && !Array.isArray(item)
-      ? [
-          {
-            id: typeof item.id === 'string' ? item.id : '',
-            texto: typeof item.texto === 'string' ? item.texto : '',
-            hecho: item.hecho === true,
-          },
-        ]
-      : [],
-  );
-}
-
-/** Where a client may take a task of their side (decision D18: the firm closes it). */
-const NEXT: Partial<Record<EstadoTarea, EstadoTarea[]>> = {
-  POR_HACER: ['EN_CURSO', 'EN_REVISION', 'BLOQUEADA'],
-  EN_ESPERA_CLIENTE: ['EN_CURSO', 'EN_REVISION', 'BLOQUEADA'],
-  EN_CURSO: ['EN_REVISION', 'BLOQUEADA'],
-  BLOQUEADA: ['EN_CURSO', 'EN_REVISION'],
-};
 
 function TaskCard({ task, editable, pending }: { task: Row; editable: boolean; pending: boolean }) {
   const { t } = useTranslation();
@@ -49,23 +23,11 @@ function TaskCard({ task, editable, pending }: { task: Row; editable: boolean; p
   const asuntos = useRows('Asuntos', text(task, 'clienteId'));
   const today = todayInCancun();
   const estado = text(task, 'estado') as EstadoTarea | null;
-  const checklist = checklistOf(task.checklist);
   const matter = asuntos?.find((a) => a.id === task.asuntoId);
   const fecha = text(task, 'fechaLimite');
 
   const move = (next: EstadoTarea): void => {
     void engine.mutate('Tareas', 'update', task.id, { estado: next });
-  };
-  const toggle = (index: number): void => {
-    const next = checklist.map((item, i) => (i === index ? { ...item, hecho: !item.hecho } : item));
-    // Only the marks change: same items, same text, same order (the server checks it).
-    const original = Array.isArray(task.checklist) ? task.checklist : [];
-    const merged = original.map((raw, i) =>
-      raw && typeof raw === 'object' && !Array.isArray(raw)
-        ? { ...raw, hecho: next[i]?.hecho ?? false }
-        : raw,
-    );
-    void engine.mutate('Tareas', 'update', task.id, { checklist: merged });
   };
 
   return (
@@ -74,7 +36,9 @@ function TaskCard({ task, editable, pending }: { task: Row; editable: boolean; p
         <SemaforoBadge light={taskSemaforo(task, today)} />
         <div className="min-w-0 flex-1 basis-60">
           <h3 className="font-sans text-base font-semibold text-foreground">
-            {text(task, 'titulo')}
+            <Link href={`/tareas/${task.id}`} className="underline-offset-2 hover:underline">
+              {text(task, 'titulo')}
+            </Link>
           </h3>
           <p className="text-sm text-muted-foreground">
             {[
@@ -104,40 +68,18 @@ function TaskCard({ task, editable, pending }: { task: Row; editable: boolean; p
       {text(task, 'descripcion') ? (
         <p className="mt-3 text-sm whitespace-pre-line">{text(task, 'descripcion')}</p>
       ) : null}
-      {checklist.length > 0 ? (
-        <fieldset className="mt-3">
-          <legend className="text-sm font-medium">{t('tasks.checklist')}</legend>
-          <ul className="mt-1 space-y-1">
-            {checklist.map((item, i) => (
-              <li key={item.id || i}>
-                <label className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 size-4 accent-primary"
-                    checked={item.hecho}
-                    disabled={!editable || estado === 'EN_REVISION'}
-                    onChange={() => {
-                      toggle(i);
-                    }}
-                  />
-                  <span className={item.hecho ? 'text-muted-foreground line-through' : ''}>
-                    {item.texto}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </fieldset>
-      ) : null}
+      <div className="mt-3">
+        <Checklist task={task} disabled={!editable || estado === 'EN_REVISION'} />
+      </div>
       {pending ? (
         <p className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
           <Icon name="cloudOff" className="size-3.5" />
           {t('common.pendingSync')}
         </p>
       ) : null}
-      {editable && estado && NEXT[estado] ? (
+      {editable && estado && CLIENT_NEXT[estado] ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          {NEXT[estado].map((next) => (
+          {CLIENT_NEXT[estado].map((next) => (
             <Button
               key={next}
               size="sm"

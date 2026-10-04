@@ -238,3 +238,98 @@ describe('access that changes', () => {
     expect(w.row('Solicitudes', SOL)).toBeDefined();
   });
 });
+
+describe('documents and their files', () => {
+  const DOC = '00000000-0000-4000-9999-0000000000d1';
+  const bytes = (text: string): ArrayBuffer => new TextEncoder().encode(text).buffer;
+
+  it('a document made offline goes with its file once the network is back', async () => {
+    const w = createWorld();
+    const colab = new TestBrowser(w, ID.cColab);
+    const firm = new TestBrowser(w, ID.abogado);
+    await colab.sync();
+    colab.online = false;
+
+    await colab.engine.mutate('Documentos', 'create', DOC, {
+      clienteId: ID.clienteA,
+      entidadId: ID.norte,
+      vinculo: { tipo: 'Asuntos', id: ID.asNorte },
+      nombre: 'acta.pdf',
+      visibilidad: 'COMPARTIDO',
+      categoria: 'COMPLIANCE',
+      tamanoBytes: 15,
+    });
+    await colab.engine.queueFile(DOC, {
+      data: bytes('%PDF ficticio 1'),
+      nombre: 'acta.pdf',
+      size: 15,
+    });
+    await colab.sync();
+    // The record and its file wait together.
+    expect(colab.engine.getStatus()).toMatchObject({ phase: 'offline', pending: 2 });
+
+    colab.online = true;
+    colab.calls = [];
+    await colab.sync();
+    expect(colab.calls).toEqual(['sync.push', 'sync.pull', 'files.upload']);
+    expect(colab.engine.getStatus()).toMatchObject({ phase: 'idle', pending: 0 });
+    expect(await colab.db.uploads.count()).toBe(0);
+    expect(await colab.get('Documentos', DOC)).toMatchObject({ versionDoc: 1, tamanoBytes: 15 });
+
+    // The firm reads it back, byte for byte.
+    await firm.sync();
+    expect(await firm.get('Documentos', DOC)).toMatchObject({ versionDoc: 1 });
+    const res = w.ok<{ base64: string }>(
+      'files.download',
+      { documentoId: DOC },
+      { as: ID.abogado },
+    );
+    expect(atob(res.base64)).toBe('%PDF ficticio 1');
+  });
+
+  it('a file the server refuses waits for the user, with a notice, and is not retried', async () => {
+    const w = createWorld();
+    const firm = new TestBrowser(w, ID.abogado);
+    await firm.sync();
+    await firm.engine.mutate('Documentos', 'create', DOC, {
+      clienteId: ID.clienteA,
+      vinculo: { tipo: 'Asuntos', id: ID.asNorte },
+      nombre: 'pagina.html',
+      visibilidad: 'INTERNO',
+    });
+    await firm.engine.queueFile(DOC, { data: bytes('<b>x</b>'), nombre: 'pagina.html', size: 8 });
+    await firm.sync();
+    expect(await firm.db.uploads.get(DOC)).toMatchObject({
+      error: { code: 'VALIDATION', reason: 'FILE_TYPE' },
+    });
+    expect(await firm.notices()).toEqual([
+      expect.objectContaining({ kind: 'upload', recordId: DOC, reason: 'FILE_TYPE' }),
+    ]);
+    expect(firm.engine.getStatus()).toMatchObject({ pending: 0 });
+    firm.calls = [];
+    await firm.sync();
+    expect(firm.calls).not.toContain('files.upload');
+    await firm.engine.dropFile(DOC);
+    expect(await firm.db.uploads.count()).toBe(0);
+  });
+
+  it('a document deleted before its file left takes the file with it', async () => {
+    const w = createWorld();
+    const firm = new TestBrowser(w, ID.abogado);
+    await firm.sync();
+    firm.online = false;
+    await firm.engine.mutate('Documentos', 'create', DOC, {
+      clienteId: ID.clienteA,
+      vinculo: { tipo: 'Asuntos', id: ID.asNorte },
+      nombre: 'borrador.docx',
+      visibilidad: 'INTERNO',
+    });
+    await firm.engine.queueFile(DOC, { data: bytes('x'), nombre: 'borrador.docx', size: 1 });
+    await firm.engine.mutate('Documentos', 'delete', DOC);
+    firm.online = true;
+    await firm.sync();
+    expect(firm.calls).not.toContain('files.upload');
+    expect(await firm.db.uploads.count()).toBe(0);
+    expect(firm.engine.getStatus()).toMatchObject({ pending: 0 });
+  });
+});

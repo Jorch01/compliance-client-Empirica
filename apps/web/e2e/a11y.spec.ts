@@ -20,11 +20,16 @@ const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boole
     user: 'socia',
     paths: ['#/', '#/clientes', '#/usuarios', '#/solicitudes', '#/sugerencias', '#/ayuda'],
   },
+  {
+    user: 'socia',
+    paths: ['#/asuntos', '#/tareas', '#/documentos', '#/conflictos'],
+    dark: true,
+  },
   { user: 'socia', paths: ['#/'], dark: true },
   { user: 'adminA', paths: ['#/', '#/pendientes', '#/equipo'], mobile: true },
   {
     user: 'norte',
-    paths: ['#/', '#/pendientes', '#/solicitudes', '#/sugerencias'],
+    paths: ['#/', '#/pendientes', '#/solicitudes', '#/sugerencias', '#/asuntos', '#/documentos'],
     dark: true,
     mobile: true,
   },

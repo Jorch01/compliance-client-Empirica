@@ -60,9 +60,12 @@ export function deviceId(): string {
   }
 }
 
+/** Actions that carry a whole file: they may take minutes on a slow network. */
+const FILE_ACTIONS: ReadonlySet<Action> = new Set(['files.upload', 'files.download']);
+
 export interface CallOptions {
   idToken?: string | null;
-  /** Gives up after this long (Apps Script can take a few seconds). */
+  /** Gives up after this long (Apps Script can take a few seconds; a file, minutes). */
   timeoutMs?: number;
   url?: string;
   fetchImpl?: typeof fetch;
@@ -95,7 +98,9 @@ export async function callApi<T>(
       body,
       redirect: 'follow',
       credentials: 'omit',
-      signal: AbortSignal.timeout(options.timeoutMs ?? 45_000),
+      signal: AbortSignal.timeout(
+        options.timeoutMs ?? (FILE_ACTIONS.has(action) ? 300_000 : 45_000),
+      ),
     });
   } catch (error) {
     throw new NetworkError(error instanceof Error ? error.message : undefined);

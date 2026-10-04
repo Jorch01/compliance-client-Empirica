@@ -12,6 +12,9 @@
  * - A client the user can no longer see is wiped; one whose access changed
  *   (`resetClients`) is wiped and downloaded again.
  *
+ * - A document's file waits on the device until the server has the
+ *   document's record, and then goes on its own (files.upload).
+ *
  * It runs when the app opens, when the window comes back, when the network
  * returns, every minute while visible, and shortly after each edit.
  */
@@ -24,6 +27,7 @@ import {
   clientIdOf,
   text,
   type Action,
+  type FileUploadData,
   type Op,
   type OpResult,
   type PullData,
@@ -34,6 +38,7 @@ import {
 } from '@empirica/shared';
 import { ApiCallError, NetworkError, type CallResult } from '../api/client.ts';
 import { LOCAL_TABLES, rowsOf, type Notice, type OutboxEntry, type PortalDb } from '../data/db.ts';
+import { bytesToBase64 } from '../domain/files.ts';
 import { applyLocally, enqueue, replay, type OpType } from './local.ts';
 
 export type SyncPhase = 'idle' | 'syncing' | 'offline' | 'error';
@@ -70,6 +75,8 @@ export const META = {
 } as const;
 
 const AUTH_CODES = new Set(['UNAUTHENTICATED', 'NOT_WHITELISTED', 'EMAIL_NOT_VERIFIED']);
+/** A file the server refuses for these reasons waits for the user; anything else is retried. */
+const FINAL_UPLOAD_CODES = new Set(['VALIDATION', 'FORBIDDEN', 'NOT_FOUND', 'CONFLICT']);
 const RETRY_MS = [5_000, 15_000, 30_000, 60_000, 120_000, 300_000];
 
 const key = (table: TableName, id: string): string => `${table}:${id}`;
@@ -132,7 +139,9 @@ export class SyncEngine {
   }
 
   async #refreshPending(): Promise<void> {
-    const pending = await this.db.outbox.count();
+    const changes = await this.db.outbox.count();
+    const files = await this.db.uploads.filter((u) => !u.error).count();
+    const pending = changes + files;
     if (pending !== this.#status.pending) this.#set({ pending });
   }
 
@@ -178,6 +187,43 @@ export class SyncEngine {
     return saved;
   }
 
+  /**
+   * Keeps a document's file to send once the server has its record. Call it
+   * right after creating the record (or to send a new version of it).
+   */
+  async queueFile(
+    documentoId: string,
+    file: { data: ArrayBuffer; nombre: string; size: number },
+  ): Promise<void> {
+    await this.db.uploads.put({
+      id: documentoId,
+      uploadId: this.#uuid(),
+      data: file.data,
+      nombre: file.nombre,
+      size: file.size,
+      createdAt: new Date(this.#now()).toISOString(),
+      error: null,
+    });
+    await this.#refreshPending();
+    this.#schedule(1_500);
+  }
+
+  /** Forgets a file that was not sent (the user gave up on it). */
+  async dropFile(documentoId: string): Promise<void> {
+    await this.db.uploads.delete(documentoId);
+    await this.#refreshPending();
+  }
+
+  /**
+   * Stores rows an online action answered with (a conflict decided…), with
+   * the edits still queued replayed on top, as the sync does.
+   */
+  async accept(table: TableName, rows: readonly Row[]): Promise<void> {
+    await this.db.transaction('rw', [rowsOf(this.db, table), this.db.outbox], async () => {
+      for (const row of rows) await this.#acceptServerRow(table, row);
+    });
+  }
+
   // ── Sync ─────────────────────────────────────────────────────────────────
 
   /** Pushes the queue and pulls what changed. Calls during a run wait for one more run. */
@@ -199,6 +245,7 @@ export class SyncEngine {
       try {
         await this.#push();
         await this.#pull();
+        await this.#sendFiles();
         this.#failures = 0;
         const now = this.#now();
         await this.db.meta.put({ key: META.lastSync, value: now });
@@ -274,6 +321,60 @@ export class SyncEngine {
       }
       await this.#applyResults(batch, data.results);
     }
+  }
+
+  /** The files whose documents the server already has, one at a time. */
+  async #sendFiles(): Promise<void> {
+    const waiting = await this.db.uploads.filter((u) => !u.error).toArray();
+    for (const entry of waiting) {
+      // The record goes first: until it reaches the server, its file waits.
+      const queued = await this.db.outbox
+        .where('[table+id]')
+        .equals(['Documentos', entry.id])
+        .count();
+      if (queued) continue;
+      const documento = await rowsOf(this.db, 'Documentos').get(entry.id);
+      if (!documento || documento.deleted) {
+        await this.db.uploads.delete(entry.id);
+        continue;
+      }
+      let row: Row;
+      try {
+        const res = await this.#call<FileUploadData>('files.upload', {
+          documentoId: entry.id,
+          uploadId: entry.uploadId,
+          base64: bytesToBase64(entry.data),
+        });
+        await this.#contact(res.serverNow);
+        row = res.data.row;
+      } catch (error) {
+        if (!(error instanceof ApiCallError) || !FINAL_UPLOAD_CODES.has(error.code)) throw error;
+        await this.db.uploads.update(entry.id, {
+          error: { code: error.code, ...(error.reason ? { reason: error.reason } : {}) },
+        });
+        await this.db.notices.add({
+          at: new Date(this.#now()).toISOString(),
+          table: 'Documentos',
+          recordId: entry.id,
+          kind: 'upload',
+          code: error.code,
+          ...(error.reason ? { reason: error.reason } : {}),
+          label: entry.nombre,
+        });
+        continue;
+      }
+      await this.db.transaction(
+        'rw',
+        [rowsOf(this.db, 'Documentos'), this.db.outbox, this.db.uploads],
+        async () => {
+          await this.#acceptServerRow('Documentos', row);
+          // A newer file chosen meanwhile stays for the next round.
+          const current = await this.db.uploads.get(entry.id);
+          if (current?.uploadId === entry.uploadId) await this.db.uploads.delete(entry.id);
+        },
+      );
+    }
+    await this.#refreshPending();
   }
 
   async #release(batch: readonly OutboxEntry[]): Promise<void> {
