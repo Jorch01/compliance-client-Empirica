@@ -50,6 +50,7 @@ const PATHS = {
     'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM16 2v4M8 2v4M3 10h18',
   arrowRight: 'M5 12h14M12 5l7 7-7 7',
   send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
+  message: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
 } as const;
 
 export type IconName = keyof typeof PATHS;

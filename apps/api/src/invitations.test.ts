@@ -544,8 +544,13 @@ describe('administration of users and memberships', () => {
       ),
     );
     colab.sync();
-    // Only what belongs to no client stays (public holidays).
-    expect(colab.rows().map((r) => r.id)).toEqual([ID.inhabil]);
+    // Only what belongs to no client stays: public holidays and what they told the firm.
+    expect(
+      colab
+        .rows()
+        .map((r) => r.id)
+        .sort(),
+    ).toEqual([ID.inhabil, ID.sugColab].sort());
     expect(
       failure(
         w.call(

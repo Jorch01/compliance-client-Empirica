@@ -105,3 +105,7 @@ export const ESTADOS_SOLICITUD = [
 export const TIPOS_EVENTO = ['VENCIMIENTO', 'AUDIENCIA', 'CITA', 'REUNION'] as const;
 export const ESTADOS_CONFLICTO = ['PENDIENTE', 'RESUELTO'] as const;
 export const MODOS_IA = ['OFF', 'METADATA_ONLY', 'FULL'] as const;
+
+/** What someone tells the firm about the portal itself. */
+export const TIPOS_SUGERENCIA = ['SUGERENCIA', 'ERROR'] as const;
+export const ESTADOS_SUGERENCIA = ['NUEVA', 'EN_REVISION', 'RESUELTA', 'DESCARTADA'] as const;

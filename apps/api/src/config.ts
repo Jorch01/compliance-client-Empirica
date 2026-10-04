@@ -3,7 +3,7 @@
  * a new deployment. setup() creates the missing ones with these defaults.
  * Public ones also reach the browser.
  */
-import { text, type Row } from '@empirica/shared';
+import { MIN_APP_VERSION, compareVersions, text, type Row } from '@empirica/shared';
 
 export interface ConfigDefault {
   clave: string;
@@ -28,6 +28,9 @@ export interface Settings {
   requestsPerMinute: number;
 }
 
+const atLeast = (version: string, floor: string): string =>
+  compareVersions(version, floor) < 0 ? floor : version;
+
 export function readSettings(rows: readonly Row[]): Settings {
   const value = (key: string): string | null => {
     const row = rows.find((r) => !r.deleted && r.clave === key);
@@ -39,7 +42,7 @@ export function readSettings(rows: readonly Row[]): Settings {
     value('limiteSolicitudesPorMinuto') ?? fallback('limiteSolicitudesPorMinuto'),
   );
   return {
-    minAppVersion: value('minAppVersion') ?? fallback('minAppVersion'),
+    minAppVersion: atLeast(value('minAppVersion') ?? fallback('minAppVersion'), MIN_APP_VERSION),
     requestsPerMinute: Number.isFinite(perMinute) && perMinute > 0 ? perMinute : 120,
   };
 }

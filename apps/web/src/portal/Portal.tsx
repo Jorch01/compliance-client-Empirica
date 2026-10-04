@@ -1,7 +1,9 @@
 import { Route, Switch } from 'wouter';
+import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
 import { ClientHome } from '../pages/ClientHome.tsx';
 import { ClientsPage } from '../pages/Clients.tsx';
 import { ControlCenter } from '../pages/ControlCenter.tsx';
+import { FeedbackPage } from '../pages/Feedback.tsx';
 import { HelpPage } from '../pages/Help.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
 import { PendingPage } from '../pages/Pending.tsx';
@@ -26,6 +28,9 @@ function Routes() {
       </Route>
       <Route path="/ayuda">
         <HelpPage />
+      </Route>
+      <Route path="/sugerencias">
+        <FeedbackPage />
       </Route>
       {me.isFirm ? (
         <Route path="/clientes">
@@ -58,11 +63,13 @@ function Routes() {
 export function Portal() {
   return (
     <ScopeProvider>
-      <TourProvider>
-        <Shell>
-          <Routes />
-        </Shell>
-      </TourProvider>
+      <FeedbackProvider>
+        <TourProvider>
+          <Shell>
+            <Routes />
+          </Shell>
+        </TourProvider>
+      </FeedbackProvider>
     </ScopeProvider>
   );
 }

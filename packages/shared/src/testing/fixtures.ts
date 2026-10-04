@@ -66,6 +66,9 @@ export const ID = {
   trNorte: uid(0xf01),
   ctNorte: uid(0xf02),
   evNorte: uid(0xf03),
+  // Feedback about the portal
+  sugColab: uid(0xf11),
+  sugB: uid(0xf12),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';
@@ -440,6 +443,28 @@ export function demoData(): Dataset {
         valorVigente: '"2026-10-15"',
         valorPropuesto: '"2026-10-20"',
         estado: 'PENDIENTE',
+      }),
+    ],
+    Sugerencias: [
+      base(ID.sugColab, {
+        usuarioId: ID.cColab,
+        tipo: 'SUGERENCIA',
+        mensaje: 'Sería útil ver los pendientes por fecha.',
+        pantalla: '#/pendientes',
+        clienteContexto: A,
+        estado: 'NUEVA',
+        createdBy: ID.cColab,
+      }),
+      base(ID.sugB, {
+        usuarioId: ID.cB,
+        tipo: 'ERROR',
+        mensaje: 'No carga la lista de solicitudes.',
+        pantalla: '#/solicitudes',
+        clienteContexto: B,
+        diagnostico: { version: '0.2.0' },
+        estado: 'EN_REVISION',
+        respuesta: 'Gracias, ya lo estamos revisando.',
+        createdBy: ID.cB,
       }),
     ],
     Bitacora: [],

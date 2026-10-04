@@ -9,6 +9,7 @@ import { Dialog } from '../ui/Dialog.tsx';
 import { Icon } from '../ui/Icon.tsx';
 import { Popover } from '../ui/Popover.tsx';
 import { PreferencesInline } from './Preferences.tsx';
+import { useFeedback } from '../feedback/context.ts';
 import { useSyncStatus } from './sync-status.ts';
 import { useTour } from './tour-context.ts';
 
@@ -86,6 +87,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const { me } = usePortal();
   const { start } = useTour();
+  const feedback = useFeedback();
   const [logout, setLogout] = useState(false);
   return (
     <>
@@ -124,6 +126,17 @@ export function UserMenu() {
                 }}
               >
                 {t('help.tour')}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="message"
+                className="justify-start"
+                onClick={() => {
+                  close();
+                  feedback.open();
+                }}
+              >
+                {t('feedback.button')}
               </Button>
               <Link
                 href="/ayuda"

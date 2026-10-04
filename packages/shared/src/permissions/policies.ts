@@ -111,6 +111,20 @@ const clientComment: TablePolicy = {
   delete: 'own',
 };
 
+/** Anyone may tell the firm something about the portal; only as themselves. */
+const ownFeedback: TablePolicy = {
+  read: true,
+  create: { forced: { usuarioId: SELF, estado: 'NUEVA' }, blank: ['respuesta'] },
+  update: false,
+  delete: false,
+};
+
+/** The administrators answer it and move it along. */
+const answerFeedback: TablePolicy = {
+  ...ownFeedback,
+  update: { fields: ['estado', 'respuesta'] },
+};
+
 const ownNotification: TablePolicy = {
   read: true,
   create: false,
@@ -159,6 +173,10 @@ export const POLICIES: Record<TableName, RolePolicies> = {
     [ownNotification, ownNotification, ownNotification],
   ),
   Conflictos: byRole([READ, READ, READ], [NONE, NONE, NONE]),
+  Sugerencias: byRole(
+    [answerFeedback, ownFeedback, ownFeedback],
+    [ownFeedback, ownFeedback, ownFeedback],
+  ),
   Bitacora: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   Reportes: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   OpsAplicadas: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),

@@ -3,7 +3,9 @@
  * web app: colors come only from the generated tokens (no hex typed by
  * hand), and every visible text from the translation files.
  */
+import { MIN_APP_VERSION, compareVersions } from '@empirica/shared';
 import { describe, expect, it } from 'vitest';
+import { APP_VERSION } from './config/api.ts';
 
 const sources = import.meta.glob<string>(
   ['./**/*.{ts,tsx,css}', '!./styles/tokens.css', '!./**/*.test.{ts,tsx}'],
@@ -23,5 +25,10 @@ describe('web conventions', () => {
       )
       .map(([path]) => path);
     expect(offenders).toEqual([]);
+  });
+
+  it('ships a version its own backend accepts', () => {
+    expect(APP_VERSION).not.toBe('0.0.0');
+    expect(compareVersions(APP_VERSION, MIN_APP_VERSION)).toBeGreaterThanOrEqual(0);
   });
 });

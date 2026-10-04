@@ -497,6 +497,13 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
     create: { fecha: '2026-12-25', descripcion: 'BORRADOR: validar' },
     expected: ['CUD', '', '', '', '', ''],
   },
+  Sugerencias: {
+    // Sent by the unit collaborator: only the administrators answer it.
+    target: ID.sugColab,
+    update: { estado: 'EN_REVISION' },
+    create: { tipo: 'SUGERENCIA', mensaje: 'Una idea para el portal' },
+    expected: ['CU', 'C', 'C', 'C', 'C', 'C'],
+  },
 };
 
 describe('the matrix, cell by cell', () => {
@@ -539,6 +546,72 @@ describe('the matrix, cell by cell', () => {
       ok: false,
       reason: 'READ_ONLY_TABLE',
     });
+  });
+});
+
+describe('feedback about the portal (Sugerencias)', () => {
+  const w = world();
+
+  it('whoever sends it sees it; the administrators see all; nobody else does', () => {
+    expect(w.sees(ID.cColab, 'Sugerencias', ID.sugColab)).toBe(true);
+    expect(w.sees(ID.socio, 'Sugerencias', ID.sugColab)).toBe(true);
+    expect(w.sees(ID.socio, 'Sugerencias', ID.sugB)).toBe(true);
+    for (const other of [ID.abogado, ID.asistente, ID.cAdmin, ID.cLectura, ID.cB]) {
+      expect(w.sees(other, 'Sugerencias', ID.sugColab)).toBe(false);
+    }
+    expect(w.sees(ID.cColab, 'Sugerencias', ID.sugB)).toBe(false);
+  });
+
+  it('even read-only users can send one, always as themselves and as new', () => {
+    const own = w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9901), {
+      tipo: 'ERROR',
+      mensaje: 'No abre la pantalla de equipo',
+    });
+    expect(own).toMatchObject({
+      ok: true,
+      fields: { usuarioId: ID.cLectura, estado: 'NUEVA' },
+    });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9902), {
+        tipo: 'ERROR',
+        mensaje: 'Firmado por otro',
+        usuarioId: ID.cAdmin,
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE', field: 'usuarioId' });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9903), {
+        tipo: 'SUGERENCIA',
+        mensaje: 'Ya resuelta por mí',
+        estado: 'RESUELTA',
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE', field: 'estado' });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9904), {
+        tipo: 'SUGERENCIA',
+        mensaje: 'Con respuesta propia',
+        respuesta: 'Listo',
+      }),
+    ).toMatchObject({ ok: false, reason: 'FIELD_NOT_ALLOWED', field: 'respuesta' });
+  });
+
+  it('the administrators answer and move it, but never rewrite what was sent', () => {
+    expect(
+      w.write(ID.socio, 'Sugerencias', 'update', ID.sugColab, {
+        estado: 'RESUELTA',
+        respuesta: 'Listo: ya se ordenan por fecha.',
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      w.write(ID.socio, 'Sugerencias', 'update', ID.sugColab, { mensaje: 'Otro texto' }),
+    ).toMatchObject({ ok: false, reason: 'IMMUTABLE', field: 'mensaje' });
+    expect(
+      w.write(ID.cColab, 'Sugerencias', 'update', ID.sugColab, { estado: 'RESUELTA' }),
+    ).toMatchObject({ ok: false, reason: 'ROLE' });
+  });
+
+  it('it carries no client: it never depends on access to one', () => {
+    expect(TABLES.Sugerencias.scope.client).toBeUndefined();
+    expect(PULLED_TABLES).toContain('Sugerencias');
   });
 });
 

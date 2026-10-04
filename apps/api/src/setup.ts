@@ -14,9 +14,10 @@
 import { TABLES, TABLE_NAMES, allColumns, text, toProjectIso, type Row } from '@empirica/shared';
 import { lookupAccount } from './auth.ts';
 import { CONFIG_DEFAULTS } from './config.ts';
-import { Database, Sequence } from './db/database.ts';
+import { Database, Sequence, openSpreadsheet } from './db/database.ts';
 import { Writer } from './db/writer.ts';
 import { PROP, type Env } from './env.ts';
+import { ApiError } from './errors.ts';
 import type { GFolder, GSheet, GSpreadsheet } from './google.ts';
 
 export const SPREADSHEET_NAME = 'EMPIRICA_PORTAL_DB';
@@ -167,6 +168,48 @@ function ensureTab(
   }
 }
 
+/**
+ * The data model as the spreadsheet must hold it: tabs, columns, types and
+ * closed lists. Its fingerprint changes only when the model does.
+ */
+export function schemaPrint(env: Env): string {
+  const model = TABLE_NAMES.map((name) => [
+    name,
+    allColumns(TABLES[name]).map((c) => [c.name, c.type, ...(c.values ?? [])].join(':')),
+  ]);
+  return env.sha256Hex(JSON.stringify(model)).slice(0, 16);
+}
+
+/**
+ * Brings the spreadsheet up to the deployed model: the first request after a
+ * deploy that adds a tab or a column creates it, as setup() would, so a new
+ * version never breaks for lack of a tab. Afterwards it costs nothing: the
+ * fingerprint is read with the other properties. It only adds; it never
+ * deletes, renames or reorders.
+ */
+export function ensureSchema(env: Env): void {
+  const print = schemaPrint(env);
+  if (env.prop(PROP.schemaVersion) === print) return;
+  // Not set up yet: setup() creates everything, the first time by hand.
+  if (!env.prop(PROP.spreadsheetId)) return;
+  const lock = env.g.LockService.getScriptLock();
+  if (!lock.tryLock(10_000)) throw new ApiError('BUSY');
+  try {
+    const ss = openSpreadsheet(env);
+    const report: SetupReport = {
+      spreadsheetId: ss.getId(),
+      created: [],
+      checked: [],
+      warnings: [],
+    };
+    for (const name of TABLE_NAMES) ensureTab(env, ss, name, report);
+    env.setProp(PROP.schemaVersion, print);
+    if (report.created.length) env.log('Esquema actualizado', report.created);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function base(id: string, serverNow: string, by: string): Row {
   return {
     id,
@@ -189,6 +232,7 @@ export function runSetup(env: Env): SetupReport {
     const ss = openOrCreateSpreadsheet(env, report);
     report.spreadsheetId = ss.getId();
     for (const name of TABLE_NAMES) ensureTab(env, ss, name, report);
+    env.setProp(PROP.schemaVersion, schemaPrint(env));
     // A new spreadsheet comes with an empty default tab; ours replace it.
     for (const sheet of ss.getSheets()) {
       const name = sheet.getName();

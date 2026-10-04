@@ -3,7 +3,7 @@
  * and a whitelisted, active user. Anything else gets a clear error and no
  * data at all.
  */
-import { ERROR_MESSAGES, type ApiFailure } from '@empirica/shared';
+import { ERROR_MESSAGES, MIN_APP_VERSION, type ApiFailure } from '@empirica/shared';
 import { ID } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
 import { PROP } from './env.ts';
@@ -52,6 +52,17 @@ describe('the envelope', () => {
       details: { minAppVersion: '1.2.0' },
     });
     expect(w.call('sync.pull', { cursor: 0 }, { as: ID.socio, appVersion: '1.2.0' }).ok).toBe(true);
+  });
+
+  it('asks apps older than this backend to update, whatever Config says', () => {
+    const fresh = createWorld();
+    expect(fresh.rows('Config').find((c) => c.clave === 'minAppVersion')?.valor).toBe('0.0.0');
+    expect(
+      failure(fresh.call('sync.pull', { cursor: 0 }, { as: ID.socio, appVersion: '0.2.0' })),
+    ).toMatchObject({ code: 'CLIENT_TOO_OLD', details: { minAppVersion: MIN_APP_VERSION } });
+    expect(
+      fresh.call('sync.pull', { cursor: 0 }, { as: ID.socio, appVersion: MIN_APP_VERSION }).ok,
+    ).toBe(true);
   });
 });
 

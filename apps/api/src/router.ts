@@ -38,6 +38,7 @@ import { push } from './actions/push.ts';
 import { authenticate, rateLimit, verifyIdToken } from './auth.ts';
 import { readSettings } from './config.ts';
 import { Database } from './db/database.ts';
+import { ensureSchema } from './setup.ts';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
 
@@ -77,6 +78,8 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
     if (action === 'ping')
       return { ok: true, data: { pong: true }, serverNow, ...(requestId ? { requestId } : {}) };
 
+    // A deploy that added tabs or columns: create them before anything reads.
+    ensureSchema(env);
     const db = new Database(env);
     const settings = readSettings(db.rows('Config'));
     if (request.appVersion && compareVersions(request.appVersion, settings.minAppVersion) < 0) {

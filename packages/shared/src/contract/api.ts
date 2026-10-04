@@ -323,6 +323,14 @@ export interface PushData {
   results: OpResult[];
 }
 
+/**
+ * The oldest app this backend serves. Raise it with a release that changes
+ * what the app must know (a new tab, a new field in the contract): older
+ * apps are asked to reload instead of failing to sync. `Config.minAppVersion`
+ * can only raise it further.
+ */
+export const MIN_APP_VERSION = '0.2.1';
+
 /** Compares dotted versions ("1.2.10" > "1.2.9"). */
 export function compareVersions(a: string, b: string): number {
   const pa = a.split('.').map((n) => Number.parseInt(n, 10) || 0);

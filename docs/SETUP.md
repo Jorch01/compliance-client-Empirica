@@ -181,6 +181,8 @@ Cuando el código ya esté en Apps Script:
 6. Copia el **ID de implementación** y créalo en GitHub como variable `APPS_SCRIPT_DEPLOYMENT_ID` (igual que en el paso 8). Es la parte de la URL entre `/s/` y `/exec`. Con eso, cada versión nueva se publica en esta misma dirección, y después de publicar GitHub comprueba que el Web App responde.
 7. Copia la **URL de la aplicación web** (termina en `/exec`) y mándamela: no es secreta, el portal la necesita para llamar al backend. Si la abres en el navegador verás `{"ok":true,…}`. ✔ Recibida el 3 de octubre.
 
+**Después de esto, `setup` ya no hace falta para cada versión.** Si una versión nueva trae pestañas o columnas nuevas (como `Sugerencias`, que llegó al aprobar la Fase 2), el backend las agrega solo en la primera petición después de publicarse, sin tocar lo que ya existe (`PLAN.md`, D31). Volver a ejecutar `setup` sigue siendo seguro: solo crea lo que falta.
+
 ### Paso 10 · Antes de abrir el portal a los usuarios (al aprobar la Fase 2)
 
 Hasta ahora `portal.empirica.mx` muestra una portada provisional. Cuando apruebes la Fase 2 y se fusione, la portada se sustituye por la pantalla de entrada del portal. Antes, revisa esto (unos 15 minutos, con la cuenta del paso 1):
