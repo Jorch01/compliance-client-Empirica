@@ -363,7 +363,8 @@ export const TABLES: Record<TableName, TableDef> = {
     'Invitaciones',
     [
       col('email', { type: 'email', required: true }),
-      CLIENTE,
+      // Empty for firm users invited without a client to assign them to.
+      ref('clienteId', 'Clientes'),
       col('rol', { ...e(ROLES), required: true }),
       col('alcance', { type: 'json' }),
       col('puesto', { type: 'string' }),

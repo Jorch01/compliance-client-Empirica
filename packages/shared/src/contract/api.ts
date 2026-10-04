@@ -4,7 +4,14 @@
  * server import these same definitions.
  */
 import * as z from 'zod/mini';
-import type { Rol } from '../domain/enums.ts';
+import {
+  ESTADOS_INVITACION,
+  FIRM_ROLES,
+  LADOS,
+  ROLES,
+  type Lado,
+  type Rol,
+} from '../domain/enums.ts';
 import { PUSHABLE_TABLES, type TableName } from '../domain/tables.ts';
 import type { FieldIssue } from '../domain/validate.ts';
 import type { Row } from '../domain/values.ts';
@@ -14,11 +21,35 @@ import type { DenialReason } from '../permissions/write.ts';
 
 export const API_VERSION = 1;
 
-export const ACTIONS = ['ping', 'session.bootstrap', 'sync.pull', 'sync.push'] as const;
+export const ACTIONS = [
+  'ping',
+  'session.bootstrap',
+  'sync.pull',
+  'sync.push',
+  // Online only (PLAN.md § 7): they change who may see what.
+  'invitations.list',
+  'invitations.create',
+  'invitations.decide',
+  'invitations.resend',
+  'invitations.revoke',
+  'invitations.accept',
+  'admin.users.update',
+  'admin.memberships.save',
+  'profile.update',
+] as const;
 export type Action = (typeof ACTIONS)[number];
 
 /** Actions that do not need a signed-in user. */
 export const PUBLIC_ACTIONS: readonly Action[] = ['ping'];
+
+/**
+ * Actions for a signed-in account that has no access yet: accepting the
+ * invitation is what gives it access.
+ */
+export const PRE_ACCESS_ACTIONS: readonly Action[] = ['invitations.accept'];
+
+/** Days an invitation link stays valid. */
+export const INVITATION_DAYS = 7;
 
 export const ERROR_CODES = [
   'UNAUTHENTICATED',
@@ -109,6 +140,105 @@ export const PushPayloadSchema = z.object({
 });
 export interface PushPayload {
   ops: Op[];
+}
+
+const id = z.uuid();
+const name = z.string().check(z.minLength(1), z.maxLength(120));
+const AlcanceSchema = z.nullable(
+  z.object({
+    entidades: z.array(id).check(z.maxLength(200)),
+    asuntos: z.array(id).check(z.maxLength(500)),
+  }),
+);
+
+export const InvitationsListSchema = z.object({ clienteId: z.optional(id) });
+
+/**
+ * A new invitation. Firm users (`lado` EMPIRICA) are invited only by the
+ * SOCIO_ADMIN; with `clienteId`, a lawyer or assistant is also assigned to
+ * that client. Client users need `clienteId`.
+ */
+export const InvitationCreateSchema = z.object({
+  email: z.email().check(z.maxLength(254)),
+  nombre: name,
+  lado: z.enum(LADOS),
+  rol: z.enum(ROLES),
+  clienteId: z.optional(id),
+  alcance: z.optional(AlcanceSchema),
+  puesto: z.optional(z.nullable(z.string().check(z.maxLength(120)))),
+  idioma: z.optional(z.enum(['es', 'en'])),
+});
+export type InvitationCreate = z.infer<typeof InvitationCreateSchema>;
+
+export const InvitationDecideSchema = z.object({ invitacionId: id, approve: z.boolean() });
+export const InvitationRefSchema = z.object({ invitacionId: id });
+/** The secret part of the link: two random UUIDs without dashes. */
+export const InvitationAcceptSchema = z.object({
+  token: z.string().check(z.regex(/^[0-9a-f]{64}$/)),
+});
+
+export const UserUpdateSchema = z.object({
+  usuarioId: id,
+  nombre: z.optional(name),
+  estado: z.optional(z.enum(['ACTIVO', 'INACTIVO'])),
+  /** Firm users only. */
+  rolBase: z.optional(z.enum(FIRM_ROLES)),
+  /** Unbinds the Firebase account, so the person can sign in with a new one. */
+  resetAccount: z.optional(z.boolean()),
+});
+
+/** Creates the membership of a user in a client, or changes it if it exists. */
+export const MembershipSaveSchema = z.object({
+  usuarioId: id,
+  clienteId: id,
+  rol: z.enum(ROLES),
+  alcance: z.optional(AlcanceSchema),
+  puesto: z.optional(z.nullable(z.string().check(z.maxLength(120)))),
+  estado: z.optional(z.enum(['ACTIVA', 'REVOCADA'])),
+});
+
+export const ProfileUpdateSchema = z.object({
+  nombre: z.optional(name),
+  idioma: z.optional(z.enum(['es', 'en'])),
+});
+
+export type EstadoInvitacion = (typeof ESTADOS_INVITACION)[number];
+
+/** An invitation as the firm (or the client admin who sent it) sees it. */
+export interface InvitationView {
+  id: string;
+  email: string;
+  nombre: string | null;
+  lado: Lado;
+  clienteId: string | null;
+  rol: Rol;
+  alcance: Alcance | null;
+  puesto: string | null;
+  /** VENCIDA as soon as the link expires, even before anyone marks it. */
+  estado: EstadoInvitacion;
+  venceEn: string | null;
+  invitadoPor: string | null;
+  aprobadoPor: string | null;
+  createdAt: string;
+}
+
+export interface InvitationOutcome {
+  invitation: InvitationView;
+  /**
+   * The secret of a new link, returned once to whoever may share it. The
+   * link is `<portal>#/invitacion/<token>`; the server keeps only its hash.
+   */
+  token?: string;
+  /** The person already had an account: the new client simply appears for them. */
+  alreadyActive?: boolean;
+}
+
+export interface InvitationsListData {
+  invitations: InvitationView[];
+}
+
+export interface AcceptData {
+  clienteId: string | null;
 }
 
 export interface ApiSuccess<T> {

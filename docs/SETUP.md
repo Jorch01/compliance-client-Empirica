@@ -4,18 +4,19 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 ## 1. Lo que falta, todo junto
 
-| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                                                         |
-| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                                                                |
-| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                                                      |
-| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | ✔ 3 oct                                                                                        |
-| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json`                                |
-| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct. Firebase: lo confirma `setup` (paso 9, punto 4)                        |
-| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                                                      |
-| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`                                 |
-| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages. Falta **Enforce HTTPS** (paso 7, punto 4) |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                                                  |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                                     |
+| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                                     |
+| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                                            |
+| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                                  |
+| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | ✔ 3 oct                                                                    |
+| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json`            |
+| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct. Firebase: lo confirma `setup` (paso 9, punto 4)    |
+| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                                  |
+| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`             |
+| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages, con **Enforce HTTPS** |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                              |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                 |
+| 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | Pendiente                                                                  |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -180,6 +181,23 @@ Cuando el código ya esté en Apps Script:
 6. Copia el **ID de implementación** y créalo en GitHub como variable `APPS_SCRIPT_DEPLOYMENT_ID` (igual que en el paso 8). Es la parte de la URL entre `/s/` y `/exec`. Con eso, cada versión nueva se publica en esta misma dirección, y después de publicar GitHub comprueba que el Web App responde.
 7. Copia la **URL de la aplicación web** (termina en `/exec`) y mándamela: no es secreta, el portal la necesita para llamar al backend. Si la abres en el navegador verás `{"ok":true,…}`. ✔ Recibida el 3 de octubre.
 
+### Paso 10 · Antes de abrir el portal a los usuarios (al aprobar la Fase 2)
+
+Hasta ahora `portal.empirica.mx` muestra una portada provisional. Cuando apruebes la Fase 2 y se fusione, la portada se sustituye por la pantalla de entrada del portal. Antes, revisa esto (unos 15 minutos, con la cuenta del paso 1):
+
+1. **Confirma la configuración de Firebase en el backend.** En la ventana de incógnito del paso 9, ejecuta `setup` otra vez y mándame la línea que empieza con `Revisado: Firebase` (o el aviso, si sale otro). No cambia nada de lo que ya existe.
+2. **Firebase → Authentication → Método de acceso**: deben estar activos **Correo electrónico/contraseña** y **Google** (paso 2). En **Configuración → Dominios autorizados** debe estar `portal.empirica.mx` (y `localhost`, que viene de fábrica).
+3. **Firebase → Authentication → Plantillas**: deja el texto de fábrica (Firebase lo manda en el idioma de cada usuario, español o inglés, porque el portal se lo indica); solo revisa que el remitente diga **Empírica Portal** (paso 2, punto 4).
+4. **Pantalla de Google al "Continuar con Google".** En <https://console.cloud.google.com>, con el proyecto `empirica-portal-d86b4`, menú **Google Auth Platform** (antes se llamaba "Pantalla de consentimiento de OAuth"):
+   - **Público** (_Audience_): el estado de publicación debe ser **En producción**. Si dice **Prueba**, pulsa **Publicar app**: en modo de prueba solo pueden entrar con Google las cuentas que agregues a mano como "usuarios de prueba". El portal solo pide nombre y correo, así que no hace falta pasar por la verificación de Google para publicarla.
+   - **Desarrollo de la marca** (_Branding_): nombre de la app **Empírica Portal**; correo de asistencia, la cuenta del paso 1; página principal `https://portal.empirica.mx`; política de privacidad `https://portal.empirica.mx/privacidad/`; en dominios autorizados, agrega `empirica.mx` (`firebaseapp.com` ya aparece). Guarda.
+   - Opcional, cuando quieras: **verificación de la marca**. Sin ella, la pantalla de Google muestra la dirección técnica (`empirica-portal-d86b4.firebaseapp.com`) en lugar de "Empírica Portal". Es gratuita; Google pide comprobar en Search Console que `empirica.mx` es tuyo y tarda unos días.
+5. **GitHub → Settings → Secrets and variables → Actions → Variables**: deben existir `PAGES_ENABLED` (`true`, paso 7), `FIREBASE_WEB_API_KEY` (paso 8) y `APPS_SCRIPT_DEPLOYMENT_ID` (paso 9). El portal publicado toma de esta última la dirección del backend.
+6. Fusiona la propuesta de cambios de la Fase 2 cuando te avise que está lista. En unos 3 minutos GitHub publica el portal y el backend (en **Actions** todo debe quedar en verde).
+7. **Prueba con tu cuenta**: abre `https://portal.empirica.mx` y entra con tu correo de socio (uno de `ADMIN_EMAILS`), con Google o creando una contraseña con ese mismo correo (te llegará un correo para confirmarlo). El portal empieza vacío: crea el primer cliente en **Clientes**, agrégale sus unidades e invita en **Usuarios** a una persona de prueba (por ejemplo, otro correo tuyo) para ver el recorrido completo.
+
+**En iPhone o iPad con el portal instalado** (agregado a la pantalla de inicio), la ventana de "Continuar con Google" puede no responder; ahí conviene entrar con correo y contraseña. La solución definitiva queda para la Fase 7 (`PLAN.md`, D29).
+
 ### Actualizar el aviso de privacidad
 
 El portal publica el aviso en `https://portal.empirica.mx/privacidad/` (la portada lo enlaza) con el texto exacto de `apps/web/src/legal/aviso-de-privacidad.txt`; una prueba compara la página con ese archivo palabra por palabra. Para cambiarlo, reemplaza el archivo con el texto nuevo, respetando su formato:
@@ -197,8 +215,13 @@ Al fusionar el cambio, la página se actualiza sola.
 
 ```bash
 npm install          # dependencias de todo el monorepo
-npm run dev          # portal en http://localhost:5173
+npm run dev          # portal en http://localhost:5173 (contra el backend publicado)
+npm run dev:mock     # portal con datos ficticios y el backend real en tu computadora, sin cuentas
 npm run check        # formato, lint, tipos y pruebas (lo mismo que el CI)
+npm run test:e2e     # pruebas en el navegador (Chromium) sobre el modo de demostración
 npm run build        # compila el portal y el Apps Script
 npm run brand:tokens # regenera tokens y vista previa tras cambiar una regla de color
+npm run brand:icons  # regenera los íconos de la app desde los tokens y el símbolo
 ```
+
+`npm run test:e2e` usa el Chromium de Playwright (`npx playwright install chromium` la primera vez). Si ya tienes otro Chromium, indícalo con `CHROMIUM_PATH=/ruta/al/chrome`.

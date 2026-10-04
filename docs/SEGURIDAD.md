@@ -60,13 +60,18 @@ En el portal eso no es posible, porque el servidor necesita leer cada registro p
 
 El portal guarda en el navegador una **réplica parcial**: solo los clientes y registros que el servidor autorizó a ese usuario. El filtro ocurre en el servidor, antes de enviar; el navegador nunca recibe algo que el usuario no pueda ver.
 
-| Medida                       | Detalle                                                                                                                    |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Borrado al cerrar sesión     | Se vacían todas las tablas locales, salvo que el usuario marque "mantener en este dispositivo" (para equipos del despacho) |
-| Revocación                   | Si el servidor informa que se revocó una membresía, ese cliente se borra en la siguiente sincronización                    |
-| Días sin validar             | Pasados N días sin contacto con el servidor, hay que volver a iniciar sesión antes de ver datos                            |
-| Bloqueo por inactividad      | Pide reautenticación sin borrar lo capturado sin red                                                                       |
-| Cifrado en reposo (opcional) | Clave AES-GCM de WebCrypto **no exportable**, guardada en IndexedDB                                                        |
+| Medida                       | Detalle                                                                                                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Una base por cuenta          | Cada cuenta tiene su propia base (`empirica-<cuenta>`): dos personas que comparten una computadora nunca ven la copia de la otra                                                                        |
+| Borrado al cerrar sesión     | Se borra la base completa, salvo que el usuario marque "mantener en este dispositivo" (para equipos del despacho). Si hay cambios sin enviar, el portal intenta enviarlos antes y avisa si se perderían |
+| Revocación                   | Si el servidor informa que se revocó una membresía, ese cliente se borra en la siguiente sincronización; si cambió el rol o el alcance, se borra y se vuelve a descargar                                |
+| Días sin validar             | Pasados 14 días sin contacto con el servidor (`diasSinConexion` en `Config`), hay que volver a iniciar sesión antes de ver datos                                                                        |
+| Bloqueo por inactividad      | A los 30 minutos sin uso (`inactividadMinutos` en `Config`) pide la contraseña o Google otra vez, sin borrar lo capturado sin red; el bloqueo sigue si se recarga la página                             |
+| Lo que el servidor rechaza   | Un cambio hecho sin red que el servidor no acepta (permiso retirado, campo protegido) se deshace en el dispositivo y el usuario ve el motivo                                                            |
+| Service Worker               | Guarda solo la aplicación (código, fuentes, íconos); nunca las respuestas del backend                                                                                                                   |
+| Cifrado en reposo (opcional) | Pendiente para F7: clave AES-GCM de WebCrypto **no exportable**, guardada en IndexedDB                                                                                                                  |
+
+**Invitaciones.** El enlace lleva un secreto aleatorio de 244 bits que se muestra una sola vez a quien invita; el servidor guarda solo su huella (SHA-256), vence a los 7 días y solo lo acepta una cuenta cuyo correo, ya verificado, sea el invitado. Un enlace nuevo invalida el anterior. Mientras el correo no llega (F5), quien invita lo comparte por su cuenta: conviene mandarlo directo a la persona, no a grupos.
 
 **Alcance real del cifrado local.** Protege contra la lectura casual del disco (alguien que copia la carpeta del navegador o revisa un respaldo del equipo). **No** protege contra un navegador comprometido, una extensión maliciosa o alguien que use la sesión abierta, porque la misma página que descifra para mostrar los datos tiene la clave. Es una capa adicional, no un sustituto del bloqueo de pantalla del equipo.
 

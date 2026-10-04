@@ -48,9 +48,34 @@ jobs:
       - name: Compilar
         run: npm run build
 
+  # The portal in a real browser (Chromium) against the real backend code
+  # with fictitious data: two devices converging after working offline,
+  # nothing internal reaching a client, and WCAG 2.2 AA checked by axe.
+  navegador:
+    name: Pruebas en el navegador
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Instalar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas en el navegador
+        run: npm run test:e2e
+
   publicar:
     name: Publicar en GitHub Pages
-    needs: pruebas # ← the lock: no green tests, no deploy
+    needs: [pruebas, navegador] # ← the lock: no green tests, no deploy
     if: >-
       vars.PAGES_ENABLED == 'true' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
@@ -86,6 +111,8 @@ jobs:
           # Public by design (it ships to the browser), but kept out of the
           # repository so secret scanners do not flag it. docs/SETUP.md, step 8.
           VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
+          # The backend's address is built from it (src/config/api.ts).
+          VITE_APPS_SCRIPT_DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
 
       - name: Configurar Pages
         uses: actions/configure-pages@v6
@@ -101,7 +128,7 @@ jobs:
 
   desplegar-api:
     name: Desplegar el backend (Apps Script)
-    needs: pruebas # ← the same lock: no green tests, no deploy
+    needs: [pruebas, navegador] # ← the same lock: no green tests, no deploy
     if: >-
       vars.API_DEPLOY_ENABLED == 'true' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&

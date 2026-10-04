@@ -1,6 +1,6 @@
 # Plan del proyecto · Empírica Portal
 
-> **Estado: Fase 0 aprobada el 2 de octubre de 2026** (paleta y tipografía A, y respuestas a las 15 preguntas, ver la § 13). **Fase 1 (backend núcleo) entregada el 2 de octubre de 2026, en revisión** (§ 11 y § 14).
+> **Estado: Fase 0 aprobada el 2 de octubre de 2026** (paleta y tipografía A, y respuestas a las 15 preguntas, ver la § 13). **Fase 1 (backend núcleo) aprobada el 3 de octubre de 2026** (§ 14). **Fase 2 (el portal en el navegador) entregada el 3 de octubre de 2026, en revisión** (§ 11 y § 15).
 
 Documentos:
 
@@ -46,6 +46,10 @@ Documentos:
 | D23 | Registros anexos                  | Comentarios, documentos, evidencias y eventos siguen la visibilidad del registro al que pertenecen; las tareas y trámites conservan su propio alcance, pero se ocultan si su asunto es `INTERNO`                                                                                                                                                                                                 | Un usuario de unidad ve los comentarios de la tarea que le asignaron aunque el asunto sea de otra unidad; un comentario compartido en un asunto interno nunca llega al cliente                                                                                                                                 |
 | D24 | Permisos de Apps Script           | Lista explícita en `appsscript.json`: hojas, Drive, peticiones externas y triggers. Correo y Calendar se agregan en F5                                                                                                                                                                                                                                                                           | El código empaquetado usa los servicios a través de un objeto (para probarlo); la detección automática de permisos podría no verlos                                                                                                                                                                            |
 | D25 | Primera publicación del backend   | Se crea a mano en el editor (una vez); después el CI siempre actualiza **esa** publicación                                                                                                                                                                                                                                                                                                       | Así la dirección del Web App no cambia nunca y el socio no tiene que leer registros del CI (`SETUP.md`, paso 9)                                                                                                                                                                                                |
+| D26 | Envío de invitaciones en F2       | Quien invita **comparte el enlace** (botón Copiar o su propio correo, con el texto ya escrito); el portal no manda correos hasta F5                                                                                                                                                                                                                                                              | Mandar correo exige agregar el permiso de Gmail a Apps Script, y eso obliga a la cuenta propietaria a autorizar de nuevo; mientras no lo haga, el Web App dejaría de responder. Se hace una sola vez, en F5, junto con los resúmenes                                                                           |
+| D27 | Modo de demostración              | `npm run dev:mock` corre **el backend real** (el mismo código de `apps/api`) con servicios de Google simulados y datos ficticios, dentro del servidor de Vite                                                                                                                                                                                                                                    | Se prueba lo que se despliega, no una imitación; dos ventanas son dos dispositivos y las pruebas en el navegador lo usan                                                                                                                                                                                       |
+| D28 | Direcciones del portal            | Las rutas van después del `#` (`portal.empirica.mx/#/clientes`)                                                                                                                                                                                                                                                                                                                                  | GitHub Pages sirve una sola página para todas, también sin conexión, sin reglas de redirección                                                                                                                                                                                                                 |
+| D29 | Entrar con Google                 | Siempre en una ventana emergente, nunca redirigiendo la página                                                                                                                                                                                                                                                                                                                                   | Fuera de Firebase Hosting, los navegadores que bloquean el almacenamiento de terceros (Safari, y Chrome en camino) rompen la redirección (`LIMITES.md` § 4). En la app instalada en iPhone puede fallar: ahí se recomienda correo y contraseña hasta F7 (ver § 15)                                             |
 
 ## 2. Arquitectura
 
@@ -112,9 +116,9 @@ sequenceDiagram
 
 **Por qué no el enlace mágico de Firebase.** En Spark, Firebase envía como máximo 5 correos de inicio de sesión por enlace al día. Propuesta:
 
-1. **Alta por invitación (Fase 2).** El despacho registra el correo y el rol; el servidor crea la invitación (token aleatorio, guarda solo su hash, vence en 7 días) y la envía **desde la cuenta del despacho** con MailApp. El enlace abre el portal, que pide entrar con Google o crear contraseña. Cuando el correo está verificado y coincide con el invitado, el servidor activa al usuario y su membresía.
-2. **Invitaciones de `CLIENTE_ADMIN`** quedan en "pendiente de aprobación" hasta que el despacho las aprueba; entonces se envía el correo. El admin de una unidad solo invita dentro de su unidad (D13).
-3. **Enlace de acceso sin contraseña (opcional, a validar en F2).** Firebase permite _generar_ enlaces de inicio de sesión sin enviarlos (20,000 al día en Spark). Si la cuenta del despacho puede generarlos desde Apps Script, el servidor los mandaría con MailApp. Si no resulta viable, se queda en contraseña + Google.
+1. **Alta por invitación (Fase 2).** El despacho registra el correo y el rol; el servidor crea la invitación (token aleatorio, guarda solo su hash, vence en 7 días) y devuelve el enlace **una sola vez** a quien invita, que lo comparte (botón Copiar o su propio correo, con el texto ya escrito; D26). El envío con MailApp desde la cuenta del despacho llega en F5. El enlace abre el portal, que pide entrar con Google o crear contraseña. Cuando el correo está verificado y coincide con el invitado, el servidor activa al usuario y su membresía.
+2. **Invitaciones de `CLIENTE_ADMIN`** quedan en "pendiente de aprobación" hasta que el despacho las aprueba; entonces se genera el enlace para quien aprueba. El admin de una unidad solo invita dentro de su unidad (D13).
+3. **Enlace de acceso sin contraseña (opcional, se evalúa en F5).** Firebase permite _generar_ enlaces de inicio de sesión sin enviarlos (20,000 al día en Spark). Como necesita MailApp para enviarlos, se evalúa junto con los correos (D26). Mientras tanto: contraseña o Google.
 
 **Verificación en el servidor.** `accounts:lookup` de Identity Toolkit con una **API key de servidor** restringida a esa API (en Script Properties). La key del navegador va restringida por dominio; si fuera la misma, la restricción por dominio bloquearía las llamadas del servidor. El resultado se guarda en CacheService con el hash del token, por el menor de 5 minutos y lo que le quede de vida al token. Sin `emailVerified`, no hay acceso.
 
@@ -202,7 +206,7 @@ Columnas que el código fija y nadie más escribe: ids de Drive y de Calendar, `
 
 ### En el dispositivo
 
-- Base Dexie `empirica-portal` con versión de esquema y migraciones (como `DB_VERSION` en TSJ). Tablas: las pestañas que el usuario puede ver, `outbox`, `meta` (cursor, desfase de reloj, última validación) y `archivos` (documentos marcados "disponible sin conexión", con tope de MB).
+- Una base Dexie **por cuenta** (`empirica-<cuenta>`), con versión de esquema y migraciones (como `DB_VERSION` en TSJ): dos personas que comparten computadora nunca mezclan sus copias. Tablas: las pestañas que el usuario puede ver, `outbox`, `meta` (cursor, épocas, huella de la instantánea, último contacto), `notices` (cambios que el servidor no aplicó, con su motivo) y, en F3, `archivos` (documentos marcados "disponible sin conexión", con tope de MB).
 - La interfaz lee siempre de Dexie con consultas reactivas (`useLiveQuery`): responde al instante.
 - Cada cambio se aplica primero en local, con sellos por campo de `ahoraSync()`, y entra a la cola con un `opId` único. Lo pendiente lleva marca de "pendiente" hasta que el servidor lo confirma.
 
@@ -225,7 +229,7 @@ sequenceDiagram
   A-->>L: cambios con serverSeq > cursor (ya filtrados) + ocultados + épocas
 ```
 
-- **Cuándo**: al abrir, al enfocar la ventana, al recuperar la red, cada 60 s con la app visible y con Background Sync donde exista (iOS no lo tiene: ahí sirven los tres primeros, como en TSJ).
+- **Cuándo**: al abrir, al enfocar la ventana, al recuperar la red, cada 60 s con la app visible y 1.5 s después de cada cambio; tras un fallo, reintentos espaciados (5 s a 5 min). Sin Background Sync: Safari no lo tiene y los cinco momentos anteriores bastan (como en TSJ).
 - **Numeración sin candado para leer.** Quien escribe toma el candado (`LockService`), numera cada cambio después de `SEQ_RESERVED`, guarda la reserva, escribe todo en lote y solo entonces publica `SEQ_COMMITTED`. Quien lee no toma candado: lee primero `SEQ_COMMITTED` y solo devuelve filas numeradas hasta ahí, que ya están completas. Si una escritura muere a la mitad, la siguiente numera después de lo reservado y su publicación vuelve visibles las filas que sí se escribieron.
 - **`sync.pull` barato**: si no hay nada nuevo después del cursor, solo se leen las pestañas pequeñas (usuarios, membresías, clientes, unidades, configuración) y no las grandes. Responde en páginas (`more: true`) sin partir nunca un mismo número.
 - **Instantánea de lo pequeño**: usuarios, membresías y configuración no viajan por registro sino completos (ya filtrados para el usuario) cada vez que cambian; el dispositivo manda la huella (`snapshotHash`) de la que tiene.
@@ -248,11 +252,11 @@ sequenceDiagram
 
 ### Service Worker
 
-Workbox vía `vite-plugin-pwa` (`injectManifest`): precarga del shell (lista generada por Vite), red primero con 4 s de espera y luego la copia guardada, como en TSJ. Las respuestas de la API **nunca** se guardan en el Service Worker. Cuando hay versión nueva aparece "Hay una actualización" y el usuario decide cuándo recargar. Una prueba falla si algún archivo que la app usa no está en la precarga.
+Workbox vía `vite-plugin-pwa` (`injectManifest`, `apps/web/sw/sw.ts`): precarga de la app completa (páginas, código, fuentes latinas, íconos; ~1 MB, lista generada por Vite). Como todas las direcciones son la misma página (D28), la red no se consulta para abrirla: la versión nueva llega por la actualización del Service Worker, que se revisa al abrir y cada hora. Las respuestas de la API **nunca** se guardan en el Service Worker. Cuando hay versión nueva aparece "Hay una versión nueva del portal" y el usuario decide cuándo recargar; si el servidor responde `CLIENT_TOO_OLD`, la pantalla de versión vieja cambia de inmediato. La prueba en el navegador "el portal abre sin red" falla si algún archivo que la app usa no está en la precarga.
 
 ### Seguridad del dato local
 
-Réplica parcial (solo lo autorizado), borrado al cerrar sesión salvo "mantener en este dispositivo", reautenticación tras N días sin validar y cifrado en reposo opcional con una clave WebCrypto no exportable. Alcance y límites en `SEGURIDAD.md`.
+Réplica parcial (solo lo autorizado), borrado al cerrar sesión salvo "mantener en este dispositivo", bloqueo tras 30 minutos sin uso, reautenticación tras 14 días sin validar (los dos valores en `Config`: `inactividadMinutos`, `diasSinConexion`) y, pendiente para F7, cifrado en reposo opcional con una clave WebCrypto no exportable. Alcance y límites en `SEGURIDAD.md`.
 
 ## 6. Permisos
 
@@ -342,8 +346,8 @@ Por fase se agregan: modo mock con MSW y datos 100 % ficticios ("Cliente Demo, S
 | Fase | Contenido                                                                                                                                                                                                                                                                                                                                                            | Hecho cuando                                                                                      | Estado                                  |
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | F0   | Plan, preguntas, andamiaje, `CLAUDE.md`, tokens desde `/brand`                                                                                                                                                                                                                                                                                                       | Apruebas el plan y la paleta                                                                      | **Aprobada** (2026-10-02)               |
-| F1   | `setup()`, capa de datos, verificación del token, lista blanca, permisos (incluido el alcance por unidad), bitácora, contrato, `sync.pull`/`sync.push`, respaldos y despliegue automático                                                                                                                                                                            | Aislamiento y visibilidad en verde, también sobre la sincronización                               | **Entregada, en revisión** (2026-10-02) |
-| F2   | Login e invitaciones, layout, navegación, i18n ES/EN, temas, selector de cliente y de unidad, modo mock, Dexie, cola, motor de sincronización, Service Worker, indicador de estado, **tour guiado con instrucciones para instalar según iOS, Android o computadora**, componente de ayuda "¿Cómo se lee?", Centro de control e Inicio del cliente (hub y por unidad) | Ambos lados navegables; sin red se crea y edita, y todo converge en dos dispositivos              | Pendiente                               |
+| F1   | `setup()`, capa de datos, verificación del token, lista blanca, permisos (incluido el alcance por unidad), bitácora, contrato, `sync.pull`/`sync.push`, respaldos y despliegue automático                                                                                                                                                                            | Aislamiento y visibilidad en verde, también sobre la sincronización                               | **Aprobada** (2026-10-03)               |
+| F2   | Login e invitaciones, layout, navegación, i18n ES/EN, temas, selector de cliente y de unidad, modo mock, Dexie, cola, motor de sincronización, Service Worker, indicador de estado, **tour guiado con instrucciones para instalar según iOS, Android o computadora**, componente de ayuda "¿Cómo se lee?", Centro de control e Inicio del cliente (hub y por unidad) | Ambos lados navegables; sin red se crea y edita, y todo converge en dos dispositivos              | **Entregada, en revisión** (2026-10-03) |
 | F3   | Tareas, Asuntos, Comentarios, Documentos                                                                                                                                                                                                                                                                                                                             | CRUD completo con roles y visibilidad                                                             | Pendiente                               |
 | F4   | Trámites, Compliance (con su heatmap y su botón "¿Cómo se lee?"), Contratos, Solicitudes                                                                                                                                                                                                                                                                             | Matriz de compliance y pipeline de trámites                                                       | Pendiente                               |
 | F5   | Calendarios (bidireccional, ACL, ICS) y correos                                                                                                                                                                                                                                                                                                                      | Un vencimiento del portal aparece en Calendar y en el ICS; las citas movidas en Calendar regresan | Pendiente                               |
@@ -397,7 +401,7 @@ Ambos valores se pueden cambiar después en Configuración.
 
 1. Con la cuenta dedicada (D12, creada el 3 de octubre): crear la key de Gemini y, si Firebase se creó con otra cuenta, pasarlo a ella (`SETUP.md`, paso 1). Apps Script ya es de la cuenta dedicada y las keys de Firebase están restringidas (paso 3, 3 de octubre).
 2. ~~La URL del aviso de privacidad~~: publicado el 3 de octubre en `/privacidad/`.
-3. ~~El registro DNS~~: `portal.empirica.mx` ya apunta a GitHub Pages (3 de octubre); falta activar **Enforce HTTPS** (`SETUP.md`, paso 7).
+3. ~~El registro DNS~~: `portal.empirica.mx` ya apunta a GitHub Pages y **Enforce HTTPS** está activo (3 de octubre).
 
 ## 14. Fase 1: qué quedó y cómo probarla
 
@@ -418,3 +422,61 @@ Ambos valores se pueden cambiar después en Configuración.
 **Cómo probarla con la cuenta propietaria** (cuando esté lista): `SETUP.md` pasos 1 a 9. Después de `setup()` aparece el libro `EMPIRICA_PORTAL_DB` con sus 24 pestañas y los dos socios como `SOCIO_ADMIN`; `GET` a la dirección del Web App responde `{"ok":true,…}`. El portal que la usa llega en la Fase 2.
 
 **Quedó para fases siguientes** (no bloquea F1): altas por invitación y administración de usuarios y membresías (F2; deberán subir la `membershipEpoch` del cliente al cambiar rol o alcance), resolver conflictos (F3), qué mostrar de los registros que cuelgan de uno borrado (F3), archivo de la `Bitacora` cuando crezca (F7) y caché del contexto del usuario para un `sync.pull` aún más barato (F7).
+
+## 15. Fase 2: qué quedó y cómo probarla
+
+**Qué hace el portal ahora**
+
+| Quién                        | Qué ve y qué puede hacer                                                                                                                                                                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cualquiera                   | Entrar con correo y contraseña o con Google; confirmar su correo; aceptar una invitación desde su enlace; español o inglés; tema claro, oscuro o el del dispositivo; recorrido guiado e instrucciones para instalar según iPhone, Android o computadora; aviso de privacidad       |
+| Despacho                     | **Centro de control**: vencidos, por vencer, por revisar, solicitudes nuevas y en espera del cliente (cada cuadro abre su lista, con su botón "¿Cómo se lee?"), tabla de clientes con su semáforo, próximos vencimientos e invitaciones por aprobar                                |
+| Despacho                     | **Clientes**: lista, alta (socio administrador), ficha con unidades y sucursales (agregar y mover), equipo del despacho asignado e invitaciones del cliente                                                                                                                        |
+| Despacho                     | **Usuarios**: invitar (enlace para compartir), aprobar, rechazar, nuevo enlace, cancelar; equipo del despacho (rol, activar, desactivar, restablecer cuenta) y usuarios de clientes (rol, alcance por unidad, quitar acceso). Los cambios de acceso se hacen en línea              |
+| Despacho                     | **Solicitudes** de todos sus clientes, con cambio de estado (también sin conexión)                                                                                                                                                                                                 |
+| Cliente (hub o unidad)       | **Inicio**: pendientes de su lado, vencidos, por vencer y solicitudes en curso; desde el hub, una fila por unidad con su semáforo; próximos vencimientos y su Fractional Legal Team                                                                                                |
+| Cliente                      | **Pendientes de su lado**: empezar, marcar como listo (pasa a revisión del despacho, D18), marcar bloqueado y palomear la lista de verificación, también sin conexión. Solo lectura no cambia nada                                                                                 |
+| Cliente                      | **Solicitudes** nuevas (sin conexión también) y su estado; **Equipo**; el administrador del cliente invita a su gente (queda por aprobar) dentro de sus unidades                                                                                                                   |
+| Todos, en cualquier pantalla | Indicador de sincronización (al día, sincronizando, sin conexión con N cambios por enviar) y la lista de cambios que el servidor no aplicó, con el motivo en palabras; bloqueo a los 30 minutos sin uso; cerrar sesión borra la copia del dispositivo salvo que se pida mantenerla |
+
+**Código**
+
+| Dónde                  | Qué                                                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/session` | Estados de la sesión (entrar, confirmar correo, sin acceso, 14 días sin red, versión vieja, bloqueo), una base local por cuenta                            |
+| `apps/web/src/sync`    | Cola de cambios y motor de sincronización, probados contra el backend real (`integration/`)                                                                |
+| `apps/web/src/portal`  | Marco del portal: menú, selector de cliente y unidad, indicador de sincronización, menú de usuario, recorrido e instalación                                |
+| `apps/web/src/pages`   | Centro de control, Inicio del cliente, Clientes, Usuarios e invitaciones, Solicitudes, Pendientes, Equipo, Ayuda                                           |
+| `apps/web/sw`          | Service Worker: la app queda en el dispositivo y abre sin red                                                                                              |
+| `apps/web/mock`        | Modo de demostración: el backend real con datos ficticios dentro de Vite (D27)                                                                             |
+| `apps/web/e2e`         | Pruebas en el navegador (Playwright): dos dispositivos convergen tras trabajar sin red, nada interno llega a un cliente, accesibilidad WCAG 2.2 AA con axe |
+| `apps/api/src/actions` | Invitaciones, administración de usuarios y membresías, perfil; un cliente creado sin conexión y sus unidades ya entran en el mismo envío                   |
+| `scripts/brand`        | `npm run brand:icons`: íconos de la app dibujados desde los tokens y el símbolo vectorial                                                                  |
+
+**Cómo probarla sin cuentas y sin instalar nada** (GitHub Codespaces, como en el paso 8 de `SETUP.md`; tarda unos 3 minutos en arrancar):
+
+1. En la página del repositorio en GitHub, cambia la rama (el botón que dice `main`) a `claude/zen-franklin-44f0kw`. Luego **Code → Codespaces → Create codespace on claude/zen-franklin-44f0kw**.
+2. En la terminal de abajo escribe `npm install` y Enter (un minuto); después `npm run dev:mock` y Enter.
+3. Aparece el aviso "Your application running on port 5173 is available": pulsa **Open in Browser**. Se abre el portal en "Modo de demostración", con los usuarios ficticios (socia, abogados, administradores y colaboradores de "Cliente Demo"). Entra como **Socia Demo**: verás el recorrido y el Centro de control.
+4. Sigue con los puntos 2 a 5 de abajo. Al terminar, borra el Codespace (**Code → Codespaces → ⋯ → Delete**) para no gastar las horas gratuitas.
+
+En tu computadora, con Node 22, es lo mismo: `npm install`, `npm run dev:mock` y abre <http://localhost:5173>. Después:
+
+1. Entra como **Socia Demo**: verás el recorrido y el Centro de control.
+2. Abre una **ventana de incógnito** en la misma dirección y entra como **Encargada Norte**: es otro dispositivo, de una usuaria de cliente limitada a la Unidad Norte. (En Codespaces, la ventana de incógnito pide entrar a GitHub primero: hazlo con tu cuenta.)
+3. En la ventana de la encargada, abre las herramientas del navegador (F12) → **Red** → **Sin conexión**. Ve a **Pendientes** y pulsa "Empezar" en "Entregar acta constitutiva"; en **Solicitudes**, crea una nueva. El indicador dice "Sin conexión · 2".
+4. Quita "Sin conexión": en segundos el indicador vuelve a "Al día". En la ventana de la socia, pulsa el indicador → **Sincronizar ahora**: la solicitud aparece; cámbiale el estado y sincroniza en la otra ventana para verlo llegar.
+5. Como socia, en **Usuarios → Invitar**, invita a `nueva@cliente-a.example` solo a la Unidad Norte, copia el enlace y ábrelo en otra ventana de incógnito; en "O entra con otro correo" escribe ese correo: la invitación se acepta y la persona ve solo su unidad.
+6. Pruebas automáticas: `npm run check` (formato, lint, tipos y 629 pruebas) y `npm run test:e2e` (14 pruebas en Chromium, unos 45 segundos; en el CI corren solas).
+
+Los datos de demostración viven en memoria: al reiniciar `npm run dev:mock` vuelven a su estado inicial (y el navegador borra su copia).
+
+**Cómo probarla con las cuentas reales**, después de que apruebes y se publique (la portada provisional de `portal.empirica.mx` se sustituye por la pantalla de entrada): `SETUP.md`, paso 10. Entra con el correo de uno de los socios (`ADMIN_EMAILS`); el portal arranca vacío: crea el primer cliente en **Clientes** e invita a las personas en **Usuarios**.
+
+**Quedó para fases siguientes** (no bloquea F2):
+
+- Envío de invitaciones por correo y resúmenes diarios (F5, D26).
+- Tareas, asuntos, comentarios y documentos con su CRUD completo, y la pantalla para resolver conflictos de campos sensibles (F3). En F2 el despacho ve las tareas en el Centro de control, y el cliente las mueve en "Pendientes de su lado".
+- Entrar con Google en la app instalada en iPhone o iPad: la ventana de Google puede no responder ahí (D29). Solución para F7: servir el asistente de inicio de sesión de Firebase desde `portal.empirica.mx` (requiere que agregues una dirección autorizada en Google Cloud). Mientras tanto, en esa app se entra con correo y contraseña.
+- Que la pantalla de consentimiento de Google muestre "Empírica Portal" en lugar de la dirección técnica requiere la verificación de marca de Google (gratuita, opcional; `SETUP.md`, paso 10).
+- Cifrado en reposo de la copia local y carga por partes del código para que el portal pese menos al abrir la primera vez (F7).

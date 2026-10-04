@@ -1,36 +1,82 @@
-import { PublicHeader } from './components/PublicHeader.tsx';
+import { use } from 'react';
+import { Router, useLocation } from 'wouter';
+import { useHashLocation } from 'wouter/use-hash-location';
+import { AuthProvider } from './auth/AuthProvider.tsx';
+import type { AuthClient } from './auth/types.ts';
+import { Portal } from './portal/Portal.tsx';
+import { UpdatePrompt } from './pwa/UpdatePrompt.tsx';
+import { AcceptInvitation } from './screens/AcceptInvitation.tsx';
+import {
+  FailedScreen,
+  LockScreen,
+  LoginScreen,
+  NeedsNetworkScreen,
+  NoAccessScreen,
+  OutdatedScreen,
+  ReauthScreen,
+  StartingScreen,
+  VerifyEmailScreen,
+} from './screens/StateScreens.tsx';
+import { configNumber, useSession } from './session/context.ts';
+import { SessionProvider } from './session/SessionProvider.tsx';
+
+/** The link of an invitation: #/invitacion/<64 hex>. */
+const INVITATION = /^\/invitacion\/([0-9a-f]{64})\/?$/;
+
+/** What to show for the state of the session; the portal only when it is ready. */
+function Root() {
+  const { state } = useSession();
+  const [location] = useLocation();
+  const invitation = INVITATION.exec(location)?.[1];
+  if (invitation) return <AcceptInvitation token={invitation} />;
+  switch (state.status) {
+    case 'starting':
+      return <StartingScreen />;
+    case 'signedOut':
+      return <LoginScreen />;
+    case 'unverified':
+      return <VerifyEmailScreen user={state.authUser} />;
+    case 'noAccess':
+      return <NoAccessScreen user={state.authUser} reason={state.reason} />;
+    case 'reauth':
+      return <ReauthScreen days={state.days} />;
+    case 'needsNetwork':
+      return <NeedsNetworkScreen />;
+    case 'outdated':
+      return <OutdatedScreen />;
+    case 'failed':
+      return <FailedScreen message={state.message} />;
+    case 'ready':
+      return state.locked ? (
+        <LockScreen
+          user={state.authUser}
+          minutes={configNumber(state.me, 'inactividadMinutos', 30)}
+        />
+      ) : (
+        <Portal />
+      );
+  }
+}
 
 /**
- * Public placeholder until the portal itself arrives (phase 2). It speaks to
- * a client who lands here, never about the project's internal progress.
+ * The portal: who signs in (Firebase, or the demo accounts of the mock
+ * mode), the session on this device, and the screens. Addresses live after
+ * the `#` so GitHub Pages serves every one of them from the same page.
  */
-export function App() {
+export function App({ authClient }: { authClient: AuthClient }) {
   return (
-    <div className="min-h-dvh bg-background">
-      <PublicHeader />
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <p className="label-caps text-muted-foreground">Portal de clientes</p>
-        <h1 className="mt-2 text-4xl font-semibold">Muy pronto</h1>
-        <div className="mt-6 rounded-card border border-border bg-card p-6 text-card-foreground shadow-card">
-          <p>
-            Aquí podrás dar seguimiento, en un solo lugar, a tus asuntos, tareas, trámites y
-            obligaciones con tu Fractional Legal Team de Empírica, desde la computadora o el
-            celular.
-          </p>
-          <p className="mt-4 rounded-control border-l-4 border-accent-strong bg-accent px-4 py-3 text-accent-foreground">
-            El acceso es por invitación: cuando el portal esté listo, tu abogado de Empírica te
-            enviará la tuya.
-          </p>
-        </div>
-      </main>
-      <footer className="mx-auto max-w-3xl px-4 pb-10 text-sm">
-        <a
-          href={`${import.meta.env.BASE_URL}privacidad/`}
-          className="text-link underline underline-offset-2"
-        >
-          Aviso de privacidad
-        </a>
-      </footer>
-    </div>
+    <AuthProvider client={authClient}>
+      <SessionProvider>
+        <Router hook={useHashLocation}>
+          <Root />
+        </Router>
+        <UpdatePrompt />
+      </SessionProvider>
+    </AuthProvider>
   );
+}
+
+/** The portal once its sign-in provider has loaded (Firebase is a separate download). */
+export function AppLoader({ authClient }: { authClient: Promise<AuthClient> }) {
+  return <App authClient={use(authClient)} />;
 }

@@ -49,12 +49,14 @@ export function push(
     const db = new Database(env);
     const user = db.table('Usuarios').get(session.user.id);
     if (user?.estado !== 'ACTIVO' || user.deleted) throw new ApiError('NOT_WHITELISTED');
-    const ctx = buildUserContext({
-      user,
-      membresias: db.rows('Membresias'),
-      entidades: db.rows('Entidades'),
-      clientes: db.rows('Clientes'),
-    });
+    const contextOf = (): UserContext =>
+      buildUserContext({
+        user,
+        membresias: db.rows('Membresias'),
+        entidades: db.rows('Entidades'),
+        clientes: db.rows('Clientes'),
+      });
+    const ctx = contextOf();
     const nowMs = env.now();
     const serverNow = toProjectIso(nowMs);
     const seq = new Sequence(env);
@@ -63,7 +65,7 @@ export function push(
       serverNow,
       ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
-    const run = new PushRun(env, db, ctx, writer, nowMs, serverNow);
+    const run = new PushRun(env, db, ctx, writer, nowMs, serverNow, contextOf);
     const results = payload.ops.map((raw) => {
       const parsed = OpSchema.safeParse(raw);
       if (parsed.success) return run.apply(parsed.data);
@@ -96,7 +98,8 @@ interface StoredResult {
 class PushRun {
   readonly #env: Env;
   readonly #db: Database;
-  readonly #ctx: UserContext;
+  #ctx: UserContext;
+  readonly #contextOf: () => UserContext;
   readonly #writer: Writer;
   readonly #nowMs: number;
   readonly #serverNow: string;
@@ -109,10 +112,12 @@ class PushRun {
     writer: Writer,
     nowMs: number,
     serverNow: string,
+    contextOf: () => UserContext,
   ) {
     this.#env = env;
     this.#db = db;
     this.#ctx = ctx;
+    this.#contextOf = contextOf;
     this.#writer = writer;
     this.#nowMs = nowMs;
     this.#serverNow = serverNow;
@@ -134,7 +139,9 @@ class PushRun {
       if (prior.usuarioId !== this.#ctx.userId) {
         return { opId: op.opId, status: 'rejected', code: 'VALIDATION', reason: 'OP_ID_TAKEN' };
       }
-      if (prior.result.status === 'rejected') return { ...prior.result, opId: op.opId };
+      if (prior.result.status === 'rejected') {
+        return { ...this.#current(op.table, op.id), ...prior.result, opId: op.opId };
+      }
       return { ...this.#current(op.table, op.id), opId: op.opId, status: 'duplicate' };
     }
     const result = this.#evaluate(op);
@@ -157,7 +164,15 @@ class PushRun {
     reason: NonNullable<OpResult['reason']>,
     extra: Partial<OpResult> = {},
   ): OpResult {
-    return { opId: op.opId, status: 'rejected', code, reason, ...extra };
+    // With the record as it stands, so the device can undo what it showed.
+    return {
+      ...this.#current(op.table, op.id),
+      opId: op.opId,
+      status: 'rejected',
+      code,
+      reason,
+      ...extra,
+    };
   }
 
   #evaluate(op: Op): OpResult {
@@ -258,6 +273,11 @@ class PushRun {
     after: Row,
     clienteId: string | null,
   ): void {
+    // A client created (or deleted, or restored) in this batch: the next
+    // operations, such as its first units, already see it as it is now.
+    if (table === 'Clientes' && (!before || Boolean(before.deleted) !== Boolean(after.deleted))) {
+      this.#ctx = this.#contextOf();
+    }
     // Moving a unit in the tree changes who sees what: every device of that
     // client downloads it again.
     if (table === 'Entidades' && before && before.parentId !== after.parentId && clienteId) {

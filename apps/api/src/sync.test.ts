@@ -465,6 +465,25 @@ describe('sync.push', () => {
     ]);
   });
 
+  it('a new client works in the same batch: the partner adds its units offline', () => {
+    const w = createWorld();
+    const client = uid(0x60020);
+    const unit = uid(0x60021);
+    const results = new Device(w, ID.socio).push([
+      op('Clientes', 'create', client, {
+        razonSocial: 'Cliente Nuevo Demo, S.A. de C.V.',
+        servicio: 'FLT_IGUALA',
+        estado: 'ACTIVO',
+      }),
+      op('Entidades', 'create', unit, { clienteId: client, nombre: 'Planta', tipo: 'UNIDAD' }),
+    ]);
+    expect(results).toMatchObject([
+      { status: 'applied', row: { id: client } },
+      { status: 'applied', row: { id: unit, clienteId: client } },
+    ]);
+    expect(results[0]?.removed).toBeUndefined();
+  });
+
   it('another client’s records answer NOT_FOUND and are left untouched', () => {
     const w = createWorld();
     const b = new Device(w, ID.cB);

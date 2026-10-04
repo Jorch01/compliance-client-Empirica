@@ -1,21 +1,38 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App.tsx';
+import { fakeAuth } from './test/fakeAuth.ts';
 
-describe('App (public placeholder until phase 2)', () => {
-  it('shows the brand and a message for clients, nothing about internal progress', () => {
-    render(<App />);
-    expect(screen.getByRole('img', { name: 'Empírica Legal Lab' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Muy pronto' })).toBeInTheDocument();
-    expect(screen.getByText(/acceso es por invitación/)).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/fase|plan|paleta/i);
+describe('App', () => {
+  it('asks a signed-out visitor to sign in, by invitation only', async () => {
+    render(<App authClient={fakeAuth(null)} />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Inicia sesión' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continuar con Google/ })).toBeInTheDocument();
+    expect(screen.getByText('El acceso es por invitación del despacho.')).toBeInTheDocument();
   });
 
-  it('links the privacy notice', () => {
-    render(<App />);
-    expect(screen.getByRole('link', { name: 'Aviso de privacidad' })).toHaveAttribute(
-      'href',
-      '/privacidad/',
-    );
+  it('links the privacy notice from the sign-in screen', async () => {
+    render(<App authClient={fakeAuth(null)} />);
+    await screen.findByRole('heading', { level: 1, name: 'Inicia sesión' });
+    const links = screen.getAllByRole('link', { name: 'Aviso de privacidad' });
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).toHaveAttribute('href', '/privacidad/');
+  });
+
+  it('asks to confirm the email before anything else', async () => {
+    const user = {
+      uid: 'u1',
+      email: 'persona@cliente.example',
+      emailVerified: false,
+      name: 'Persona',
+      providers: ['password'],
+    };
+    render(<App authClient={fakeAuth(user)} />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Confirma tu correo' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/persona@cliente\.example/)).toBeInTheDocument();
   });
 });
