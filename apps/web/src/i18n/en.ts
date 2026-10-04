@@ -152,6 +152,8 @@ export const en: Messages = {
         'This link is not valid or was already used. Ask the person who invited you for a new one.',
       TOKEN:
         'Your Google or Firebase session could not be confirmed. Try again; if it happens again, send the technical detail below to the person who invited you.',
+      NETWORK:
+        "We could not reach the portal's server. Check your connection and try again; if it happens again, send the technical detail below to the person who invited you.",
     },
     retry: 'Try again',
     details: 'Technical detail',

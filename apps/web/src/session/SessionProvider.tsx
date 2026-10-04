@@ -6,6 +6,7 @@ import { useAuth } from '../auth/context.ts';
 import type { AuthUser } from '../auth/types.ts';
 import { MOCK_MODE } from '../config/api.ts';
 import { dbName, openDb, type PortalDb } from '../data/db.ts';
+import { recordError } from '../feedback/diagnostics.ts';
 import { META, SyncEngine, type Caller } from '../sync/engine.ts';
 import { makeCaller } from './caller.ts';
 import {
@@ -142,7 +143,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (aborted()) return;
       db = openDb(uid);
       const call = makeCaller(client);
-      const begun = await begin(db, call, user);
+      let begun: Begin;
+      try {
+        begun = await begin(db, call, user);
+      } catch (error) {
+        // The cleanup below closed the database (another account or attempt): nothing to tell.
+        if (aborted()) return;
+        recordError(error, 'session');
+        begun = {
+          failure: {
+            status: 'failed',
+            message: error instanceof Error ? error.message : String(error),
+          },
+        };
+      }
       if (aborted()) return;
       if ('failure' in begun) {
         setOutcome({ key, failure: begun.failure });

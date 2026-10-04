@@ -60,6 +60,17 @@ export function deviceId(): string {
   }
 }
 
+/** The readable start of an answer that is not the envelope, without its markup. */
+function excerpt(body: string): string {
+  return body
+    .slice(0, 20_000)
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
+}
+
 /** Actions that carry a whole file: they may take minutes on a slow network. */
 const FILE_ACTIONS: ReadonlySet<Action> = new Set(['files.upload', 'files.download']);
 
@@ -105,12 +116,21 @@ export async function callApi<T>(
   } catch (error) {
     throw new NetworkError(error instanceof Error ? error.message : undefined);
   }
-  let envelope: ApiResponse<T>;
+  let answer = '';
+  let envelope: ApiResponse<T> | undefined;
   try {
-    envelope = (await response.json()) as ApiResponse<T>;
+    answer = await response.text();
+    envelope = JSON.parse(answer) as ApiResponse<T>;
   } catch {
-    // Google's own error pages (quota, outage) are HTML, not our envelope.
-    throw new NetworkError(`Respuesta inesperada del servidor (${response.status})`);
+    /* not JSON: see below */
+  }
+  if (typeof envelope?.ok !== 'boolean') {
+    // Google's own pages (an outage, a quota, a permission the owner has to
+    // grant) are HTML, not our envelope: their first words tell which.
+    const start = excerpt(answer);
+    throw new NetworkError(
+      `Respuesta inesperada del servidor (${String(response.status)})${start ? `: ${start}` : ''}`,
+    );
   }
   if (!envelope.ok) {
     const { code, message, details } = envelope.error;
