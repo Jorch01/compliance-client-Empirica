@@ -36,6 +36,9 @@ export const ACTIONS = [
   'admin.users.update',
   'admin.memberships.save',
   'profile.update',
+  'conflicts.resolve',
+  'files.upload',
+  'files.download',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -201,6 +204,49 @@ export const ProfileUpdateSchema = z.object({
   nombre: z.optional(name),
   idioma: z.optional(z.enum(['es', 'en'])),
 });
+
+/**
+ * A lawyer's decision on a conflict (PLAN.md § 5, "Conflictos"): keep the
+ * value that stayed, or apply the one that was proposed.
+ */
+export const CONFLICT_DECISIONS = ['CONSERVAR', 'APLICAR'] as const;
+export type ConflictDecision = (typeof CONFLICT_DECISIONS)[number];
+
+export const ConflictResolveSchema = z.object({
+  conflictoId: id,
+  decision: z.enum(CONFLICT_DECISIONS),
+});
+
+export interface ConflictResolveData {
+  /** The conflict, now resolved. */
+  conflicto: Row;
+  /** The record it was about, as the user may see it now. */
+  record: Row | null;
+}
+
+/**
+ * The file of a document whose record already exists (created with
+ * `sync.push`, perhaps offline). `uploadId` makes a retry harmless; the
+ * type comes from the document's name, the size limit from
+ * `Config.mbMaxArchivo`.
+ */
+export const FileUploadSchema = z.object({
+  documentoId: id,
+  uploadId: id,
+  base64: z.string().check(z.regex(/^[A-Za-z0-9+/]*={0,2}$/)),
+});
+
+export interface FileUploadData {
+  row: Row;
+}
+
+export const FileDownloadSchema = z.object({ documentoId: id });
+
+export interface FileDownloadData {
+  nombre: string;
+  mimeType: string;
+  base64: string;
+}
 
 export type EstadoInvitacion = (typeof ESTADOS_INVITACION)[number];
 

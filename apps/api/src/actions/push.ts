@@ -10,6 +10,8 @@ import {
   TABLES,
   applyOp,
   authorizeWrite,
+  progressOf,
+  sameValue,
   buildUserContext,
   canRead,
   clampStamp,
@@ -31,9 +33,9 @@ import { Database, Sequence } from '../db/database.ts';
 import { Writer, diff } from '../db/writer.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
-
-/** How long a push waits for another one to finish. */
-export const LOCK_WAIT_MS = 20_000;
+import { conflictLink } from './conflicts.ts';
+import { placeDocumentFile } from './files.ts';
+import { LOCK_WAIT_MS, changed, type LockedRun } from './locked.ts';
 
 export function push(
   env: Env,
@@ -266,6 +268,34 @@ class PushRun {
     };
   }
 
+  /** The frame the online actions' helpers expect, over this run's writer. */
+  get #run(): LockedRun {
+    return {
+      env: this.#env,
+      db: this.#db,
+      writer: this.#writer,
+      serverNow: this.#serverNow,
+      nowMs: this.#nowMs,
+    };
+  }
+
+  /** A matter's progress, counted again after one of its tasks changed. */
+  #refreshProgress(asuntoId: string, clienteId: string | null): void {
+    const asunto = this.#db.table('Asuntos').get(asuntoId);
+    if (!asunto) return;
+    const avance = progressOf(this.#db.rows('Tareas').filter((t) => t.asuntoId === asuntoId));
+    if (sameValue(asunto.avance, avance)) return;
+    this.#writer.save('Asuntos', asunto, changed(this.#run, asunto, { avance }));
+    this.#writer.audit(
+      'SISTEMA',
+      'Asuntos',
+      asuntoId,
+      clienteId,
+      { avance: asunto.avance ?? null },
+      { avance },
+    );
+  }
+
   /** Side effects of some changes. */
   #afterSave(
     table: TableName,
@@ -273,6 +303,25 @@ class PushRun {
     after: Row,
     clienteId: string | null,
   ): void {
+    // A task created, closed, reopened, moved, deleted or restored: its matter's progress.
+    if (
+      table === 'Tareas' &&
+      (!before ||
+        before.estado !== after.estado ||
+        before.asuntoId !== after.asuntoId ||
+        Boolean(before.deleted) !== Boolean(after.deleted))
+    ) {
+      const asuntos = new Set([text(before ?? after, 'asuntoId'), text(after, 'asuntoId')]);
+      for (const id of asuntos) if (id) this.#refreshProgress(id, clienteId);
+    }
+    // A document now seen by others (or of another area): its file changes folder.
+    if (
+      table === 'Documentos' &&
+      before &&
+      (before.visibilidad !== after.visibilidad || before.categoria !== after.categoria)
+    ) {
+      placeDocumentFile(this.#run, after);
+    }
     // A client created (or deleted, or restored) in this batch: the next
     // operations, such as its first units, already see it as it is now.
     if (table === 'Clientes' && (!before || Boolean(before.deleted) !== Boolean(after.deleted))) {
@@ -355,7 +404,7 @@ class PushRun {
         clienteId,
         tipo: 'CONFLICTO',
         mensaje: `Dos cambios distintos a "${c.field}" en ${table}: se conservó el valor vigente y falta tu decisión.`,
-        link: `#/conflictos/${conflict.id}`,
+        link: conflictLink(conflict.id),
         leida: false,
       });
     }

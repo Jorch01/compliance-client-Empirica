@@ -11,6 +11,7 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import type {
+  GBlob,
   GFile,
   GFolder,
   GHttpResponse,
@@ -262,21 +263,66 @@ export class FakeSpreadsheet implements GSpreadsheet {
   }
 }
 
+const unsigned = (data: readonly number[]): Buffer => Buffer.from(data.map((b) => (b + 256) % 256));
+
+class FakeBlob implements GBlob {
+  readonly bytes: Buffer;
+  readonly contentType: string | null;
+  readonly name: string | null;
+
+  constructor(bytes: Buffer, contentType: string | null = null, name: string | null = null) {
+    this.bytes = bytes;
+    this.contentType = contentType;
+    this.name = name;
+  }
+
+  getBytes(): number[] {
+    return signed(this.bytes);
+  }
+  getContentType(): string | null {
+    return this.contentType;
+  }
+  getName(): string | null {
+    return this.name;
+  }
+  getDataAsString(): string {
+    return this.bytes.toString('utf8');
+  }
+}
+
 class FakeFile implements GFile {
   readonly id: string;
   name: string;
   readonly created: Date;
   parent: FakeFolder | null;
   trashed = false;
+  readonly content: Buffer;
+  readonly mimeType: string | null;
   readonly #google: FakeGoogle;
 
-  constructor(google: FakeGoogle, id: string, name: string, parent: FakeFolder | null) {
+  constructor(
+    google: FakeGoogle,
+    id: string,
+    name: string,
+    parent: FakeFolder | null,
+    content: Buffer = Buffer.alloc(0),
+    mimeType: string | null = null,
+  ) {
     this.#google = google;
     this.id = id;
     this.name = name;
     this.parent = parent;
+    this.content = content;
+    this.mimeType = mimeType;
     this.created = new Date(google.now());
     google.files.set(id, this);
+  }
+
+  getBlob(): FakeBlob {
+    return new FakeBlob(this.content, this.mimeType, this.name);
+  }
+  getSize(): number {
+    return this.content.length;
   }
 
   getId(): string {
@@ -308,6 +354,7 @@ class FakeFolder implements GFolder {
   readonly id: string;
   readonly name: string;
   readonly parent: FakeFolder | null;
+  trashed = false;
   readonly #google: FakeGoogle;
 
   constructor(google: FakeGoogle, name: string, parent: FakeFolder | null) {
@@ -331,6 +378,28 @@ class FakeFolder implements GFolder {
     const files = [...this.#google.files.values()].filter((f) => f.parent === this);
     let i = 0;
     return { hasNext: () => i < files.length, next: () => files[i++] as GFile };
+  }
+  getFoldersByName(name: string): GIterator<GFolder> {
+    const folders = [...this.#google.folders.values()].filter(
+      (f) => f.parent === this && f.name === name && !f.trashed,
+    );
+    let i = 0;
+    return { hasNext: () => i < folders.length, next: () => folders[i++] as GFolder };
+  }
+  createFile(blob: GBlob): FakeFile {
+    const b = blob as FakeBlob;
+    if (b.bytes.length > 50 * 1024 * 1024) throw new Error('File too large (50 MB).');
+    return new FakeFile(
+      this.#google,
+      `file-${randomUUID()}`,
+      b.name ?? 'Untitled',
+      this,
+      b.bytes,
+      b.contentType,
+    );
+  }
+  isTrashed(): boolean {
+    return this.trashed;
   }
 }
 
@@ -549,9 +618,16 @@ export class FakeGoogle {
         DigestAlgorithm: { SHA_256: 'SHA_256' },
         Charset: { UTF_8: 'UTF_8' },
         base64DecodeWebSafe: (encoded) => signed(Buffer.from(encoded, 'base64url')),
-        newBlob: (data) => ({
-          getDataAsString: () => Buffer.from(data.map((b) => (b + 256) % 256)).toString('utf8'),
-        }),
+        base64Decode: (encoded) => {
+          // Apps Script refuses what is not base64, as the real one does.
+          if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) {
+            throw new Error('Could not decode string.');
+          }
+          return signed(Buffer.from(encoded, 'base64'));
+        },
+        base64Encode: (data) => unsigned(data).toString('base64'),
+        newBlob: (data, contentType, name) =>
+          new FakeBlob(unsigned(data), contentType ?? null, name ?? null),
         getUuid: () => randomUUID(),
       },
       DriveApp: {

@@ -414,6 +414,8 @@ export const TABLES: Record<TableName, TableDef> = {
         visibility: true,
       },
       sensitive: VISIBLE_SCOPE_FIELDS,
+      // Counts every task, internal ones too: clients count what they see.
+      hiddenFromClients: ['avance'],
       serverManaged: ['avance'],
       immutable: ['clienteId'],
     },
@@ -626,7 +628,8 @@ export const TABLES: Record<TableName, TableDef> = {
       col('versionDoc', { type: 'number' }),
       VISIBILIDAD,
       ref('subidoPor', 'Usuarios'),
-      col('categoria', { type: 'string' }),
+      // The practice area: the Drive folder of the client it goes in.
+      col('categoria', e(AREAS)),
       col('tamanoBytes', { type: 'number' }),
     ],
     {
