@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'wouter';
 import { ESTADOS_SOLICITUD, text, type Row } from '@empirica/shared';
 import { usePendingIds } from '../../data/hooks.ts';
 import { useNames } from '../../data/names.ts';
@@ -9,22 +10,8 @@ import { useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { EmptyState } from '../../ui/Card.tsx';
 import { Icon } from '../../ui/Icon.tsx';
-import { StatusBadge, type Tone } from '../../ui/StatusBadge.tsx';
-
-type EstadoSolicitud = (typeof ESTADOS_SOLICITUD)[number];
-
-const REQUEST_TONE: Record<EstadoSolicitud, Tone> = {
-  RECIBIDA: 'info',
-  EN_ANALISIS: 'info',
-  DENTRO_IGUALA: 'success',
-  FUERA_IGUALA_COTIZADA: 'warning',
-  ACEPTADA: 'success',
-  RECHAZADA: 'neutral',
-  CONVERTIDA: 'success',
-};
-
-const isEstado = (v: unknown): v is EstadoSolicitud =>
-  typeof v === 'string' && (ESTADOS_SOLICITUD as readonly string[]).includes(v);
+import { StatusBadge } from '../../ui/StatusBadge.tsx';
+import { REQUEST_TONE, requestState } from '../requests/requests.ts';
 
 /**
  * Requests to the firm: what was asked, by whom, where it stands. The firm
@@ -48,7 +35,7 @@ export function RequestList({ requests }: { requests: readonly Row[] }) {
   return (
     <ul className="divide-y divide-border">
       {requests.map((r) => {
-        const estado = isEstado(r.estado) ? r.estado : 'RECIBIDA';
+        const estado = requestState(r);
         const clienteId = text(r, 'clienteId');
         const editable = me.isFirm && can(me, 'Solicitudes', 'update', clienteId);
         const meta = [
@@ -64,7 +51,14 @@ export function RequestList({ requests }: { requests: readonly Row[] }) {
           <li key={r.id} className="py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1 basis-64">
-                <p className="font-medium">{text(r, 'titulo')}</p>
+                <p>
+                  <Link
+                    href={`/solicitudes/${r.id}`}
+                    className="font-medium underline-offset-2 hover:underline"
+                  >
+                    {text(r, 'titulo')}
+                  </Link>
+                </p>
                 {meta ? <p className="text-sm text-muted-foreground">{meta}</p> : null}
                 <p className="text-sm text-muted-foreground">
                   {[

@@ -17,6 +17,7 @@ import { SemaforoBadge } from './common/Semaforo.tsx';
 import { TaskList } from './common/TaskList.tsx';
 import { Tile } from './common/Tile.tsx';
 import { Upcoming } from './common/Upcoming.tsx';
+import { ComplianceSummary } from './compliance/ComplianceSummary.tsx';
 
 type TileKey = 'overdue' | 'dueSoon' | 'inReview' | 'newRequests' | 'waitingClient';
 
@@ -217,7 +218,10 @@ export function ControlCenter() {
             <ClientsTable tasks={tasks ?? []} requests={requests ?? []} />
           </Card>
         )}
-        <Upcoming />
+        <div className="min-w-0 space-y-6">
+          <Upcoming />
+          <ComplianceSummary />
+        </div>
       </div>
 
       <Dialog

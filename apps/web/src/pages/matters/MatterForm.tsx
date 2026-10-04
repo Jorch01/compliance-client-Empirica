@@ -46,10 +46,19 @@ const str = (row: Row | undefined, field: string): string => (row ? (text(row, f
  */
 export function MatterForm({
   matter,
+  preset,
   onClose,
   onSaved,
 }: {
   matter?: Row;
+  /** A new matter's first values (from a request, for one). */
+  preset?: {
+    clienteId: string;
+    entidadId: string;
+    titulo: string;
+    area: string;
+    dentroIguala: boolean;
+  };
   onClose: () => void;
   onSaved?: (id: string) => void;
 }) {
@@ -63,17 +72,18 @@ export function MatterForm({
   const [form, setForm] = useState<Form>(() => ({
     clienteId:
       str(matter, 'clienteId') ||
+      (preset?.clienteId ?? '') ||
       (scope.clientId && creatable.some((c) => c.id === scope.clientId) ? scope.clientId : '') ||
       (creatable.length === 1 ? (creatable[0]?.id ?? '') : ''),
-    entidadId: matter ? str(matter, 'entidadId') : (scope.unitId ?? ''),
-    titulo: str(matter, 'titulo'),
-    area: str(matter, 'area'),
+    entidadId: matter ? str(matter, 'entidadId') : (preset?.entidadId ?? scope.unitId ?? ''),
+    titulo: str(matter, 'titulo') || (preset?.titulo ?? ''),
+    area: str(matter, 'area') || (preset?.area ?? ''),
     estado: str(matter, 'estado') || 'ACTIVO',
     prioridad: str(matter, 'prioridad'),
     responsableId: matter ? str(matter, 'responsableId') : me.id,
     fechaInicio: str(matter, 'fechaInicio'),
     fechaObjetivo: str(matter, 'fechaObjetivo'),
-    dentroIguala: matter ? matter.dentroIguala === true : true,
+    dentroIguala: matter ? matter.dentroIguala === true : (preset?.dentroIguala ?? true),
     visibilidad: matter?.visibilidad === 'INTERNO' ? 'INTERNO' : 'COMPARTIDO',
   }));
   const [error, setError] = useState<string | null>(null);

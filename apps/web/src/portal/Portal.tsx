@@ -2,16 +2,26 @@ import { Route, Switch } from 'wouter';
 import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
 import { ClientHome } from '../pages/ClientHome.tsx';
 import { ClientsPage } from '../pages/Clients.tsx';
+import { CompliancePage } from '../pages/Compliance.tsx';
+import { CatalogPage } from '../pages/compliance/Catalog.tsx';
+import { NonWorkingDaysPage } from '../pages/compliance/NonWorkingDays.tsx';
 import { ConflictsPage } from '../pages/Conflicts.tsx';
+import { ContractDetailPage } from '../pages/ContractDetail.tsx';
+import { ContractsPage } from '../pages/Contracts.tsx';
 import { ControlCenter } from '../pages/ControlCenter.tsx';
 import { DocumentsPage } from '../pages/Documents.tsx';
 import { FeedbackPage } from '../pages/Feedback.tsx';
+import { FilingDetailPage } from '../pages/FilingDetail.tsx';
+import { FilingsPage } from '../pages/Filings.tsx';
+import { TemplatesPage } from '../pages/filings/Templates.tsx';
 import { HelpPage } from '../pages/Help.tsx';
 import { MatterDetailPage } from '../pages/MatterDetail.tsx';
 import { MattersPage } from '../pages/Matters.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
+import { ObligationDetailPage } from '../pages/ObligationDetail.tsx';
 import { PendingPage } from '../pages/Pending.tsx';
 import { PeoplePage } from '../pages/People.tsx';
+import { RequestDetailPage } from '../pages/RequestDetail.tsx';
 import { RequestsPage } from '../pages/Requests.tsx';
 import { TaskDetailPage } from '../pages/TaskDetail.tsx';
 import { TasksPage } from '../pages/Tasks.tsx';
@@ -43,6 +53,39 @@ function Routes() {
       <Route path="/tareas/:id">
         <TaskDetailPage />
       </Route>
+      <Route path="/tramites">
+        <FilingsPage />
+      </Route>
+      {me.isFirm ? (
+        <Route path="/tramites/plantillas">
+          <TemplatesPage />
+        </Route>
+      ) : null}
+      <Route path="/tramites/:id">
+        <FilingDetailPage />
+      </Route>
+      <Route path="/compliance">
+        <CompliancePage />
+      </Route>
+      {me.isFirm ? (
+        <Route path="/compliance/catalogo">
+          <CatalogPage />
+        </Route>
+      ) : null}
+      {me.isFirm ? (
+        <Route path="/compliance/inhabiles">
+          <NonWorkingDaysPage />
+        </Route>
+      ) : null}
+      <Route path="/compliance/:id">
+        <ObligationDetailPage />
+      </Route>
+      <Route path="/contratos">
+        <ContractsPage />
+      </Route>
+      <Route path="/contratos/:id">
+        <ContractDetailPage />
+      </Route>
       <Route path="/documentos">
         <DocumentsPage />
       </Route>
@@ -58,6 +101,9 @@ function Routes() {
       ) : null}
       <Route path="/solicitudes">
         <RequestsPage />
+      </Route>
+      <Route path="/solicitudes/:id">
+        <RequestDetailPage />
       </Route>
       <Route path="/ayuda">
         <HelpPage />

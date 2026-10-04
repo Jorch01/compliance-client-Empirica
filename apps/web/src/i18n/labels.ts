@@ -6,10 +6,12 @@
 import type { TFunction } from 'i18next';
 import {
   AREAS,
+  CATEGORIAS_OBLIGACION,
   ERROR_CODES,
   ESTADOS_SOLICITUD,
   ESTADOS_TAREA,
   PRIORIDADES,
+  RIESGOS,
   ROLES,
   SERVICIOS,
   TIPOS_ENTIDAD,
@@ -24,6 +26,12 @@ export const areaLabel = (t: TFunction, v: unknown): string =>
 
 export const priorityLabel = (t: TFunction, v: unknown): string =>
   oneOf(PRIORIDADES, v) ? t(`options.prioridades.${v}`) : '';
+
+export const categoryLabel = (t: TFunction, v: unknown): string =>
+  oneOf(CATEGORIAS_OBLIGACION, v) ? t(`options.categorias.${v}`) : '';
+
+export const riskLabel = (t: TFunction, v: unknown): string =>
+  oneOf(RIESGOS, v) ? t(`options.riesgos.${v}`) : '';
 
 export const roleLabel = (t: TFunction, v: unknown): string =>
   oneOf(ROLES, v) ? t(`roles.${v}`) : '';

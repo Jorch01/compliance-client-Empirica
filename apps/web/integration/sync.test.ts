@@ -88,6 +88,61 @@ describe('offline edits', () => {
     expect(await colab.outbox()).toEqual([]);
   });
 
+  it('an edit that names a record created after it keeps its place behind that record', async () => {
+    const w = createWorld();
+    const firm = new TestBrowser(w, ID.socio);
+    await firm.sync();
+    firm.online = false;
+    // A request classified, turned into a new matter, and marked as converted.
+    const matter = '00000000-0000-4000-9999-000000000002';
+    await firm.engine.mutate('Solicitudes', 'update', ID.solNorte, { estado: 'DENTRO_IGUALA' });
+    await firm.engine.mutate('Asuntos', 'create', matter, {
+      clienteId: ID.clienteA,
+      entidadId: ID.norte,
+      titulo: 'Revisar contrato de proveedor',
+      area: 'CONTRATOS',
+      estado: 'ACTIVO',
+      visibilidad: 'COMPARTIDO',
+    });
+    await firm.engine.mutate('Solicitudes', 'update', ID.solNorte, {
+      estado: 'CONVERTIDA',
+      asuntoIdGenerado: matter,
+    });
+    // A contract, its signed copy, and the copy named on the contract.
+    const contract = '00000000-0000-4000-9999-000000000003';
+    const doc = '00000000-0000-4000-9999-000000000004';
+    await firm.engine.mutate('Contratos', 'create', contract, {
+      clienteId: ID.clienteA,
+      contraparte: 'Distribuidora Ficticia',
+      visibilidad: 'COMPARTIDO',
+    });
+    await firm.engine.mutate('Documentos', 'create', doc, {
+      clienteId: ID.clienteA,
+      vinculo: { tipo: 'Contratos', id: contract },
+      nombre: 'contrato-firmado.pdf',
+      visibilidad: 'COMPARTIDO',
+    });
+    await firm.engine.mutate('Contratos', 'update', contract, { docId: doc });
+    expect((await firm.outbox()).map((o) => `${o.table}:${o.type}`)).toEqual([
+      'Solicitudes:update',
+      'Asuntos:create',
+      'Solicitudes:update',
+      'Contratos:create',
+      'Documentos:create',
+      'Contratos:update',
+    ]);
+
+    firm.online = true;
+    await firm.sync();
+    expect(w.row('Solicitudes', ID.solNorte)).toMatchObject({
+      estado: 'CONVERTIDA',
+      asuntoIdGenerado: matter,
+    });
+    expect(w.row('Contratos', contract)).toMatchObject({ docId: doc });
+    expect(await firm.outbox()).toEqual([]);
+    expect(await firm.db.notices.count()).toBe(0);
+  });
+
   it('two devices edit the same task offline and converge, each field to its latest edit', async () => {
     const w = createWorld();
     const lawyer = new TestBrowser(w, ID.abogado);

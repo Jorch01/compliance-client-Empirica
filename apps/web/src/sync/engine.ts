@@ -165,7 +165,8 @@ export class SyncEngine {
       const current = await store.get(id);
       const ops = await this.db.outbox.where('[table+id]').equals([table, id]).sortBy('seq');
       const pending = ops.filter((o) => !o.sending);
-      const plan = enqueue(table, current, pending, { opId, type, id, fields, at });
+      const tail = await this.db.outbox.orderBy('seq').last();
+      const plan = enqueue(table, current, pending, { opId, type, id, fields, at }, tail?.seq);
       if (plan.remove.length) await this.db.outbox.bulkDelete(plan.remove);
       if (plan.put) await this.db.outbox.put(plan.put);
       const cancelledCreation =

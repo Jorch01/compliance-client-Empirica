@@ -6,6 +6,9 @@ import {
   SERVICIOS,
   TABLES,
   missingRequired,
+  parsePerimeter,
+  perimeterValue,
+  sameValue,
   text,
   validateFields,
   type Row,
@@ -16,7 +19,7 @@ import { serviceLabel } from '../../i18n/labels.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
 import { Dialog } from '../../ui/Dialog.tsx';
-import { SelectField, TextField } from '../../ui/Field.tsx';
+import { SelectField, TextArea, TextField } from '../../ui/Field.tsx';
 
 interface Form {
   razonSocial: string;
@@ -58,6 +61,11 @@ export function ClientForm({
   const { me, engine } = usePortal();
   const usuarios = useRows('Usuarios');
   const [form, setForm] = useState<Form>(() => formOf(client));
+  // What the retainer covers: one line each (only the partner changes it).
+  const [perimeter, setPerimeter] = useState(() => {
+    const p = parsePerimeter(client?.perimetroIguala);
+    return { cubiertos: p.cubiertos.join('\n'), excluidos: p.excluidos.join('\n') };
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const full = me.isAdmin;
@@ -83,6 +91,13 @@ export function ClientForm({
       const value = form[key].trim();
       if (client && value === before[key]) continue;
       fields[key] = value === '' ? null : value;
+    }
+    if (full) {
+      const value = perimeterValue({
+        cubiertos: perimeter.cubiertos.split('\n'),
+        excluidos: perimeter.excluidos.split('\n'),
+      });
+      if (!sameValue(client?.perimetroIguala ?? null, value)) fields.perimetroIguala = value;
     }
     if (!client && missingRequired(TABLES.Clientes, fields).length) {
       setError(t('errors.VALIDATION'));
@@ -208,6 +223,36 @@ export function ClientForm({
             ]}
           />
         </div>
+        {form.servicio === 'FLT_IGUALA' ? (
+          <fieldset className="space-y-2">
+            <legend className="font-medium">{t('clients.perimeter')}</legend>
+            <p className="text-sm text-muted-foreground">{t('clients.perimeterHint')}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextArea
+                label={t('clients.covered')}
+                optional={t('common.optional')}
+                rows={4}
+                maxLength={5000}
+                disabled={!full}
+                value={perimeter.cubiertos}
+                onChange={(e) => {
+                  setPerimeter((p) => ({ ...p, cubiertos: e.target.value }));
+                }}
+              />
+              <TextArea
+                label={t('clients.excluded')}
+                optional={t('common.optional')}
+                rows={4}
+                maxLength={5000}
+                disabled={!full}
+                value={perimeter.excluidos}
+                onChange={(e) => {
+                  setPerimeter((p) => ({ ...p, excluidos: e.target.value }));
+                }}
+              />
+            </div>
+          </fieldset>
+        ) : null}
         <p className="text-sm text-muted-foreground">{t('clients.offlineNote')}</p>
       </form>
     </Dialog>

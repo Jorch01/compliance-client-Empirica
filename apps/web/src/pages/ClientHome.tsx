@@ -17,6 +17,7 @@ import { SemaforoBadge } from './common/Semaforo.tsx';
 import { TaskList } from './common/TaskList.tsx';
 import { Tile } from './common/Tile.tsx';
 import { Upcoming } from './common/Upcoming.tsx';
+import { ComplianceSummary } from './compliance/ComplianceSummary.tsx';
 
 const HUB = '#hub';
 const OTHER = '#other';
@@ -274,6 +275,7 @@ export function ClientHome() {
         </div>
         <div className="min-w-0 space-y-6">
           <Upcoming limit={6} />
+          <ComplianceSummary />
           <TeamCard client={client} />
         </div>
       </div>

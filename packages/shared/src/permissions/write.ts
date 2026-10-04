@@ -17,6 +17,7 @@ import {
   OWNER_COLUMN,
   POLICIES,
   SELF,
+  SELF_ONLY,
   type TablePolicy,
 } from './policies.ts';
 import { canRead, clientIdOf, parentOf, unitOf, type Lookup } from './read.ts';
@@ -85,6 +86,19 @@ export function roleFor(ctx: UserContext, def: TableDef, clienteId: string | nul
   if (!def.scope.client) return ctx.rolBase;
   if (clienteId) return ctx.clients.get(clienteId)?.rol ?? null;
   return def.audience === 'everyone' ? ctx.rolBase : null;
+}
+
+/** A column that only names the user making the change, set to someone else. */
+function notSelf(
+  ctx: UserContext,
+  table: TableName,
+  fields: Readonly<Record<string, Value>>,
+): Denial | null {
+  for (const field of SELF_ONLY[table] ?? []) {
+    const value = fields[field];
+    if (!isEmpty(value) && value !== ctx.userId) return deny('FORBIDDEN', 'FORCED_VALUE', field);
+  }
+  return null;
 }
 
 const isOwner = (ctx: UserContext, table: TableName, row: Row): boolean => {
@@ -158,6 +172,8 @@ function checkUpdate(
     const denial = clientTaskRule(current, changes);
     if (denial) return denial;
   }
+  const selfDenial = notSelf(ctx, def.name, changes);
+  if (selfDenial) return selfDenial;
   return checkRefs(ctx, def, { ...current, ...changes }, Object.keys(changes), clienteId, lookup);
 }
 
@@ -244,6 +260,8 @@ function authorizeCreate(
   for (const field of rule.blank ?? []) {
     if (!isEmpty(fields[field])) return deny('FORBIDDEN', 'FIELD_NOT_ALLOWED', field);
   }
+  const selfDenial = notSelf(ctx, def.name, fields);
+  if (selfDenial) return selfDenial;
   for (const field of def.serverManaged) {
     if (!isEmpty(fields[field])) return deny('FORBIDDEN', 'SERVER_MANAGED', field);
   }

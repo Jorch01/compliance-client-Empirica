@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 import { Logo } from '../components/Logo.tsx';
@@ -24,8 +24,15 @@ interface NavItem {
   badge?: number;
 }
 
+interface NavGroup {
+  key: string;
+  /** Shown above the group; none for the first and last ones. */
+  label?: string;
+  items: NavItem[];
+}
+
 /** The menu for this user: the firm runs its clients, a client follows its matters. */
-function useNavItems(): NavItem[] {
+function useNavGroups(): NavGroup[] {
   const { t } = useTranslation();
   const { me } = usePortal();
   const { access } = useScope();
@@ -60,81 +67,137 @@ function useNavItems(): NavItem[] {
         ]
       : [];
     return [
-      { href: '/', label: t('nav.controlCenter'), icon: 'home' },
-      { href: '/clientes', label: t('nav.clients'), icon: 'building' },
-      { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
-      { href: '/tareas', label: t('nav.tasks'), icon: 'list' },
-      { href: '/documentos', label: t('nav.documents'), icon: 'file' },
-      { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
-      ...conflicts,
-      { href: '/usuarios', label: t('nav.people'), icon: 'users' },
-      ...feedback,
-      { href: '/ayuda', label: t('nav.help'), icon: 'help' },
+      { key: 'home', items: [{ href: '/', label: t('nav.controlCenter'), icon: 'home' }] },
+      {
+        key: 'work',
+        label: t('nav.groups.work'),
+        items: [
+          { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+          { href: '/tareas', label: t('nav.tasks'), icon: 'list' },
+          { href: '/tramites', label: t('nav.filings'), icon: 'landmark' },
+          { href: '/compliance', label: t('nav.compliance'), icon: 'clipboard' },
+          { href: '/contratos', label: t('nav.contracts'), icon: 'contract' },
+          { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
+          { href: '/documentos', label: t('nav.documents'), icon: 'file' },
+        ],
+      },
+      {
+        key: 'admin',
+        label: t('nav.groups.admin'),
+        items: [
+          { href: '/clientes', label: t('nav.clients'), icon: 'building' },
+          { href: '/usuarios', label: t('nav.people'), icon: 'users' },
+          ...conflicts,
+          ...feedback,
+        ],
+      },
+      { key: 'help', items: [{ href: '/ayuda', label: t('nav.help'), icon: 'help' }] },
     ];
   }
   const pending = (tareas ?? []).filter(onClientSide).length;
   return [
-    { href: '/', label: t('nav.home'), icon: 'home' },
     {
-      href: '/pendientes',
-      label: t('nav.pending'),
-      icon: 'list',
-      ...(pending > 0 ? { badge: pending } : {}),
+      key: 'home',
+      items: [
+        { href: '/', label: t('nav.home'), icon: 'home' },
+        {
+          href: '/pendientes',
+          label: t('nav.pending'),
+          icon: 'list',
+          ...(pending > 0 ? { badge: pending } : {}),
+        },
+      ],
     },
-    { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
-    { href: '/documentos', label: t('nav.documents'), icon: 'file' },
-    { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
-    { href: '/equipo', label: t('nav.team'), icon: 'users' },
-    ...(access?.rol === 'CLIENTE_ADMIN'
-      ? [{ href: '/usuarios', label: t('nav.people'), icon: 'shield' as const }]
-      : []),
-    ...feedback,
-    { href: '/ayuda', label: t('nav.help'), icon: 'help' },
+    {
+      key: 'work',
+      label: t('nav.groups.work'),
+      items: [
+        { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+        { href: '/tramites', label: t('nav.filings'), icon: 'landmark' },
+        { href: '/compliance', label: t('nav.compliance'), icon: 'clipboard' },
+        { href: '/contratos', label: t('nav.contracts'), icon: 'contract' },
+        { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
+        { href: '/documentos', label: t('nav.documents'), icon: 'file' },
+      ],
+    },
+    {
+      key: 'company',
+      label: t('nav.groups.company'),
+      items: [
+        { href: '/equipo', label: t('nav.team'), icon: 'users' },
+        ...(access?.rol === 'CLIENTE_ADMIN'
+          ? [{ href: '/usuarios', label: t('nav.people'), icon: 'shield' as const }]
+          : []),
+        ...feedback,
+      ],
+    },
+    { key: 'help', items: [{ href: '/ayuda', label: t('nav.help'), icon: 'help' }] },
   ];
 }
 
 const isCurrent = (href: string, location: string): boolean =>
   href === '/' ? location === '/' : location === href || location.startsWith(`${href}/`);
 
+function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const [location] = useLocation();
+  const current = isCurrent(item.href, location);
+  return (
+    <li>
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={current ? 'page' : undefined}
+        className={`flex min-h-11 items-center gap-3 rounded-control px-3 font-medium ${
+          current
+            ? 'bg-sidebar-accent text-sidebar'
+            : 'text-sidebar-foreground hover:bg-sidebar-border'
+        }`}
+      >
+        <Icon name={item.icon} className="size-5" />
+        <span className="flex-1">{item.label}</span>
+        {item.badge ? (
+          <span
+            className={`rounded-full px-2 text-xs font-semibold tabular-nums ${
+              current ? 'bg-sidebar text-sidebar-foreground' : 'bg-accent text-accent-foreground'
+            }`}
+          >
+            {item.badge}
+          </span>
+        ) : null}
+      </Link>
+    </li>
+  );
+}
+
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation();
-  const [location] = useLocation();
-  const items = useNavItems();
+  const groups = useNavGroups();
+  // The menu is drawn twice (the sidebar and the phone's drawer): its ids must differ.
+  const base = useId();
   return (
-    <nav aria-label={t('nav.main')} data-tour="nav">
-      <ul className="space-y-1">
-        {items.map((item) => {
-          const current = isCurrent(item.href, location);
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={current ? 'page' : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-control px-3 font-medium ${
-                  current
-                    ? 'bg-sidebar-accent text-sidebar'
-                    : 'text-sidebar-foreground hover:bg-sidebar-border'
-                }`}
+    <nav aria-label={t('nav.main')} data-tour="nav" className="space-y-4">
+      {groups.map((group) =>
+        group.items.length === 0 ? null : (
+          <div key={group.key}>
+            {group.label ? (
+              <p
+                id={`${base}-${group.key}`}
+                className="label-caps mb-1 px-3 text-sidebar-muted-foreground"
               >
-                <Icon name={item.icon} className="size-5" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge ? (
-                  <span
-                    className={`rounded-full px-2 text-xs font-semibold tabular-nums ${
-                      current
-                        ? 'bg-sidebar text-sidebar-foreground'
-                        : 'bg-accent text-accent-foreground'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                {group.label}
+              </p>
+            ) : null}
+            <ul
+              className="space-y-1"
+              {...(group.label ? { 'aria-labelledby': `${base}-${group.key}` } : {})}
+            >
+              {group.items.map((item) => (
+                <NavLink key={item.href} item={item} {...(onNavigate ? { onNavigate } : {})} />
+              ))}
+            </ul>
+          </div>
+        ),
+      )}
     </nav>
   );
 }
@@ -143,7 +206,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation();
   const { open } = useFeedback();
   return (
-    <div className="flex h-full flex-col gap-8 px-4 py-6">
+    <div className="flex h-full flex-col gap-6 overflow-y-auto px-4 py-6">
       <Link href="/" onClick={onNavigate} className="self-start rounded-control">
         <Logo variant="logotipo" className="h-9 w-auto text-sidebar-accent" />
       </Link>

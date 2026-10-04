@@ -66,7 +66,7 @@ No hace falta Google Workspace. Solo convendría si un día el portal manda más
 
 1. Entra a <https://console.cloud.google.com/apis/credentials> y elige arriba el proyecto `empirica-portal` (ID `empirica-portal-d86b4`).
 2. Abre **Browser key (auto created by Firebase)**:
-   - _Restricciones de aplicaciones_: **Sitios web**. Agrega `https://portal.empirica.mx/*`, `http://localhost:5173/*` y `http://localhost:4173/*`.
+   - _Restricciones de aplicaciones_: **Sitios web**. Agrega `https://portal.empirica.mx/*`, `https://empirica-portal-d86b4.firebaseapp.com/*`, `http://localhost:5173/*` y `http://localhost:4173/*`. El de `firebaseapp.com` es indispensable: ahí se abren los enlaces de los correos de Firebase (confirmar el correo, restablecer la contraseña) y la ventana de "Continuar con Google"; sin él, el enlace responde `API_KEY_HTTP_REFERRER_BLOCKED` (corregido el 4 de octubre de 2026).
    - _Restricciones de API_: **Restringir clave**. Marca **Identity Toolkit API** y **Token Service API**.
    - Guarda.
 3. **Crear credenciales → Clave de API**. Edítala:

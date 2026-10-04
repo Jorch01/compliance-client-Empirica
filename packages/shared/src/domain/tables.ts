@@ -472,6 +472,7 @@ export const TABLES: Record<TableName, TableDef> = {
       ENTIDAD,
       ref('asuntoId', 'Asuntos'),
       ref('plantillaId', 'PlantillasTramite'),
+      col('titulo', { type: 'string', required: true }),
       col('autoridad', { type: 'string' }),
       col('folioExpediente', { type: 'string' }),
       col('etapaActual', { type: 'string' }),
@@ -546,7 +547,8 @@ export const TABLES: Record<TableName, TableDef> = {
       ref('obligacionId', 'Obligaciones', true),
       CLIENTE,
       ENTIDAD,
-      col('periodo', { type: 'string', required: true }),
+      // The period's date by the obligation's rule (domain/compliance.ts).
+      col('periodo', { type: 'date', required: true }),
       col('fechaCumplimiento', { type: 'date' }),
       ref('evidenciaDocId', 'Documentos'),
       ref('validadoPor', 'Usuarios'),
