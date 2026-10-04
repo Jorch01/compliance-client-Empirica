@@ -150,6 +150,8 @@ export const es = {
       INVALID_LINK: 'Este enlace no es válido o ya se usó. Pide uno nuevo a quien te invitó.',
       TOKEN:
         'No se pudo confirmar tu sesión con Google o Firebase. Intenta de nuevo; si se repite, manda a quien te invitó el detalle técnico de abajo.',
+      NETWORK:
+        'No pudimos comunicarnos con el servidor del portal. Revisa tu conexión e intenta de nuevo; si se repite, manda a quien te invitó el detalle técnico de abajo.',
     },
     retry: 'Reintentar',
     details: 'Detalle técnico',

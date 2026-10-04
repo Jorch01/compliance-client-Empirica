@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'wouter';
 import type { AcceptData } from '@empirica/shared';
-import { ApiCallError, callApi } from '../api/client.ts';
+import { ApiCallError, NetworkError } from '../api/client.ts';
 import { useAuth } from '../auth/context.ts';
 import { recordError } from '../feedback/diagnostics.ts';
+import { makeCaller } from '../session/caller.ts';
 import { useSession } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
 import { Spinner } from '../ui/Card.tsx';
@@ -16,7 +18,7 @@ const REASONS = ['EMAIL_MISMATCH', 'EXPIRED', 'REVOKED', 'INVALID_LINK'] as cons
 
 interface Failure {
   error: string;
-  /** What the browser said, for whoever helps: the step and its message. */
+  /** What the browser or the server said, for whoever helps. */
   detail: string | null;
   /** Worth trying again (the network or the session, not the invitation). */
   retry: boolean;
@@ -29,71 +31,56 @@ function detailOf(error: unknown): string {
   return (typeof code === 'string' ? `${code} · ${message}` : message).slice(0, 300);
 }
 
+/** The invitation itself said no, the server could not be read, or the session could not be had. */
+function failureOf(t: TFunction, error: unknown): Failure {
+  if (error instanceof ApiCallError) {
+    const reason = REASONS.find((r) => r === error.reason);
+    const email = typeof error.details.email === 'string' ? error.details.email : '';
+    return reason
+      ? { error: t(`invite.errors.${reason}`, { email }), detail: null, retry: false }
+      : {
+          error: t(`errors.${error.code}`),
+          detail: `${error.code} · ${error.message}`.slice(0, 300),
+          retry: true,
+        };
+  }
+  recordError(error, 'invitation');
+  return {
+    error: error instanceof NetworkError ? t('invite.errors.NETWORK') : t('invite.errors.TOKEN'),
+    detail: detailOf(error),
+    retry: true,
+  };
+}
+
 /**
- * The link of an invitation (#/invitacion/<secret>): sign in or create the
- * account with the invited email, confirm it, and the invitation is
- * accepted on its own; then the portal opens.
+ * Accepts the invitation for the account signed in now: once, and again
+ * with "Reintentar". It lives only while that account is signed in, so
+ * signing out and in again, with it or another one, starts over.
  */
-export function AcceptInvitation({ token }: { token: string }) {
+function Acceptance({ token }: { token: string }) {
   const { t } = useTranslation();
-  const { state: auth, client } = useAuth();
+  const { client } = useAuth();
   const { retry } = useSession();
   const [, navigate] = useLocation();
-  const [result, setResult] = useState<'idle' | 'accepting' | 'done' | Failure>('idle');
-  // Each attempt (the first, and every "Reintentar") runs the acceptance once.
+  const [result, setResult] = useState<'accepting' | 'done' | Failure>('accepting');
   const [attempt, setAttempt] = useState(0);
   const started = useRef(-1);
 
-  const user = auth.status === 'signedIn' ? auth.user : null;
   useEffect(() => {
-    if (!user?.emailVerified || started.current === attempt) return;
+    if (started.current === attempt) return;
     started.current = attempt;
-    setResult('accepting');
     void (async () => {
-      // 1. A fresh session token from Firebase (the email may have just been confirmed).
-      let idToken: string | null;
       try {
-        idToken = await client.getIdToken(true);
-      } catch (error) {
-        recordError(error, 'invitation: session token');
-        setResult({ error: t('invite.errors.TOKEN'), detail: detailOf(error), retry: true });
-        return;
-      }
-      // 2. The portal's server accepts the invitation.
-      try {
-        await callApi<AcceptData>('invitations.accept', { token }, { idToken });
+        // With the session's token, renewed once if the server finds it expired.
+        await makeCaller(client)<AcceptData>('invitations.accept', { token });
         setResult('done');
         retry();
       } catch (error) {
-        if (error instanceof ApiCallError) {
-          const reason = REASONS.find((r) => r === error.reason);
-          const email = typeof error.details.email === 'string' ? error.details.email : '';
-          setResult({
-            error: reason ? t(`invite.errors.${reason}`, { email }) : t(`errors.${error.code}`),
-            detail: reason ? null : `${error.code} · ${error.message}`.slice(0, 300),
-            retry: !reason,
-          });
-        } else {
-          recordError(error, 'invitation: server');
-          setResult({ error: t('errors.NETWORK'), detail: detailOf(error), retry: true });
-        }
+        setResult(failureOf(t, error));
       }
     })();
-  }, [user?.emailVerified, user, client, token, retry, t, attempt]);
+  }, [attempt, client, token, retry, t]);
 
-  if (auth.status === 'loading') return <Spinner label={t('invite.checking')} />;
-  if (!user) {
-    return (
-      <AuthLayout>
-        <div className="mb-4 rounded-card border border-accent-strong bg-accent p-4 text-accent-foreground">
-          <p className="font-semibold">{t('invite.title')}</p>
-          <p className="mt-1 text-sm">{t('invite.intro')}</p>
-        </div>
-        <AuthForm initialMode="signUp" />
-      </AuthLayout>
-    );
-  }
-  if (!user.emailVerified) return <VerifyEmailScreen user={user} />;
   if (typeof result === 'object') {
     return (
       <MessageScreen
@@ -104,6 +91,7 @@ export function AcceptInvitation({ token }: { token: string }) {
               <Button
                 icon="refresh"
                 onClick={() => {
+                  setResult('accepting');
                   setAttempt((n) => n + 1);
                 }}
               >
@@ -150,4 +138,31 @@ export function AcceptInvitation({ token }: { token: string }) {
       <Spinner label={t('invite.accepting')} />
     </AuthLayout>
   );
+}
+
+/**
+ * The link of an invitation (#/invitacion/<secret>): sign in or create the
+ * account with the invited email, confirm it, and the invitation is
+ * accepted on its own; then the portal opens.
+ */
+export function AcceptInvitation({ token }: { token: string }) {
+  const { t } = useTranslation();
+  const { state: auth } = useAuth();
+
+  if (auth.status === 'loading') return <Spinner label={t('invite.checking')} />;
+  const user = auth.status === 'signedIn' ? auth.user : null;
+  if (!user) {
+    return (
+      <AuthLayout>
+        <div className="mb-4 rounded-card border border-accent-strong bg-accent p-4 text-accent-foreground">
+          <p className="font-semibold">{t('invite.title')}</p>
+          <p className="mt-1 text-sm">{t('invite.intro')}</p>
+        </div>
+        <AuthForm initialMode="signUp" />
+      </AuthLayout>
+    );
+  }
+  if (!user.emailVerified) return <VerifyEmailScreen user={user} />;
+  // Signing out unmounts it and another account replaces it: no answer meant for an earlier sign-in stays.
+  return <Acceptance key={user.uid} token={token} />;
 }
