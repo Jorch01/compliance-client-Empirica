@@ -140,12 +140,7 @@ export function Heatmap({
   const months = totals.map((c) => c.month);
   return (
     <>
-      <div
-        role="region"
-        aria-label={caption}
-        tabIndex={0}
-        className="-mx-5 overflow-x-auto px-5 pb-1"
-      >
+      <div role="region" aria-label={caption} tabIndex={0} className="overflow-x-auto pb-1">
         <table className="w-full min-w-[52rem] border-separate border-spacing-0 text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead>
