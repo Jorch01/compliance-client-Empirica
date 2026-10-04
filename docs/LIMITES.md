@@ -130,6 +130,13 @@ Fuente: [Best practices for using signInWithRedirect on browsers that block thir
 - Opciones de Google para apps fuera de Firebase Hosting: usar `signInWithPopup()` (la que se adoptó, D29), un proxy inverso hacia `firebaseapp.com` (GitHub Pages no lo permite), **servir los archivos del asistente de inicio de sesión desde el propio dominio** (se propone para F7) o implementar el inicio de sesión de Google por separado. ✅
 - La ventana emergente puede no responder en una app instalada en la pantalla de inicio de iPhone o iPad: ahí se recomienda correo y contraseña hasta F7. ⚠ Depende de la versión de iOS; se confirmará con un iPhone real.
 
+### Correos de Firebase y la clave del navegador (verificado el 4 de octubre de 2026)
+
+Fuente: el error que devolvió el enlace de confirmación del propio portal y la [guía de Firebase sobre API keys](https://firebase.google.com/docs/projects/api-keys).
+
+- Los enlaces de los correos (confirmar el correo, restablecer la contraseña) abren la página de Firebase en `empirica-portal-d86b4.firebaseapp.com`, que llama a Identity Toolkit con la clave del navegador. Si la clave solo admite `portal.empirica.mx`, responde `API_KEY_HTTP_REFERRER_BLOCKED`. Por eso la clave debe admitir también `https://empirica-portal-d86b4.firebaseapp.com/*` (`SETUP.md`, paso 3). ✅
+- Con la **protección contra la enumeración de correos** (activa por omisión en proyectos nuevos), "restablecer contraseña" responde que envió el correo aunque esa dirección no tenga cuenta con contraseña; en ese caso no llega nada. ✅
+
 ### Pantalla de consentimiento de Google (verificado el 3 de octubre de 2026)
 
 Fuente: [Manage OAuth App Branding](https://support.google.com/cloud/answer/15549049) y [Get started with the Google Auth Platform](https://support.google.com/cloud/answer/15544987).
