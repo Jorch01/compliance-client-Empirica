@@ -16,7 +16,8 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F1 aprobada** (2026-10-03): backend núcleo, resumen en `docs/PLAN.md` § 14.
 - **F2 aprobada** (2026-10-04): el portal en el navegador, resumen en `docs/PLAN.md` § 15. Al aprobarla, el socio pidió el botón "Sugerencias o errores" (D30, § 16).
 - **F3 aprobada** (2026-10-04): asuntos, tareas, comentarios, documentos (archivos en Drive) y conflictos; resumen en `docs/PLAN.md` § 17.
-- **F4 entregada, en revisión** (2026-10-04): trámites (tablero y etapas), compliance (matriz, periodos, evidencia y validación), contratos y solicitudes (clasificar y convertir); resumen y cómo probarla en `docs/PLAN.md` § 18. No empezar F5 sin el visto bueno del socio.
+- **F4 aprobada** (2026-10-04): trámites (tablero y etapas), compliance (matriz, periodos, evidencia y validación), contratos y solicitudes (clasificar y convertir); resumen en `docs/PLAN.md` § 18.
+- **F5 en curso** (desde 2026-10-04): calendarios (Google Calendar y enlace personal ICS), campana de avisos, resumen diario e invitaciones por correo.
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
 - **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): el portal desde la fusión de F2 (2026-10-04) y el aviso de privacidad en `/privacidad/`. Cada fusión a `main` publica el portal y el backend.
 

@@ -39,6 +39,8 @@ export const ACTIONS = [
   'conflicts.resolve',
   'files.upload',
   'files.download',
+  'calendar.subscribe',
+  'calendar.share',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -170,11 +172,17 @@ export const InvitationCreateSchema = z.object({
   alcance: z.optional(AlcanceSchema),
   puesto: z.optional(z.nullable(z.string().check(z.maxLength(120)))),
   idioma: z.optional(z.enum(['es', 'en'])),
+  /** Sends the link by email from the portal (F5); it is returned either way. */
+  enviarCorreo: z.optional(z.boolean()),
 });
 export type InvitationCreate = z.infer<typeof InvitationCreateSchema>;
 
 export const InvitationDecideSchema = z.object({ invitacionId: id, approve: z.boolean() });
-export const InvitationRefSchema = z.object({ invitacionId: id });
+export const InvitationRefSchema = z.object({
+  invitacionId: id,
+  /** On a resend or an approval: send the new link by email too. */
+  enviarCorreo: z.optional(z.boolean()),
+});
 /** The secret part of the link: two random UUIDs without dashes. */
 export const InvitationAcceptSchema = z.object({
   token: z.string().check(z.regex(/^[0-9a-f]{64}$/)),
@@ -203,7 +211,36 @@ export const MembershipSaveSchema = z.object({
 export const ProfileUpdateSchema = z.object({
   nombre: z.optional(name),
   idioma: z.optional(z.enum(['es', 'en'])),
+  /** The daily summary by email (D14); on unless the person turns it off. */
+  resumenDiario: z.optional(z.boolean()),
 });
+
+/**
+ * The personal calendar feed (ICS): a new secret replaces the old one, which
+ * stops working; `revoke` only takes it away. The server keeps its hash.
+ */
+export const CalendarSubscribeSchema = z.object({ revoke: z.optional(z.boolean()) });
+
+export interface CalendarSubscribeData {
+  /** Shown once: the feed is `<API URL>?action=ics&token=<token>`. Null once revoked. */
+  token: string | null;
+}
+
+/**
+ * Sees a Google calendar of the portal in the person's own Google Calendar:
+ * the firm's (firm users) or a client's (whole-client users). `remove`
+ * takes the access away.
+ */
+export const CalendarShareSchema = z.object({
+  clienteId: z.optional(id),
+  remove: z.optional(z.boolean()),
+});
+
+export interface CalendarShareData {
+  calendarId: string | null;
+  /** Opens Google Calendar with the calendar ready to add. */
+  addUrl: string | null;
+}
 
 /**
  * A lawyer's decision on a conflict (PLAN.md § 5, "Conflictos"): keep the
@@ -277,6 +314,10 @@ export interface InvitationOutcome {
   token?: string;
   /** The person already had an account: the new client simply appears for them. */
   alreadyActive?: boolean;
+  /** The portal emailed the link to this address. */
+  emailedTo?: string;
+  /** Why it could not email it (the day's quota, a rejected address): share the link instead. */
+  emailError?: string;
 }
 
 export interface InvitationsListData {

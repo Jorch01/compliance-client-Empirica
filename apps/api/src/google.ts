@@ -90,6 +90,74 @@ export interface GTrigger {
   getHandlerFunction(): string;
 }
 
+/** A Google Calendar event, as the Calendar API (v3) reads and writes it. */
+export interface GCalendarEvent {
+  id?: string;
+  status?: string;
+  summary?: string;
+  description?: string;
+  start?: { date?: string; dateTime?: string; timeZone?: string };
+  end?: { date?: string; dateTime?: string; timeZone?: string };
+  transparency?: string;
+  source?: { title: string; url: string };
+  reminders?: { useDefault: boolean; overrides?: { method: string; minutes: number }[] };
+  extendedProperties?: { private?: Record<string, string> };
+  updated?: string;
+}
+
+export interface GCalendarEventList {
+  items?: GCalendarEvent[];
+  nextPageToken?: string;
+  nextSyncToken?: string;
+}
+
+export interface GAclRule {
+  id?: string;
+  role?: string;
+  scope?: { type?: string; value?: string };
+}
+
+/**
+ * The advanced Calendar service (Calendar API v3), enabled in
+ * appsscript.json. It throws on an HTTP error; a sync token that expired
+ * says "a full sync is required".
+ */
+export interface GCalendarService {
+  Calendars: {
+    insert(resource: { summary: string; timeZone: string; description?: string }): { id?: string };
+  };
+  Events: {
+    list(calendarId: string, params: Record<string, unknown>): GCalendarEventList;
+    insert(resource: GCalendarEvent, calendarId: string): GCalendarEvent;
+    patch(resource: GCalendarEvent, calendarId: string, eventId: string): GCalendarEvent;
+    remove(calendarId: string, eventId: string): unknown;
+  };
+  Acl: {
+    list(
+      calendarId: string,
+      params?: Record<string, unknown>,
+    ): {
+      items?: GAclRule[];
+      nextPageToken?: string;
+    };
+    insert(
+      resource: GAclRule,
+      calendarId: string,
+      params?: { sendNotifications?: boolean },
+    ): GAclRule;
+    remove(calendarId: string, ruleId: string): unknown;
+  };
+}
+
+export interface GMailMessage {
+  to: string;
+  subject: string;
+  body: string;
+  htmlBody?: string;
+  name?: string;
+  replyTo?: string;
+}
+
 export interface GoogleGlobals {
   SpreadsheetApp: {
     openById(id: string): GSpreadsheet;
@@ -152,7 +220,15 @@ export interface GoogleGlobals {
             inTimezone(timezone: string): { create(): GTrigger };
           };
         };
+        everyMinutes(minutes: number): { create(): GTrigger };
       };
     };
+    deleteTrigger(trigger: GTrigger): unknown;
+  };
+  /** Present once the owner authorized Calendar (F5): see `calendarOf`. */
+  Calendar?: GCalendarService;
+  MailApp: {
+    sendEmail(message: GMailMessage): unknown;
+    getRemainingDailyQuota(): number;
   };
 }
