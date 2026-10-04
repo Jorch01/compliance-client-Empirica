@@ -404,6 +404,7 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
     create: {
       clienteId: A,
       entidadId: ID.norte,
+      titulo: 'Nuevo trámite',
       estado: 'EN_PREPARACION',
       visibilidad: 'COMPARTIDO',
     },
@@ -431,7 +432,7 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
   CumplimientosHistorial: {
     target: ID.cuNorte,
     update: { notas: 'Revisado' },
-    create: { obligacionId: ID.obNorte, periodo: '2026-10', estado: 'EN_REVISION' },
+    create: { obligacionId: ID.obNorte, periodo: '2026-10-12', estado: 'EN_REVISION' },
     expected: ['CUD', 'CU', 'CU', 'C', 'C', ''],
   },
   CatalogoObligaciones: {
@@ -839,7 +840,7 @@ describe('rules inside the cells', () => {
 
   it('evidence from a client stays under review and unvalidated', () => {
     const w = world();
-    const evidence = { obligacionId: ID.obNorte, periodo: '2026-10' };
+    const evidence = { obligacionId: ID.obNorte, periodo: '2026-10-12' };
     expect(
       w.write(ID.cColab, 'CumplimientosHistorial', 'create', uid(0x7004), evidence),
     ).toMatchObject({
@@ -862,6 +863,37 @@ describe('rules inside the cells', () => {
     ).toMatchObject({
       reason: 'FIELD_NOT_ALLOWED',
     });
+  });
+
+  it('whoever validates evidence signs it as themselves', () => {
+    const w = world();
+    expect(
+      w.write(ID.abogado, 'CumplimientosHistorial', 'update', ID.cuNorte, {
+        estado: 'VALIDADO',
+        validadoPor: ID.abogado,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      w.write(ID.abogado, 'CumplimientosHistorial', 'update', ID.cuNorte, {
+        estado: 'VALIDADO',
+        validadoPor: ID.socio,
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE', field: 'validadoPor' });
+    expect(
+      w.write(ID.asistente, 'CumplimientosHistorial', 'create', uid(0x7005), {
+        obligacionId: ID.obNorte,
+        periodo: '2026-10-12',
+        estado: 'VALIDADO',
+        validadoPor: ID.abogado,
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE' });
+    // Withdrawing a validation clears the name.
+    expect(
+      w.write(ID.socio, 'CumplimientosHistorial', 'update', ID.cuNorteJul, {
+        estado: 'EN_REVISION',
+        validadoPor: null,
+      }),
+    ).toMatchObject({ ok: true });
   });
 
   it('a unit user creates only inside its units', () => {

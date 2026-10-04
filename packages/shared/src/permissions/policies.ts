@@ -48,6 +48,14 @@ export const FORCED_ON_CREATE: Partial<Record<TableName, Readonly<Record<string,
   Documentos: { subidoPor: SELF },
 };
 
+/**
+ * Columns that can only name the user making the change: whoever validates
+ * (or turns down) a compliance record signs it as themselves.
+ */
+export const SELF_ONLY: Partial<Record<TableName, readonly string[]>> = {
+  CumplimientosHistorial: ['validadoPor'],
+};
+
 /** States a client user may move a task of their side to (decision D18). */
 export const CLIENT_TASK_STATES: readonly EstadoTarea[] = [
   'POR_HACER',

@@ -60,6 +60,23 @@ describe.each(modes)('chart palette in %s mode', (mode) => {
   });
 });
 
+describe.each(modes)('compliance heatmap cells in %s mode', (mode) => {
+  // apps/web/src/pages/compliance/Heatmap.tsx: steps 1 and 3 carry the
+  // foreground text, steps 6 and 7 the background color as text.
+  const theme = tokens.themes[mode];
+  const ramp = theme.chart.sequential;
+  it.each([
+    [1, 'foreground'],
+    [3, 'foreground'],
+    [6, 'background'],
+    [7, 'background'],
+  ] as const)('step %i with %s text reads at 4.5:1', (step, text) => {
+    const cell = ramp[step - 1];
+    if (!cell) throw new Error(`no step ${String(step)}`);
+    expect(contrastRatio(resolveToken(theme, text), cell)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe('generated CSS', () => {
   it('is in sync with tokens.json (run npm run brand:tokens after changing the recipe)', () => {
     const css = readFileSync(

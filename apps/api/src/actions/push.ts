@@ -10,6 +10,7 @@ import {
   TABLES,
   applyOp,
   authorizeWrite,
+  firstOpenPeriod,
   progressOf,
   sameValue,
   buildUserContext,
@@ -109,6 +110,11 @@ class PushRun {
   readonly #done = new Map<string, { usuarioId: string; result: StoredResult }>();
   /** Matters whose tasks changed in this run (asuntoId → clienteId): their progress, at the end. */
   readonly #matters = new Map<string, string | null>();
+  /**
+   * Obligations whose compliance records changed in this run: their next due
+   * date, at the end. With the periods that lost a validated record.
+   */
+  readonly #obligations = new Map<string, { clienteId: string | null; reopened: Set<string> }>();
 
   constructor(
     env: Env,
@@ -291,6 +297,35 @@ class PushRun {
     this.#writer.meta = meta;
     for (const [asuntoId, clienteId] of this.#matters) this.#refreshProgress(asuntoId, clienteId);
     this.#matters.clear();
+    for (const [id, { clienteId, reopened }] of this.#obligations) {
+      this.#refreshDueDate(id, clienteId, [...reopened]);
+    }
+    this.#obligations.clear();
+  }
+
+  /**
+   * An obligation's next due date (`proximoVencimiento`), moved after its
+   * compliance records changed: forward past the periods the firm validated,
+   * back to one whose validation was withdrawn.
+   */
+  #refreshDueDate(obligacionId: string, clienteId: string | null, reopened: string[]): void {
+    const obligacion = this.#db.table('Obligaciones').get(obligacionId);
+    if (!obligacion || obligacion.deleted) return;
+    const next = firstOpenPeriod(obligacion, this.#db.rows('CumplimientosHistorial'), reopened);
+    if (next === null || sameValue(obligacion.proximoVencimiento, next)) return;
+    this.#writer.save(
+      'Obligaciones',
+      obligacion,
+      changed(this.#run, obligacion, { proximoVencimiento: next }),
+    );
+    this.#writer.audit(
+      'SISTEMA',
+      'Obligaciones',
+      obligacionId,
+      clienteId,
+      { proximoVencimiento: obligacion.proximoVencimiento ?? null },
+      { proximoVencimiento: next },
+    );
   }
 
   /** A matter's progress, counted again after one of its tasks changed. */
@@ -327,6 +362,28 @@ class PushRun {
     ) {
       for (const id of [text(before ?? after, 'asuntoId'), text(after, 'asuntoId')]) {
         if (id) this.#matters.set(id, clienteId);
+      }
+    }
+    // Evidence validated, turned down, moved or deleted: the obligation's next due date.
+    if (
+      table === 'CumplimientosHistorial' &&
+      (!before ||
+        before.estado !== after.estado ||
+        before.periodo !== after.periodo ||
+        Boolean(before.deleted) !== Boolean(after.deleted))
+    ) {
+      const id = text(after, 'obligacionId');
+      if (id) {
+        const entry = this.#obligations.get(id) ?? { clienteId, reopened: new Set<string>() };
+        const lost =
+          before?.estado === 'VALIDADO' &&
+          !before.deleted &&
+          (after.estado !== 'VALIDADO' ||
+            Boolean(after.deleted) ||
+            before.periodo !== after.periodo);
+        const periodo = before ? text(before, 'periodo') : null;
+        if (lost && periodo) entry.reopened.add(periodo);
+        this.#obligations.set(id, entry);
       }
     }
     // A document now seen by others (or of another area): its file changes folder.
