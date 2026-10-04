@@ -17,8 +17,6 @@ export const NOTIFICATION_KINDS = [
   'SOLICITUD_NUEVA',
   /** Two people changed a sensitive date at once: someone must decide. */
   'CONFLICTO',
-  /** Someone named you in a comment. */
-  'MENCION',
   /** A client administrator invited someone: the firm approves. */
   'INVITACION_POR_APROBAR',
   /** The administrators answered your suggestion or report. */

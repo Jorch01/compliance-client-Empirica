@@ -13,6 +13,7 @@
  */
 import { TABLES, TABLE_NAMES, allColumns, text, toProjectIso, type Row } from '@empirica/shared';
 import { lookupAccount } from './auth.ts';
+import { calendarService, firmCalendarId } from './calendar/sync.ts';
 import { CONFIG_DEFAULTS } from './config.ts';
 import { Database, Sequence, openSpreadsheet } from './db/database.ts';
 import { Writer } from './db/writer.ts';
@@ -25,6 +26,9 @@ export const ROOT_FOLDER_NAME = 'Empírica Portal';
 export const BACKUP_HOUR = 3;
 /** Entry point the nightly trigger calls (see main.ts). */
 export const NIGHTLY_HANDLER = 'nightly';
+/** Entry points of the F5 triggers: the calendars every 15 minutes, the summary every hour. */
+export const CALENDAR_HANDLER = 'syncCalendars';
+export const DIGEST_HANDLER = 'dailyDigest';
 
 const TEXT_TYPES = new Set([
   'id',
@@ -51,6 +55,40 @@ export interface SetupReport {
  * Identity Toolkit with a token that cannot exist: a key that works answers
  * INVALID_ID_TOKEN. Neither value is ever written to the log.
  */
+/**
+ * F5: Calendar and email need the owner's permission (running setup from
+ * the editor asks for it). The firm's calendar is created here the first
+ * time; the emails left today are reported.
+ */
+export function checkCalendarAndMail(env: Env, report: SetupReport): void {
+  const cal = calendarService(env);
+  if (!cal) {
+    report.warnings.push(
+      'Calendar no está activado: el servicio avanzado de Calendar falta en appsscript.json o no se autorizó.',
+    );
+  } else {
+    try {
+      const existed = Boolean(env.prop(PROP.firmCalendarId));
+      firmCalendarId(env, cal);
+      if (existed) report.checked.push('Calendar: el calendario del despacho existe.');
+      else report.created.push('calendario de Google "Empírica · Despacho"');
+    } catch (error) {
+      report.warnings.push(
+        `Calendar: no se pudo crear el calendario del despacho (${error instanceof Error ? error.message : String(error)}).`,
+      );
+    }
+  }
+  try {
+    report.checked.push(
+      `Correo: quedan ${String(env.g.MailApp.getRemainingDailyQuota())} destinatarios hoy.`,
+    );
+  } catch (error) {
+    report.warnings.push(
+      `Correo: MailApp no responde (${error instanceof Error ? error.message : String(error)}).`,
+    );
+  }
+}
+
 export function checkFirebase(env: Env, report: SetupReport): void {
   const projectId = env.prop(PROP.firebaseProjectId);
   const apiKey = env.prop(PROP.firebaseApiKey);
@@ -303,6 +341,15 @@ export function runSetup(env: Env): SetupReport {
         .inTimezone('America/Cancun')
         .create();
       report.created.push('tareas nocturnas a las 3:00 (respaldo y limpieza)');
+    }
+    checkCalendarAndMail(env, report);
+    if (!triggers.some((t) => t.getHandlerFunction() === CALENDAR_HANDLER)) {
+      env.g.ScriptApp.newTrigger(CALENDAR_HANDLER).timeBased().everyMinutes(15).create();
+      report.created.push('calendarios de Google cada 15 minutos');
+    }
+    if (!triggers.some((t) => t.getHandlerFunction() === DIGEST_HANDLER)) {
+      env.g.ScriptApp.newTrigger(DIGEST_HANDLER).timeBased().everyHours(1).create();
+      report.created.push('resumen diario (se revisa cada hora; sale a la hora de horaResumen)');
     }
     checkFirebase(env, report);
     return report;

@@ -17,6 +17,12 @@ export const PROP = {
   adminEmails: 'ADMIN_EMAILS',
   /** Fingerprint of the data model the spreadsheet was last brought up to. */
   schemaVersion: 'SCHEMA_VERSION',
+  /** The firm's Google calendar (F5), created by setup() or the first sync. */
+  firmCalendarId: 'FIRM_CALENDAR_ID',
+  /** The sync token of each calendar, as JSON: where the next sync picks up. */
+  calendarSync: 'CALENDAR_SYNC',
+  /** The day the daily summary went out (YYYY-MM-DD): never twice a day. */
+  digestSent: 'DIGEST_SENT',
 } as const;
 
 export interface Env {

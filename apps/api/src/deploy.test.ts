@@ -15,6 +15,8 @@ import {
   deploymentIdFrom,
   fingerprint,
   isHealthy,
+  rollbackTarget,
+  rolledBackMessage,
   versionRoom,
   webAppUrl,
 } from '../deploy.ts';
@@ -41,7 +43,13 @@ describe('deployment configuration', () => {
         'https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/script.external_request',
         'https://www.googleapis.com/auth/script.scriptapp',
+        // F5: the Google calendars and the emails (the owner authorizes them once).
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/script.send_mail',
       ],
+      dependencies: {
+        enabledAdvancedServices: [{ userSymbol: 'Calendar', serviceId: 'calendar', version: 'v3' }],
+      },
       webapp: { executeAs: 'USER_DEPLOYING', access: 'ANYONE_ANONYMOUS' },
     });
   });
@@ -49,6 +57,21 @@ describe('deployment configuration', () => {
 
 describe('publication (deploy.ts)', () => {
   const ID = 'AKfycbTest_deployment-1';
+
+  it('goes back to the version it served when the new one does not answer', () => {
+    expect(
+      rollbackTarget({ deploymentId: ID, versionNumber: 7, description: 'abc1234 api:1' }),
+    ).toEqual({
+      versionNumber: 7,
+      description: 'abc1234 api:1',
+    });
+    expect(rollbackTarget(undefined)).toBeNull();
+    expect(rollbackTarget({ deploymentId: ID })).toBeNull();
+    const message = rolledBackMessage(7, webAppUrl(ID), '<html>Authorization is required</html>');
+    expect(message).toContain('volvió a la versión 7: el portal sigue funcionando');
+    expect(message).toContain('ejecuta la función setup y acepta los permisos');
+    expect(message).toContain('Authorization is required');
+  });
 
   it('fingerprints the bundle: same files, same print; any change, another', () => {
     const print = fingerprint(['code', '{}']);

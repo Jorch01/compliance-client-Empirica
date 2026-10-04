@@ -221,6 +221,7 @@ export interface GoogleGlobals {
           };
         };
         everyMinutes(minutes: number): { create(): GTrigger };
+        everyHours(hours: number): { create(): GTrigger };
       };
     };
     deleteTrigger(trigger: GTrigger): unknown;

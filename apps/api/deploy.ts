@@ -8,7 +8,10 @@
  *   versions and only the editor can delete them (docs/LIMITES.md). The
  *   deployment's description carries the bundle's fingerprint, so the check
  *   keeps no state of its own.
- * - Then the Web App must answer its health check (doGet).
+ * - Then the Web App must answer its health check (doGet). If the new
+ *   version does not, the deployment goes back to the one it served, so the
+ *   portal keeps working: a version that asks for new permissions (F5:
+ *   Calendar and email) waits until the owner account authorizes them.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -79,6 +82,24 @@ export function versionRoom(count: number): { ok: boolean; message?: string } {
 export const webAppUrl = (deploymentId: string): string =>
   `https://script.google.com/macros/s/${deploymentId}/exec`;
 
+/** The version to go back to when the new one does not answer, if there is one. */
+export function rollbackTarget(
+  previous: Deployment | undefined,
+): { versionNumber: number; description: string } | null {
+  if (!previous || typeof previous.versionNumber !== 'number') return null;
+  return { versionNumber: previous.versionNumber, description: previous.description ?? '' };
+}
+
+/** What to do when the new version did not answer and the old one is back. */
+export function rolledBackMessage(versionNumber: number, url: string, last: string): string {
+  return (
+    `La versión nueva no respondió y el Web App volvió a la versión ${String(versionNumber)}: el portal sigue funcionando. ` +
+    'Si la versión nueva pide permisos nuevos (como Calendar y correo en la Fase 5), la cuenta propietaria debe autorizarlos: ' +
+    'abre el editor de Apps Script con esa cuenta, ejecuta la función setup y acepta los permisos; luego vuelve a ejecutar este job ("Re-run jobs"). ' +
+    `(${url}; respuesta: ${last.slice(0, 200)})`
+  );
+}
+
 /** The variable may hold the ID or, pasted by mistake, the whole address. */
 export function deploymentIdFrom(value: string): string {
   const trimmed = value.trim();
@@ -135,11 +156,9 @@ async function main(): Promise<void> {
   const print = fingerprint(
     ['Code.js', 'appsscript.json'].map((f) => readFileSync(join(HERE, 'build', f), 'utf8')),
   );
-  const decision = decide(
-    JSON.parse(clasp('list-deployments')) as Deployment[],
-    deploymentId,
-    print,
-  );
+  const deployments = JSON.parse(clasp('list-deployments')) as Deployment[];
+  const previous = deployments.find((d) => d.deploymentId === deploymentId);
+  const decision = decide(deployments, deploymentId, print);
   if (decision.kind === 'missing') {
     throw new Error(
       'La implementación de APPS_SCRIPT_DEPLOYMENT_ID no existe en el proyecto: revisa la variable (docs/SETUP.md, paso 9).',
@@ -163,11 +182,23 @@ async function main(): Promise<void> {
   }
 
   const url = webAppUrl(deploymentId);
-  const health = await checkHealth(
-    url,
-    async (u) => (await fetch(u, { signal: AbortSignal.timeout(30_000) })).text(),
-    (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  );
+  const get = async (u: string): Promise<string> =>
+    (await fetch(u, { signal: AbortSignal.timeout(30_000) })).text();
+  const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+  const health = await checkHealth(url, get, wait);
+  const back = decision.kind === 'changed' && !health.ok ? rollbackTarget(previous) : null;
+  if (back) {
+    clasp(
+      'update-deployment',
+      deploymentId,
+      '--versionNumber',
+      String(back.versionNumber),
+      '--description',
+      back.description,
+    );
+    await checkHealth(url, get, wait);
+    throw new Error(rolledBackMessage(back.versionNumber, url, health.last));
+  }
   if (!health.ok) {
     throw new Error(
       `El Web App no respondió como se esperaba (${url}). Al abrirla en el navegador debe mostrar {"ok":true,…}; si pide iniciar sesión, en Implementar → Gestionar implementaciones "Quién tiene acceso" debe ser "Cualquier usuario". Respuesta: ${health.last.slice(0, 200)}`,

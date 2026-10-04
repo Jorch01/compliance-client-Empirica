@@ -16,7 +16,14 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(HERE, 'build');
 
 /** Functions Apps Script calls by name. Add trigger handlers here. */
-export const ENTRY_POINTS = ['doGet', 'doPost', 'setup', 'nightly'] as const;
+export const ENTRY_POINTS = [
+  'doGet',
+  'doPost',
+  'setup',
+  'nightly',
+  'syncCalendars',
+  'dailyDigest',
+] as const;
 
 export const BUNDLE_OPTIONS: BuildOptions = {
   entryPoints: [join(HERE, 'src', 'main.ts')],

@@ -163,7 +163,11 @@ export function saveMembership(
 export function updateProfile(
   env: Env,
   session: Session,
-  input: { nombre?: string | undefined; idioma?: 'es' | 'en' | undefined },
+  input: {
+    nombre?: string | undefined;
+    idioma?: 'es' | 'en' | undefined;
+    resumenDiario?: boolean | undefined;
+  },
 ): { user: Row } {
   return underLock(env, session.user.id, (r) => {
     freshContext(r.db, session.user.id);
@@ -172,9 +176,17 @@ export function updateProfile(
     const changes: Record<string, Value> = {};
     if (input.nombre !== undefined) changes.nombre = input.nombre.trim();
     if (input.idioma !== undefined) changes.idioma = input.idioma;
+    if (input.resumenDiario !== undefined) {
+      const prefs = user.prefsNotificacion;
+      changes.prefsNotificacion = {
+        ...(prefs && typeof prefs === 'object' && !Array.isArray(prefs) ? prefs : {}),
+        resumenDiario: input.resumenDiario,
+      };
+    }
     const saved = saveChange(r, 'Usuarios', user, changed(r, user, changes), null, [
       'nombre',
       'idioma',
+      'prefsNotificacion',
     ]);
     return { user: publicUser(saved) };
   });

@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand": "./src/brand/index.ts",
+    "./brand/tokens": "./src/brand/tokens.json",
     "./testing": "./src/testing/fixtures.ts"
   },
   "scripts": {

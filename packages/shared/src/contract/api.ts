@@ -177,7 +177,12 @@ export const InvitationCreateSchema = z.object({
 });
 export type InvitationCreate = z.infer<typeof InvitationCreateSchema>;
 
-export const InvitationDecideSchema = z.object({ invitacionId: id, approve: z.boolean() });
+export const InvitationDecideSchema = z.object({
+  invitacionId: id,
+  approve: z.boolean(),
+  /** On an approval: email the new link too. */
+  enviarCorreo: z.optional(z.boolean()),
+});
 export const InvitationRefSchema = z.object({
   invitacionId: id,
   /** On a resend or an approval: send the new link by email too. */

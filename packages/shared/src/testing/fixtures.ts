@@ -648,5 +648,6 @@ export function demoData(): Dataset {
     Bitacora: [],
     Reportes: [],
     OpsAplicadas: [],
+    Calendario: [],
   };
 }

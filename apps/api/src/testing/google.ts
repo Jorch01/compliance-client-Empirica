@@ -677,6 +677,12 @@ export class FakeGoogle {
                 return trigger(handler);
               },
             }),
+            everyHours: (hours) => ({
+              create: () => {
+                this.triggers.push({ handler, minutes: hours * 60 });
+                return trigger(handler);
+              },
+            }),
           }),
         }),
         deleteTrigger: (t) => {
@@ -694,7 +700,7 @@ export class FakeGoogle {
         getRemainingDailyQuota: () => this.mail.getRemainingDailyQuota(),
       },
       ContentService: {
-        MimeType: { JSON: 'application/json' },
+        MimeType: { JSON: 'application/json', ICAL: 'text/calendar' },
         createTextOutput(content: string) {
           return {
             content,
