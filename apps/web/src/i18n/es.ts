@@ -148,7 +148,11 @@ export const es = {
       EXPIRED: 'La invitación venció. Pide una nueva a quien te invitó.',
       REVOKED: 'Esta invitación fue cancelada.',
       INVALID_LINK: 'Este enlace no es válido o ya se usó. Pide uno nuevo a quien te invitó.',
+      TOKEN:
+        'No se pudo confirmar tu sesión con Google o Firebase. Intenta de nuevo; si se repite, manda a quien te invitó el detalle técnico de abajo.',
     },
+    retry: 'Reintentar',
+    details: 'Detalle técnico',
   },
   lock: {
     title: 'Sesión bloqueada',
