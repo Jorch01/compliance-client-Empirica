@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'wouter';
 import { text, type Row } from '@empirica/shared';
 import { useNames } from '../../data/names.ts';
 import { taskSemaforo } from '../../domain/deadlines.ts';
@@ -14,11 +15,14 @@ export function TaskList({
   today,
   empty,
   pending,
+  hideClient = false,
 }: {
   tasks: readonly Row[];
   today: string;
   empty: string;
   pending?: ReadonlySet<string>;
+  /** Inside a matter or a client, its name goes without saying. */
+  hideClient?: boolean;
 }) {
   const { t } = useTranslation();
   const names = useNames();
@@ -29,7 +33,7 @@ export function TaskList({
       {tasks.map((task) => {
         const fecha = text(task, 'fechaLimite');
         const where = [
-          scope.clientId ? '' : names.client(text(task, 'clienteId')),
+          scope.clientId || hideClient ? '' : names.client(text(task, 'clienteId')),
           names.unit(text(task, 'entidadId')),
           taskStateLabel(t, task.estado),
         ]
@@ -40,7 +44,9 @@ export function TaskList({
             <SemaforoBadge light={taskSemaforo(task, today)} />
             <div className="min-w-0 flex-1 basis-56">
               <p className="font-medium">
-                {text(task, 'titulo')}
+                <Link href={`/tareas/${task.id}`} className="underline-offset-2 hover:underline">
+                  {text(task, 'titulo')}
+                </Link>
                 {task.esFatal === true ? (
                   <span className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-danger-subtle-foreground">
                     <Icon name="octagon" className="size-4 text-danger" />

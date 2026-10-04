@@ -2,10 +2,15 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 import { Logo } from '../components/Logo.tsx';
+import { useRows } from '../data/hooks.ts';
 import { onClientSide } from '../domain/deadlines.ts';
+import { useFeedback } from '../feedback/context.ts';
+import { recordError } from '../feedback/diagnostics.ts';
 import { usePortal } from '../session/context.ts';
 import { Drawer } from '../ui/Drawer.tsx';
+import { ErrorBoundary } from '../ui/ErrorBoundary.tsx';
 import { Icon, type IconName } from '../ui/Icon.tsx';
+import { CrashScreen } from './CrashScreen.tsx';
 import { InstallBanner } from './InstallBanner.tsx';
 import { ScopeSelect } from './ScopeSelect.tsx';
 import { useScope, useScopedRows } from './scope.ts';
@@ -25,12 +30,45 @@ function useNavItems(): NavItem[] {
   const { me } = usePortal();
   const { access } = useScope();
   const tareas = useScopedRows('Tareas');
+  const sugerencias = useRows('Sugerencias');
+  const conflictos = useScopedRows('Conflictos');
+  // The administrators answer what arrives; anyone else sees theirs once they sent something.
+  const nuevas = (sugerencias ?? []).filter((s) => s.estado === 'NUEVA').length;
+  const feedback: NavItem[] = me.isAdmin
+    ? [
+        {
+          href: '/sugerencias',
+          label: t('nav.feedback'),
+          icon: 'message',
+          ...(nuevas > 0 ? { badge: nuevas } : {}),
+        },
+      ]
+    : (sugerencias ?? []).some((s) => s.usuarioId === me.id)
+      ? [{ href: '/sugerencias', label: t('nav.feedback'), icon: 'message' }]
+      : [];
   if (me.isFirm) {
+    // Conflicts show up once there are any; the badge counts those to decide.
+    const porResolver = (conflictos ?? []).filter((c) => c.estado === 'PENDIENTE').length;
+    const conflicts: NavItem[] = conflictos?.length
+      ? [
+          {
+            href: '/conflictos',
+            label: t('nav.conflicts'),
+            icon: 'scale',
+            ...(porResolver > 0 ? { badge: porResolver } : {}),
+          },
+        ]
+      : [];
     return [
       { href: '/', label: t('nav.controlCenter'), icon: 'home' },
       { href: '/clientes', label: t('nav.clients'), icon: 'building' },
+      { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+      { href: '/tareas', label: t('nav.tasks'), icon: 'list' },
+      { href: '/documentos', label: t('nav.documents'), icon: 'file' },
       { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
+      ...conflicts,
       { href: '/usuarios', label: t('nav.people'), icon: 'users' },
+      ...feedback,
       { href: '/ayuda', label: t('nav.help'), icon: 'help' },
     ];
   }
@@ -43,11 +81,14 @@ function useNavItems(): NavItem[] {
       icon: 'list',
       ...(pending > 0 ? { badge: pending } : {}),
     },
+    { href: '/asuntos', label: t('nav.matters'), icon: 'briefcase' },
+    { href: '/documentos', label: t('nav.documents'), icon: 'file' },
     { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
     { href: '/equipo', label: t('nav.team'), icon: 'users' },
     ...(access?.rol === 'CLIENTE_ADMIN'
       ? [{ href: '/usuarios', label: t('nav.people'), icon: 'shield' as const }]
       : []),
+    ...feedback,
     { href: '/ayuda', label: t('nav.help'), icon: 'help' },
   ];
 }
@@ -100,20 +141,35 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation();
+  const { open } = useFeedback();
   return (
     <div className="flex h-full flex-col gap-8 px-4 py-6">
       <Link href="/" onClick={onNavigate} className="self-start rounded-control">
         <Logo variant="logotipo" className="h-9 w-auto text-sidebar-accent" />
       </Link>
       <NavList {...(onNavigate ? { onNavigate } : {})} />
-      <div className="mt-auto space-y-1 text-sm text-sidebar-muted-foreground">
-        <p className="label-caps">{t('app.team')}</p>
-        <a
-          href={`${import.meta.env.BASE_URL}privacidad/`}
-          className="underline underline-offset-2 hover:text-sidebar-foreground"
+      <div className="mt-auto space-y-4">
+        <button
+          type="button"
+          data-tour="feedback"
+          onClick={() => {
+            onNavigate?.();
+            open();
+          }}
+          className="flex min-h-11 w-full items-center gap-3 rounded-control border border-sidebar-border px-3 text-left font-medium text-sidebar-foreground hover:bg-sidebar-border"
         >
-          {t('help.privacy')}
-        </a>
+          <Icon name="message" className="size-5" />
+          {t('feedback.button')}
+        </button>
+        <div className="space-y-1 text-sm text-sidebar-muted-foreground">
+          <p className="label-caps">{t('app.team')}</p>
+          <a
+            href={`${import.meta.env.BASE_URL}privacidad/`}
+            className="underline underline-offset-2 hover:text-sidebar-foreground"
+          >
+            {t('help.privacy')}
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -210,7 +266,15 @@ export function Shell({ children }: { children: ReactNode }) {
         tabIndex={-1}
         className="mx-auto max-w-6xl px-4 py-6 outline-none sm:px-6 lg:py-8"
       >
-        {children}
+        <ErrorBoundary
+          resetKey={location}
+          onError={(error) => {
+            recordError(error, location);
+          }}
+          fallback={(error, reset) => <CrashScreen error={error} reset={reset} />}
+        >
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );

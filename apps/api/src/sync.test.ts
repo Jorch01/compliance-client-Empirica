@@ -53,6 +53,7 @@ function expectedFor(w: World, userId: string): string[] {
     'DiasInhabiles',
     'Notificaciones',
     'Conflictos',
+    'Sugerencias',
   ] as TableName[]) {
     for (const row of db.rows(t)) {
       if (!row.deleted && canRead(ctx, t, row, db.lookup())) out.push(`${t}:${row.id}`);
@@ -482,6 +483,46 @@ describe('sync.push', () => {
       { status: 'applied', row: { id: unit, clienteId: client } },
     ]);
     expect(results[0]?.removed).toBeUndefined();
+  });
+
+  it('feedback: anyone sends it, the administrators answer it, only its author sees it', () => {
+    const w = createWorld();
+    const colab = new Device(w, ID.cColab).sync();
+    const id = uid(0x60030);
+    expect(
+      colab.push([
+        op('Sugerencias', 'create', id, {
+          tipo: 'ERROR',
+          mensaje: 'No aparece mi sucursal en el inicio.',
+          pantalla: '#/',
+        }),
+      ]),
+    ).toMatchObject([{ status: 'applied', row: { usuarioId: ID.cColab, estado: 'NUEVA' } }]);
+
+    const socio = new Device(w, ID.socio).sync();
+    expect(socio.has('Sugerencias', id)).toBe(true);
+    for (const other of [ID.cAdmin, ID.abogado, ID.cB]) {
+      expect(new Device(w, other).sync().has('Sugerencias', id)).toBe(false);
+    }
+
+    // The answer comes an hour later.
+    w.clock.advance(3_600_000);
+    expect(
+      socio.push([
+        op(
+          'Sugerencias',
+          'update',
+          id,
+          { estado: 'RESUELTA', respuesta: 'Ya aparece. Gracias.' },
+          { at: new Date(w.clock.now()).toISOString() },
+        ),
+      ]),
+    ).toMatchObject([{ status: 'applied' }]);
+    colab.sync();
+    expect(colab.store.get(`Sugerencias:${id}`)?.row).toMatchObject({
+      estado: 'RESUELTA',
+      respuesta: 'Ya aparece. Gracias.',
+    });
   });
 
   it('another client’s records answer NOT_FOUND and are left untouched', () => {

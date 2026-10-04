@@ -6,6 +6,9 @@
  */
 import {
   ACTIONS,
+  ConflictResolveSchema,
+  FileDownloadSchema,
+  FileUploadSchema,
   InvitationAcceptSchema,
   InvitationCreateSchema,
   InvitationDecideSchema,
@@ -25,6 +28,8 @@ import {
 import type * as z from 'zod/mini';
 import { saveMembership, updateProfile, updateUser } from './actions/admin.ts';
 import { bootstrap } from './actions/bootstrap.ts';
+import { resolveConflict } from './actions/conflicts.ts';
+import { downloadFile, uploadFile } from './actions/files.ts';
 import {
   acceptInvitation,
   createInvitation,
@@ -38,11 +43,14 @@ import { push } from './actions/push.ts';
 import { authenticate, rateLimit, verifyIdToken } from './auth.ts';
 import { readSettings } from './config.ts';
 import { Database } from './db/database.ts';
+import { ensureSchema } from './setup.ts';
 import type { Env } from './env.ts';
 import { ApiError } from './errors.ts';
 
-/** Larger bodies are refused before parsing (a push of 200 ops fits easily). */
+/** Larger bodies are refused (a push of 200 ops fits easily). */
 export const MAX_BODY_CHARS = 2_000_000;
+/** A file upload: up to 30 MB in base64 (`mbMaxArchivo` is capped there). */
+export const MAX_UPLOAD_BODY_CHARS = 41_000_000;
 
 function parse<T>(schema: z.ZodMiniType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -60,8 +68,9 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
   const serverNow = toProjectIso(env.now());
   let requestId: string | undefined;
   try {
-    if (body.length > MAX_BODY_CHARS)
-      throw new ApiError('VALIDATION', 'La solicitud es demasiado grande.');
+    const tooLarge = (): ApiError =>
+      new ApiError('VALIDATION', 'La solicitud es demasiado grande.');
+    if (body.length > MAX_UPLOAD_BODY_CHARS) throw tooLarge();
     let raw: unknown;
     try {
       raw = JSON.parse(body);
@@ -70,6 +79,7 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
     }
     const request = parse(RequestSchema, raw);
     requestId = request.requestId;
+    if (body.length > MAX_BODY_CHARS && request.action !== 'files.upload') throw tooLarge();
     if (!(ACTIONS as readonly string[]).includes(request.action))
       throw new ApiError('NOT_IMPLEMENTED');
     const action = request.action as Action;
@@ -77,6 +87,8 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
     if (action === 'ping')
       return { ok: true, data: { pong: true }, serverNow, ...(requestId ? { requestId } : {}) };
 
+    // A deploy that added tabs or columns: create them before anything reads.
+    ensureSchema(env);
     const db = new Database(env);
     const settings = readSettings(db.rows('Config'));
     if (request.appVersion && compareVersions(request.appVersion, settings.minAppVersion) < 0) {
@@ -136,6 +148,15 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
         break;
       case 'profile.update':
         data = updateProfile(env, session, parse(ProfileUpdateSchema, payload));
+        break;
+      case 'conflicts.resolve':
+        data = resolveConflict(env, session, parse(ConflictResolveSchema, payload));
+        break;
+      case 'files.upload':
+        data = uploadFile(env, session, parse(FileUploadSchema, payload));
+        break;
+      case 'files.download':
+        data = downloadFile(env, session, parse(FileDownloadSchema, payload));
         break;
     }
     return { ok: true, data, serverNow, ...(requestId ? { requestId } : {}) };

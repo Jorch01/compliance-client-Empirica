@@ -26,7 +26,9 @@ function NoticeLine({ notice }: { notice: Notice }) {
       ? t('sync.reasons.conflict', { field })
       : notice.kind === 'superseded'
         ? t('sync.reasons.superseded', { field })
-        : t('sync.reasons.rejected', { reason: denialText(t, notice.reason, notice.code) });
+        : notice.kind === 'upload'
+          ? t('sync.reasons.upload', { reason: denialText(t, notice.reason, notice.code) })
+          : t('sync.reasons.rejected', { reason: denialText(t, notice.reason, notice.code) });
   return (
     <li className="rounded-control border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-subtle-foreground">
       {notice.label ? <p className="font-medium">{notice.label}</p> : null}

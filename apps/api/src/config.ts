@@ -3,7 +3,7 @@
  * a new deployment. setup() creates the missing ones with these defaults.
  * Public ones also reach the browser.
  */
-import { text, type Row } from '@empirica/shared';
+import { MIN_APP_VERSION, compareVersions, maxFileBytes, text, type Row } from '@empirica/shared';
 
 export interface ConfigDefault {
   clave: string;
@@ -26,7 +26,12 @@ export const CONFIG_DEFAULTS: readonly ConfigDefault[] = [
 export interface Settings {
   minAppVersion: string;
   requestsPerMinute: number;
+  /** Largest file a document may have (`mbMaxArchivo`). */
+  maxFileBytes: number;
 }
+
+const atLeast = (version: string, floor: string): string =>
+  compareVersions(version, floor) < 0 ? floor : version;
 
 export function readSettings(rows: readonly Row[]): Settings {
   const value = (key: string): string | null => {
@@ -39,7 +44,8 @@ export function readSettings(rows: readonly Row[]): Settings {
     value('limiteSolicitudesPorMinuto') ?? fallback('limiteSolicitudesPorMinuto'),
   );
   return {
-    minAppVersion: value('minAppVersion') ?? fallback('minAppVersion'),
+    minAppVersion: atLeast(value('minAppVersion') ?? fallback('minAppVersion'), MIN_APP_VERSION),
     requestsPerMinute: Number.isFinite(perMinute) && perMinute > 0 ? perMinute : 120,
+    maxFileBytes: maxFileBytes(Number(value('mbMaxArchivo') ?? fallback('mbMaxArchivo'))),
   };
 }

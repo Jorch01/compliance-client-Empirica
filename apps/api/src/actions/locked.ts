@@ -16,7 +16,9 @@ import { Database, Sequence } from '../db/database.ts';
 import { Writer } from '../db/writer.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
-import { LOCK_WAIT_MS } from './push.ts';
+
+/** How long a change waits for another one to finish. */
+export const LOCK_WAIT_MS = 20_000;
 
 export interface LockedRun {
   env: Env;

@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'wouter';
 import { APP_VERSION } from '../config/api.ts';
+import { useFeedback } from '../feedback/context.ts';
 import { InstallInstructions } from '../portal/InstallInstructions.tsx';
 import { useTour } from '../portal/tour-context.ts';
 import { configNumber, usePortal } from '../session/context.ts';
@@ -12,6 +14,7 @@ export function HelpPage() {
   const { t } = useTranslation();
   const { me } = usePortal();
   const { start } = useTour();
+  const feedback = useFeedback();
   return (
     <>
       <PageHeader title={t('help.title')} />
@@ -21,6 +24,22 @@ export function HelpPage() {
           <Button icon="arrowRight" onClick={start}>
             {t('help.tour')}
           </Button>
+        </Card>
+        <Card title={t('feedback.helpTitle')}>
+          <p className="mb-4">{t('feedback.helpBody')}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              icon="message"
+              onClick={() => {
+                feedback.open();
+              }}
+            >
+              {t('feedback.button')}
+            </Button>
+            <Link href="/sugerencias" className="text-link underline underline-offset-2">
+              {t('feedback.seeMine')}
+            </Link>
+          </div>
         </Card>
         <Card title={t('help.installTitle')}>
           <InstallInstructions />

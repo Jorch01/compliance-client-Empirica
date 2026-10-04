@@ -3,20 +3,8 @@
  * and dark themes. Contrast of every token pair is also checked in the unit
  * tests (packages/shared/src/brand/tokens.test.ts).
  */
-import AxeBuilder from '@axe-core/playwright';
-import type { Page } from '@playwright/test';
+import { audit } from './axe.ts';
 import { device, expect, signIn, test, type DemoUser } from './fixtures.ts';
-
-const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
-
-async function audit(page: Page, label: string): Promise<void> {
-  const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-  const problems = result.violations.map(
-    (v) =>
-      `${label}: ${v.id} (${v.impact ?? '?'}) ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
-  );
-  expect(problems).toEqual([]);
-}
 
 test('the sign-in screen', async ({ browser }) => {
   const context = await device(browser);
@@ -28,10 +16,23 @@ test('the sign-in screen', async ({ browser }) => {
 });
 
 const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boolean }[] = [
-  { user: 'socia', paths: ['#/', '#/clientes', '#/usuarios', '#/solicitudes', '#/ayuda'] },
+  {
+    user: 'socia',
+    paths: ['#/', '#/clientes', '#/usuarios', '#/solicitudes', '#/sugerencias', '#/ayuda'],
+  },
+  {
+    user: 'socia',
+    paths: ['#/asuntos', '#/tareas', '#/documentos', '#/conflictos'],
+    dark: true,
+  },
   { user: 'socia', paths: ['#/'], dark: true },
   { user: 'adminA', paths: ['#/', '#/pendientes', '#/equipo'], mobile: true },
-  { user: 'norte', paths: ['#/', '#/pendientes', '#/solicitudes'], dark: true, mobile: true },
+  {
+    user: 'norte',
+    paths: ['#/', '#/pendientes', '#/solicitudes', '#/sugerencias', '#/asuntos', '#/documentos'],
+    dark: true,
+    mobile: true,
+  },
 ];
 
 for (const { user, paths, dark, mobile } of SCREENS) {

@@ -26,7 +26,16 @@ export interface WriteMeta {
 }
 
 export type AuditAction =
-  'CREAR' | 'EDITAR' | 'BORRAR' | 'RESTAURAR' | 'CONFLICTO' | 'RECHAZO' | 'TOCAR' | 'SISTEMA';
+  | 'CREAR'
+  | 'EDITAR'
+  | 'BORRAR'
+  | 'RESTAURAR'
+  | 'CONFLICTO'
+  | 'RESOLVER'
+  | 'ARCHIVO'
+  | 'RECHAZO'
+  | 'TOCAR'
+  | 'SISTEMA';
 
 export class Writer {
   readonly db: Database;

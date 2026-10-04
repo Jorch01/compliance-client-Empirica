@@ -32,6 +32,7 @@ const INDEXES: Partial<Record<TableName, string[]>> = {
   Notificaciones: ['usuarioId'],
   Membresias: ['usuarioId'],
   Eventos: ['inicio'],
+  Sugerencias: ['usuarioId', 'estado'],
 };
 
 export function storeSchema(table: TableName): string {
@@ -52,12 +53,30 @@ export interface Notice {
   at: string;
   table: TableName;
   recordId: string;
-  kind: 'rejected' | 'conflict' | 'superseded';
+  /** 'upload': the server refused a document's file. */
+  kind: 'rejected' | 'conflict' | 'superseded' | 'upload';
   code?: string;
   reason?: string;
   fields?: string[];
   /** A label for the record, as the user knew it ("Licencia de funcionamiento"). */
   label?: string;
+}
+
+/**
+ * A document's file waiting to be sent (PLAN.md § 7): the record travels
+ * first, offline too; the file follows once the server has the record.
+ */
+export interface UploadEntry {
+  /** The document (Documentos id). */
+  id: string;
+  /** Makes a retry harmless (files.upload). */
+  uploadId: string;
+  data: ArrayBuffer;
+  nombre: string;
+  size: number;
+  createdAt: string;
+  /** Why the server refused it: it waits for the user, never retried on its own. */
+  error?: { code: string; reason?: string } | null;
 }
 
 export interface MetaEntry {
@@ -69,10 +88,11 @@ export type PortalDb = Dexie & {
   outbox: Table<OutboxEntry, number>;
   meta: Table<MetaEntry, string>;
   notices: Table<Notice, number>;
+  uploads: Table<UploadEntry, string>;
 } & Record<TableName, Table<Row, string>>;
 
 /** Bump when the stores change; Dexie upgrades the database in place. */
-export const DB_VERSION = 1;
+export const DB_VERSION = 3;
 
 export function dbName(accountId: string): string {
   return `empirica-${accountId}`;
@@ -84,6 +104,7 @@ export function openDb(accountId: string): PortalDb {
     outbox: '++seq, opId, [table+id]',
     meta: 'key',
     notices: '++id',
+    uploads: 'id',
   };
   for (const t of LOCAL_TABLES) stores[t] = storeSchema(t);
   db.version(DB_VERSION).stores(stores);

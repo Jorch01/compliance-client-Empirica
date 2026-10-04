@@ -49,6 +49,16 @@ export interface GIterator<T> {
   next(): T;
 }
 
+/** Bytes as Apps Script hands them: signed, -128 to 127. */
+export type GBytes = number[];
+
+export interface GBlob {
+  getBytes(): GBytes;
+  getContentType(): string | null;
+  getName(): string | null;
+  getDataAsString(charset?: string): string;
+}
+
 export interface GFile {
   getId(): string;
   getName(): string;
@@ -57,6 +67,8 @@ export interface GFile {
   moveTo(destination: GFolder): unknown;
   setTrashed(trashed: boolean): unknown;
   isTrashed(): boolean;
+  getBlob(): GBlob;
+  getSize(): number;
 }
 
 export interface GFolder {
@@ -64,6 +76,9 @@ export interface GFolder {
   getName(): string;
   createFolder(name: string): GFolder;
   getFiles(): GIterator<GFile>;
+  getFoldersByName(name: string): GIterator<GFolder>;
+  createFile(blob: GBlob): GFile;
+  isTrashed(): boolean;
 }
 
 export interface GHttpResponse {
@@ -117,8 +132,10 @@ export interface GoogleGlobals {
     computeDigest(algorithm: unknown, value: string, charset: unknown): number[];
     DigestAlgorithm: { SHA_256: unknown };
     Charset: { UTF_8: unknown };
-    base64DecodeWebSafe(encoded: string): number[];
-    newBlob(data: number[]): { getDataAsString(charset?: string): string };
+    base64DecodeWebSafe(encoded: string): GBytes;
+    base64Decode(encoded: string): GBytes;
+    base64Encode(data: GBytes): string;
+    newBlob(data: GBytes, contentType?: string, name?: string): GBlob;
     getUuid(): string;
   };
   DriveApp: {

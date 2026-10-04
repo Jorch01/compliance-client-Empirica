@@ -10,6 +10,9 @@ import type { TableName } from '../domain/tables.ts';
 export const uid = (n: number): string =>
   `00000000-0000-4000-8000-${n.toString(16).padStart(12, '0')}`;
 
+/** What the demo documents' files contain: a fictitious, tiny PDF. */
+export const DEMO_FILE_CONTENT = '%PDF-1.4\n% Documento ficticio de demostracion\n%%EOF\n';
+
 export const ID = {
   clienteA: uid(0x1a),
   clienteB: uid(0x1b),
@@ -66,6 +69,9 @@ export const ID = {
   trNorte: uid(0xf01),
   ctNorte: uid(0xf02),
   evNorte: uid(0xf03),
+  // Feedback about the portal
+  sugColab: uid(0xf11),
+  sugB: uid(0xf12),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';
@@ -345,6 +351,10 @@ export function demoData(): Dataset {
         visibilidad: 'COMPARTIDO',
         vinculo: { tipo: 'Asuntos', id: ID.asNorte },
         driveFileId: 'drive-file-1',
+        versionDoc: 1,
+        mimeType: 'application/pdf',
+        tamanoBytes: DEMO_FILE_CONTENT.length,
+        categoria: 'COMPLIANCE',
         subidoPor: ID.abogado,
       }),
     ],
@@ -439,7 +449,30 @@ export function demoData(): Dataset {
         campo: 'fechaLimite',
         valorVigente: '"2026-10-15"',
         valorPropuesto: '"2026-10-20"',
+        propuestoPor: ID.socio,
         estado: 'PENDIENTE',
+      }),
+    ],
+    Sugerencias: [
+      base(ID.sugColab, {
+        usuarioId: ID.cColab,
+        tipo: 'SUGERENCIA',
+        mensaje: 'Sería útil ver los pendientes por fecha.',
+        pantalla: '#/pendientes',
+        clienteContexto: A,
+        estado: 'NUEVA',
+        createdBy: ID.cColab,
+      }),
+      base(ID.sugB, {
+        usuarioId: ID.cB,
+        tipo: 'ERROR',
+        mensaje: 'No carga la lista de solicitudes.',
+        pantalla: '#/solicitudes',
+        clienteContexto: B,
+        diagnostico: { version: '0.2.0' },
+        estado: 'EN_REVISION',
+        respuesta: 'Gracias, ya lo estamos revisando.',
+        createdBy: ID.cB,
       }),
     ],
     Bitacora: [],

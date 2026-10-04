@@ -16,6 +16,7 @@ import {
   ESTADOS_MEMBRESIA,
   ESTADOS_OBLIGACION,
   ESTADOS_SOLICITUD,
+  ESTADOS_SUGERENCIA,
   ESTADOS_TAREA,
   ESTADOS_TRAMITE,
   ESTADOS_USUARIO,
@@ -28,6 +29,7 @@ import {
   SERVICIOS,
   TIPOS_ENTIDAD,
   TIPOS_EVENTO,
+  TIPOS_SUGERENCIA,
   VISIBILIDADES,
 } from './enums.ts';
 
@@ -108,7 +110,9 @@ export type Audience =
   /** Firm only. */
   | 'firm'
   /** Everyone with an account (non-client reference data such as public holidays). */
-  | 'everyone';
+  | 'everyone'
+  /** The user it names (`scope.user`) and the portal's administrators (SOCIO_ADMIN). */
+  | 'own';
 
 /**
  * How a tab reaches the devices:
@@ -201,6 +205,7 @@ export const TABLE_NAMES = [
   'DiasInhabiles',
   'Notificaciones',
   'Conflictos',
+  'Sugerencias',
   'Bitacora',
   'Reportes',
   'OpsAplicadas',
@@ -409,6 +414,8 @@ export const TABLES: Record<TableName, TableDef> = {
         visibility: true,
       },
       sensitive: VISIBLE_SCOPE_FIELDS,
+      // Counts every task, internal ones too: clients count what they see.
+      hiddenFromClients: ['avance'],
       serverManaged: ['avance'],
       immutable: ['clienteId'],
     },
@@ -621,7 +628,8 @@ export const TABLES: Record<TableName, TableDef> = {
       col('versionDoc', { type: 'number' }),
       VISIBILIDAD,
       ref('subidoPor', 'Usuarios'),
-      col('categoria', { type: 'string' }),
+      // The practice area: the Drive folder of the client it goes in.
+      col('categoria', e(AREAS)),
       col('tamanoBytes', { type: 'number' }),
     ],
     {
@@ -786,6 +794,30 @@ export const TABLES: Record<TableName, TableDef> = {
       audience: 'firm',
       scope: { client: 'clienteId' },
       immutable: ['clienteId', 'entidad', 'entidadId', 'campo', 'valorVigente', 'valorPropuesto'],
+    },
+  ),
+
+  // Suggestions and error reports about the portal itself (feedback button).
+  // Whoever sends one sees it and the firm's answer; the administrators see all.
+  Sugerencias: table(
+    'Sugerencias',
+    [
+      ref('usuarioId', 'Usuarios', true),
+      col('tipo', { ...e(TIPOS_SUGERENCIA), required: true }),
+      col('mensaje', { type: 'text', required: true }),
+      // Where it happened: the screen and the client in view (for context only).
+      col('pantalla', { type: 'string' }),
+      col('clienteContexto', { type: 'string' }),
+      // Version, browser, sync status and recent errors, if the user agreed.
+      col('diagnostico', { type: 'json' }),
+      col('estado', { ...e(ESTADOS_SUGERENCIA), required: true }),
+      col('respuesta', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'own',
+      scope: { user: 'usuarioId' },
+      immutable: ['usuarioId', 'tipo', 'mensaje', 'pantalla', 'clienteContexto', 'diagnostico'],
     },
   ),
 

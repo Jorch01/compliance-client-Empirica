@@ -8,6 +8,7 @@ import { PULLED_TABLES, TABLES, type TableName } from '../domain/tables.ts';
 import type { Row, Value } from '../domain/values.ts';
 import { ID, demoData, uid, type Dataset } from '../testing/fixtures.ts';
 import { buildUserContext, userHasClientAccess, type UserContext } from './context.ts';
+import { authorizeConflictResolution, authorizeDownload, authorizeUpload } from './online.ts';
 import { canRead, projectRow } from './read.ts';
 import { buildSnapshot } from './snapshot.ts';
 import { authorizeWrite, onlyToggled, type OpType, type WriteLookup } from './write.ts';
@@ -497,6 +498,13 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
     create: { fecha: '2026-12-25', descripcion: 'BORRADOR: validar' },
     expected: ['CUD', '', '', '', '', ''],
   },
+  Sugerencias: {
+    // Sent by the unit collaborator: only the administrators answer it.
+    target: ID.sugColab,
+    update: { estado: 'EN_REVISION' },
+    create: { tipo: 'SUGERENCIA', mensaje: 'Una idea para el portal' },
+    expected: ['CU', 'C', 'C', 'C', 'C', 'C'],
+  },
 };
 
 describe('the matrix, cell by cell', () => {
@@ -539,6 +547,174 @@ describe('the matrix, cell by cell', () => {
       ok: false,
       reason: 'READ_ONLY_TABLE',
     });
+  });
+});
+
+describe('feedback about the portal (Sugerencias)', () => {
+  const w = world();
+
+  it('whoever sends it sees it; the administrators see all; nobody else does', () => {
+    expect(w.sees(ID.cColab, 'Sugerencias', ID.sugColab)).toBe(true);
+    expect(w.sees(ID.socio, 'Sugerencias', ID.sugColab)).toBe(true);
+    expect(w.sees(ID.socio, 'Sugerencias', ID.sugB)).toBe(true);
+    for (const other of [ID.abogado, ID.asistente, ID.cAdmin, ID.cLectura, ID.cB]) {
+      expect(w.sees(other, 'Sugerencias', ID.sugColab)).toBe(false);
+    }
+    expect(w.sees(ID.cColab, 'Sugerencias', ID.sugB)).toBe(false);
+  });
+
+  it('even read-only users can send one, always as themselves and as new', () => {
+    const own = w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9901), {
+      tipo: 'ERROR',
+      mensaje: 'No abre la pantalla de equipo',
+    });
+    expect(own).toMatchObject({
+      ok: true,
+      fields: { usuarioId: ID.cLectura, estado: 'NUEVA' },
+    });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9902), {
+        tipo: 'ERROR',
+        mensaje: 'Firmado por otro',
+        usuarioId: ID.cAdmin,
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE', field: 'usuarioId' });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9903), {
+        tipo: 'SUGERENCIA',
+        mensaje: 'Ya resuelta por mí',
+        estado: 'RESUELTA',
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE', field: 'estado' });
+    expect(
+      w.write(ID.cLectura, 'Sugerencias', 'create', uid(0x9904), {
+        tipo: 'SUGERENCIA',
+        mensaje: 'Con respuesta propia',
+        respuesta: 'Listo',
+      }),
+    ).toMatchObject({ ok: false, reason: 'FIELD_NOT_ALLOWED', field: 'respuesta' });
+  });
+
+  it('the administrators answer and move it, but never rewrite what was sent', () => {
+    expect(
+      w.write(ID.socio, 'Sugerencias', 'update', ID.sugColab, {
+        estado: 'RESUELTA',
+        respuesta: 'Listo: ya se ordenan por fecha.',
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      w.write(ID.socio, 'Sugerencias', 'update', ID.sugColab, { mensaje: 'Otro texto' }),
+    ).toMatchObject({ ok: false, reason: 'IMMUTABLE', field: 'mensaje' });
+    expect(
+      w.write(ID.cColab, 'Sugerencias', 'update', ID.sugColab, { estado: 'RESUELTA' }),
+    ).toMatchObject({ ok: false, reason: 'ROLE' });
+  });
+
+  it('it carries no client: it never depends on access to one', () => {
+    expect(TABLES.Sugerencias.scope.client).toBeUndefined();
+    expect(PULLED_TABLES).toContain('Sugerencias');
+  });
+});
+
+describe('online actions: conflicts and files', () => {
+  /** A conflict about a task of client A, still to decide. */
+  const conflictOf = (w: ReturnType<typeof world>): Row => {
+    const c = w.data.Conflictos.find((x) => x.entidadId === ID.tNorte1);
+    if (!c) throw new Error('no conflict in the demo data');
+    return c;
+  };
+
+  it('a conflict is decided by the SOCIO_ADMIN or a lawyer of its client', () => {
+    const w = world();
+    const decide = (userId: string) =>
+      authorizeConflictResolution(w.ctx(userId), conflictOf(w), w.lookup);
+    expect(decide(ID.socio)).toEqual({ ok: true, clienteId: A });
+    expect(decide(ID.abogado)).toEqual({ ok: true, clienteId: A });
+    expect(decide(ID.asistente)).toMatchObject({ ok: false, code: 'FORBIDDEN', reason: 'ROLE' });
+    for (const u of [ID.abogadoB, ID.cB, ...CLIENT_USERS_OF_A]) {
+      expect(decide(u)).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+    }
+    expect(authorizeConflictResolution(w.ctx(ID.socio), undefined, w.lookup)).toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('a conflict is decided once, and never on a deleted record', () => {
+    const resolved = world((d) => {
+      const c = d.Conflictos.find((x) => x.entidadId === ID.tNorte1);
+      if (c) c.estado = 'RESUELTO';
+    });
+    expect(
+      authorizeConflictResolution(resolved.ctx(ID.socio), conflictOf(resolved), resolved.lookup),
+    ).toMatchObject({ code: 'CONFLICT', reason: 'ALREADY_RESOLVED' });
+    const gone = world((d) => {
+      const t = d.Tareas.find((x) => x.id === ID.tNorte1);
+      if (t) t.deleted = '2026-10-01T10:00:00.000-05:00';
+    });
+    expect(
+      authorizeConflictResolution(gone.ctx(ID.socio), conflictOf(gone), gone.lookup),
+    ).toMatchObject({ code: 'CONFLICT', reason: 'RECORD_DELETED' });
+  });
+
+  /** A document of the Norte unit, created by `subidoPor`, with or without its file. */
+  const withDocument = (subidoPor: string, driveFileId: string | null) =>
+    world((d) => {
+      const doc = d.Documentos.find((x) => x.id === ID.docNorte);
+      if (doc) Object.assign(doc, { subidoPor, driveFileId });
+    });
+
+  it('the firm sends a document’s file at any time (a new version)', () => {
+    const w = withDocument(ID.abogado, 'drive-file-1');
+    const doc = w.row('Documentos', ID.docNorte);
+    expect(authorizeUpload(w.ctx(ID.abogado), doc, w.lookup)).toEqual({ ok: true, clienteId: A });
+    expect(authorizeUpload(w.ctx(ID.asistente), doc, w.lookup)).toMatchObject({ ok: true });
+    expect(authorizeUpload(w.ctx(ID.abogadoB), doc, w.lookup)).toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('a client user sends only the first file of their own document', () => {
+    const fresh = withDocument(ID.cColab, null);
+    const doc = fresh.row('Documentos', ID.docNorte);
+    expect(authorizeUpload(fresh.ctx(ID.cColab), doc, fresh.lookup)).toMatchObject({ ok: true });
+    expect(authorizeUpload(fresh.ctx(ID.cAdmin), doc, fresh.lookup)).toMatchObject({
+      code: 'FORBIDDEN',
+      reason: 'NOT_OWNER',
+    });
+    expect(authorizeUpload(fresh.ctx(ID.cLectura), doc, fresh.lookup)).toMatchObject({
+      code: 'FORBIDDEN',
+      reason: 'ROLE',
+    });
+    const sent = withDocument(ID.cColab, 'drive-file-1');
+    expect(
+      authorizeUpload(sent.ctx(ID.cColab), sent.row('Documentos', ID.docNorte), sent.lookup),
+    ).toMatchObject({ code: 'CONFLICT', reason: 'ALREADY_UPLOADED' });
+  });
+
+  it('a file is downloaded by whoever sees its document, once it has one', () => {
+    const w = withDocument(ID.abogado, 'drive-file-1');
+    const doc = w.row('Documentos', ID.docNorte);
+    for (const u of [ID.socio, ID.abogado, ID.asistente, ID.cAdmin, ID.cColab, ID.cLectura]) {
+      expect(authorizeDownload(w.ctx(u), doc, w.lookup)).toMatchObject({ ok: true });
+    }
+    for (const u of [ID.cAdminSur, ID.cB, ID.abogadoB]) {
+      expect(authorizeDownload(w.ctx(u), doc, w.lookup)).toMatchObject({ code: 'NOT_FOUND' });
+    }
+    const internal = world((d) => {
+      const x = d.Documentos.find((r) => r.id === ID.docNorte);
+      if (x) x.visibilidad = 'INTERNO';
+    });
+    expect(
+      authorizeDownload(
+        internal.ctx(ID.cAdmin),
+        internal.row('Documentos', ID.docNorte),
+        internal.lookup,
+      ),
+    ).toMatchObject({ code: 'NOT_FOUND' });
+    const empty = withDocument(ID.abogado, null);
+    expect(
+      authorizeDownload(empty.ctx(ID.abogado), empty.row('Documentos', ID.docNorte), empty.lookup),
+    ).toMatchObject({ code: 'NOT_FOUND', reason: 'NOT_UPLOADED' });
   });
 });
 

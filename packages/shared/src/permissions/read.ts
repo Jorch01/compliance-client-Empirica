@@ -131,6 +131,10 @@ function canReadAt(
   const def = TABLES[table];
   if (def.sync === 'snapshot' || def.sync === 'none') return false;
 
+  if (def.audience === 'own') {
+    return ctx.isAdmin || (def.scope.user !== undefined && row[def.scope.user] === ctx.userId);
+  }
+
   if (def.audience === 'everyone') {
     if (def.scope.user && row[def.scope.user] !== ctx.userId) return false;
     const clienteId = clientIdOf(def, row);

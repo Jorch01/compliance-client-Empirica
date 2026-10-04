@@ -53,6 +53,14 @@ export async function signIn(page: Page, user: DemoUser): Promise<void> {
   await expect(page.getByRole('button', { name: /Al día/ })).toBeVisible({ timeout: 20_000 });
 }
 
+/** Asks for a sync now, from the status button, and waits until it is done. */
+export async function syncNow(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /Al día|Sincronizando|Sin conexión|No se pudo/ }).click();
+  await page.getByRole('button', { name: 'Sincronizar ahora' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: /Al día/ })).toBeVisible({ timeout: 20_000 });
+}
+
 /** A fresh data set before each test: the mock backend starts over. */
 export const test = base.extend<{ fresh: undefined }>({
   fresh: [

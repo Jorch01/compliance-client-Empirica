@@ -3,8 +3,15 @@
  * already run, the fictitious data set loaded, and helpers to call the API as
  * any of its users.
  */
-import { TABLES, TABLE_NAMES, type Action, type ApiResponse, type Row } from '@empirica/shared';
-import { demoData, type Dataset } from '@empirica/shared/testing';
+import {
+  TABLES,
+  TABLE_NAMES,
+  text,
+  type Action,
+  type ApiResponse,
+  type Row,
+} from '@empirica/shared';
+import { DEMO_FILE_CONTENT, demoData, type Dataset } from '@empirica/shared/testing';
 import { Database, Sequence } from '../db/database.ts';
 import { PROP, createEnv, type Env } from '../env.ts';
 import { handleRequest } from '../router.ts';
@@ -71,7 +78,21 @@ export function createWorld(
   // setup() tries the server key once; the tests count only their own lookups.
   google.firebase.lookups = 0;
   const data = options.data === null ? null : (options.data ?? demoData());
-  if (data) seed(env, data);
+  if (data) {
+    seed(env, data);
+    // The demo documents' files are in Drive too, so they can be downloaded.
+    for (const doc of data.Documentos) {
+      const fileId = text(doc, 'driveFileId');
+      if (fileId) {
+        google.seedFile(
+          fileId,
+          text(doc, 'nombre') ?? 'documento',
+          DEMO_FILE_CONTENT,
+          text(doc, 'mimeType') ?? 'application/octet-stream',
+        );
+      }
+    }
+  }
 
   // Tokens last an hour, like Firebase's; a new one is issued when needed.
   const tokens = new Map<string, { token: string; exp: number }>();

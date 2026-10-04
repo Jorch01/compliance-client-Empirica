@@ -15,6 +15,8 @@ export const PROP = {
   firebaseApiKey: 'FIREBASE_SERVER_API_KEY',
   firebaseProjectId: 'FIREBASE_PROJECT_ID',
   adminEmails: 'ADMIN_EMAILS',
+  /** Fingerprint of the data model the spreadsheet was last brought up to. */
+  schemaVersion: 'SCHEMA_VERSION',
 } as const;
 
 export interface Env {
