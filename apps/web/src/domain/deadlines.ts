@@ -65,8 +65,25 @@ export interface Deadline {
   row: Row;
   date: string;
   label: string;
+  /** Its light: by the date, unless the source says otherwise (a period under review). */
+  light: Semaforo;
+  /** What the date is, when a record has more than one ("Último día para avisar"). */
+  kind: string | null;
   clienteId: string | null;
   entidadId: string | null;
+}
+
+export interface DeadlineSource {
+  table: Deadline['table'];
+  rows: readonly Row[];
+  label: string;
+  /** The column with the date… */
+  field?: string;
+  /** …or how to find it (null: nothing is due). */
+  dateOf?: (row: Row) => string | null;
+  /** The light when the date alone does not tell it. */
+  lightOf?: (row: Row) => Semaforo | null;
+  kindOf?: (row: Row) => string | null;
 }
 
 /** States after which a date no longer counts. */
@@ -74,7 +91,7 @@ const CLOSED = new Set(['HECHO', 'CONCLUIDO', 'CANCELADO', 'INACTIVA']);
 
 /** The dated things of a set of rows, soonest first, within `days` from today (overdue included). */
 export function upcoming(
-  sources: { table: Deadline['table']; rows: readonly Row[]; field: string; label: string }[],
+  sources: readonly DeadlineSource[],
   today: string,
   days: number,
 ): Deadline[] {
@@ -82,14 +99,20 @@ export function upcoming(
   for (const s of sources) {
     for (const row of s.rows) {
       if (row.deleted || CLOSED.has(text(row, 'estado') ?? '')) continue;
-      const date = text(row, s.field);
+      const date = s.dateOf ? s.dateOf(row) : s.field ? text(row, s.field) : null;
       if (!date) continue;
-      if (daysBetween(today, date.slice(0, 10)) > days) continue;
+      const day = date.slice(0, 10);
+      if (daysBetween(today, day) > days) continue;
+      const byDate = urgencyOf(day, today);
       out.push({
         table: s.table,
         row,
-        date: date.slice(0, 10),
+        date: day,
         label: text(row, s.label) ?? '',
+        light:
+          s.lightOf?.(row) ??
+          (s.table === 'Tareas' ? taskSemaforo(row, today) : byDate === 'none' ? 'noDate' : byDate),
+        kind: s.kindOf?.(row) ?? null,
         clienteId: text(row, 'clienteId'),
         entidadId: text(row, 'entidadId'),
       });
@@ -97,3 +120,11 @@ export function upcoming(
   }
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
+
+/** Where each kind of dated record opens. */
+export const DEADLINE_PATH: Record<Deadline['table'], string> = {
+  Tareas: '/tareas',
+  Obligaciones: '/compliance',
+  Tramites: '/tramites',
+  Contratos: '/contratos',
+};

@@ -12,6 +12,7 @@ import { Button } from '../ui/Button.tsx';
 import { Card, PageHeader } from '../ui/Card.tsx';
 import { Dialog } from '../ui/Dialog.tsx';
 import { SelectField, TextArea, TextField } from '../ui/Field.tsx';
+import { Perimeter } from './common/Perimeter.tsx';
 import { RequestList } from './common/RequestList.tsx';
 
 type Filter = 'open' | 'closed' | 'all';
@@ -177,8 +178,9 @@ function NewRequestDialog({ open, onClose }: { open: boolean; onClose: () => voi
 export function RequestsPage() {
   const { t } = useTranslation();
   const { me } = usePortal();
-  const { clients } = useScope();
+  const { clients, scope } = useScope();
   const requests = useScopedRows('Solicitudes');
+  const client = clients.find((c) => c.id === scope.clientId);
   const [filter, setFilter] = useState<Filter>('open');
   const [creating, setCreating] = useState(false);
   const canCreate = clients.some((c) => can(me, 'Solicitudes', 'create', c.id));
@@ -228,6 +230,13 @@ export function RequestsPage() {
         </div>
         <RequestList requests={shown} />
       </Card>
+      {!me.isFirm && client?.servicio === 'FLT_IGUALA' ? (
+        <div className="mt-6">
+          <Card title={t('requests.perimeterTitle')}>
+            <Perimeter client={client} />
+          </Card>
+        </div>
+      ) : null}
       {creating ? (
         <NewRequestDialog
           open

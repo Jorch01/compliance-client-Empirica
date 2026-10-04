@@ -1,9 +1,6 @@
 import { useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  AREAS,
-  ESTADOS_ASUNTO,
-  PRIORIDADES,
   TABLES,
   changedFields,
   text,
@@ -15,8 +12,7 @@ import {
 import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { unitTree } from '../../domain/scope.ts';
-import { assignable } from '../../domain/work.ts';
-import { areaLabel, priorityLabel } from '../../i18n/labels.ts';
+import { assignable, linkOf } from '../../domain/work.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
@@ -27,38 +23,30 @@ import { VisibilityField } from '../common/VisibilityField.tsx';
 interface Form {
   clienteId: string;
   entidadId: string;
-  titulo: string;
-  area: string;
-  estado: string;
-  prioridad: string;
+  contraparte: string;
+  tipo: string;
+  fechaFirma: string;
+  vigenciaHasta: string;
+  renovacionAutomatica: boolean;
+  diasAvisoPrevio: string;
   responsableId: string;
-  fechaInicio: string;
-  fechaObjetivo: string;
-  dentroIguala: boolean;
+  docId: string;
   visibilidad: Visibilidad;
 }
 
 const str = (row: Row | undefined, field: string): string => (row ? (text(row, field) ?? '') : '');
 
 /**
- * A matter, new or edited (firm). New ones are shared with the client unless
- * the lawyer says otherwise (D19). Saved on the device at once.
+ * A contract, new or edited (firm): the counterparty, its dates and the
+ * days of notice before its end. Its signed copy is one of its documents,
+ * chosen once uploaded. Saved on the device at once.
  */
-export function MatterForm({
-  matter,
-  preset,
+export function ContractForm({
+  contract,
   onClose,
   onSaved,
 }: {
-  matter?: Row;
-  /** A new matter's first values (from a request, for one). */
-  preset?: {
-    clienteId: string;
-    entidadId: string;
-    titulo: string;
-    area: string;
-    dentroIguala: boolean;
-  };
+  contract?: Row;
   onClose: () => void;
   onSaved?: (id: string) => void;
 }) {
@@ -68,33 +56,39 @@ export function MatterForm({
   const usuarios = useRows('Usuarios');
   const membresias = useRows('Membresias');
   const allUnits = useRows('Entidades');
-  const creatable = clients.filter((c) => can(me, 'Asuntos', 'create', c.id));
+  const creatable = clients.filter((c) => can(me, 'Contratos', 'create', c.id));
   const [form, setForm] = useState<Form>(() => ({
     clienteId:
-      str(matter, 'clienteId') ||
-      (preset?.clienteId ?? '') ||
+      str(contract, 'clienteId') ||
       (scope.clientId && creatable.some((c) => c.id === scope.clientId) ? scope.clientId : '') ||
       (creatable.length === 1 ? (creatable[0]?.id ?? '') : ''),
-    entidadId: matter ? str(matter, 'entidadId') : (preset?.entidadId ?? scope.unitId ?? ''),
-    titulo: str(matter, 'titulo') || (preset?.titulo ?? ''),
-    area: str(matter, 'area') || (preset?.area ?? ''),
-    estado: str(matter, 'estado') || 'ACTIVO',
-    prioridad: str(matter, 'prioridad'),
-    responsableId: matter ? str(matter, 'responsableId') : me.id,
-    fechaInicio: str(matter, 'fechaInicio'),
-    fechaObjetivo: str(matter, 'fechaObjetivo'),
-    dentroIguala: matter ? matter.dentroIguala === true : (preset?.dentroIguala ?? true),
-    visibilidad: matter?.visibilidad === 'INTERNO' ? 'INTERNO' : 'COMPARTIDO',
+    entidadId: contract ? str(contract, 'entidadId') : (scope.unitId ?? ''),
+    contraparte: str(contract, 'contraparte'),
+    tipo: str(contract, 'tipo'),
+    fechaFirma: str(contract, 'fechaFirma'),
+    vigenciaHasta: str(contract, 'vigenciaHasta'),
+    renovacionAutomatica: contract?.renovacionAutomatica === true,
+    diasAvisoPrevio:
+      typeof contract?.diasAvisoPrevio === 'number' ? String(contract.diasAvisoPrevio) : '',
+    responsableId: contract ? str(contract, 'responsableId') : me.id,
+    docId: str(contract, 'docId'),
+    visibilidad: contract?.visibilidad === 'INTERNO' ? 'INTERNO' : 'COMPARTIDO',
   }));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = <K extends keyof Form>(key: K, value: Form[K]): void => {
     setForm((f) => ({ ...f, [key]: value }));
   };
-
   const units = unitTree((allUnits ?? []).filter((u) => u.clienteId === form.clienteId));
   const people = form.clienteId
     ? assignable(usuarios ?? [], membresias ?? [], form.clienteId, 'EMPIRICA')
+    : [];
+  const documents = useRows('Documentos', form.clienteId || null);
+  const own = contract
+    ? (documents ?? []).filter((d) => {
+        const link = linkOf(d);
+        return link?.tipo === 'Contratos' && link.id === contract.id;
+      })
     : [];
 
   const submit = async (event: SubmitEvent): Promise<void> => {
@@ -104,35 +98,40 @@ export function MatterForm({
       setError(t('requests.chooseClient'));
       return;
     }
+    const dias = form.diasAvisoPrevio.trim() === '' ? null : Number(form.diasAvisoPrevio);
+    if (dias !== null && (!Number.isInteger(dias) || dias < 0)) {
+      setError(t('errors.VALIDATION'));
+      return;
+    }
     const fields: Record<string, Value> = {
       clienteId: form.clienteId,
       entidadId: form.entidadId || null,
-      titulo: form.titulo.trim(),
-      area: form.area || null,
-      estado: form.estado,
-      prioridad: form.prioridad || null,
+      contraparte: form.contraparte.trim(),
+      tipo: form.tipo.trim() || null,
+      fechaFirma: form.fechaFirma || null,
+      vigenciaHasta: form.vigenciaHasta || null,
+      renovacionAutomatica: form.renovacionAutomatica,
+      diasAvisoPrevio: dias,
       responsableId: form.responsableId || null,
-      fechaInicio: form.fechaInicio || null,
-      fechaObjetivo: form.fechaObjetivo || null,
-      dentroIguala: form.dentroIguala,
+      ...(contract ? { docId: form.docId || null } : {}),
       visibilidad: form.visibilidad,
     };
-    const check = validateFields(TABLES.Asuntos, fields);
-    if (!check.ok || !form.titulo.trim() || !form.area) {
+    const check = validateFields(TABLES.Contratos, fields);
+    if (!check.ok || !form.contraparte.trim()) {
       setError(t('errors.VALIDATION'));
       return;
     }
     setBusy(true);
     try {
-      if (matter) {
-        const { clienteId: _fixed, ...changes } = changedFields(matter, check.fields);
+      if (contract) {
+        const { clienteId: _fixed, ...changes } = changedFields(contract, check.fields);
         if (Object.keys(changes).length) {
-          await engine.mutate('Asuntos', 'update', matter.id, changes);
+          await engine.mutate('Contratos', 'update', contract.id, changes);
         }
         onClose();
       } else {
         const id = crypto.randomUUID();
-        await engine.mutate('Asuntos', 'create', id, check.fields);
+        await engine.mutate('Contratos', 'create', id, check.fields);
         onClose();
         onSaved?.(id);
       }
@@ -147,20 +146,20 @@ export function MatterForm({
       onClose={onClose}
       error={error}
       size="lg"
-      title={matter ? t('matters.edit') : t('matters.new')}
+      title={contract ? t('contracts.edit') : t('contracts.new')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" form="matter-form" busy={busy} icon="check">
+          <Button type="submit" form="contract-form" busy={busy} icon="check">
             {t('common.save')}
           </Button>
         </>
       }
     >
-      <form id="matter-form" className="space-y-4" onSubmit={(e) => void submit(e)}>
-        {matter ? null : creatable.length > 1 ? (
+      <form id="contract-form" className="space-y-4" onSubmit={(e) => void submit(e)}>
+        {contract ? null : creatable.length > 1 ? (
           <SelectField
             label={t('shell.client')}
             value={form.clienteId}
@@ -174,34 +173,23 @@ export function MatterForm({
           />
         ) : null}
         <TextField
-          label={t('fields.titulo')}
+          label={t('fields.contraparte')}
           required
-          maxLength={200}
-          value={form.titulo}
+          maxLength={300}
+          value={form.contraparte}
           onChange={(e) => {
-            set('titulo', e.target.value);
+            set('contraparte', e.target.value);
           }}
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <SelectField
-            label={t('fields.area')}
-            required
-            value={form.area}
+          <TextField
+            label={t('fields.tipo')}
+            optional={t('common.optional')}
+            maxLength={200}
+            value={form.tipo}
             onChange={(e) => {
-              set('area', e.target.value);
+              set('tipo', e.target.value);
             }}
-            options={[
-              { value: '', label: t('matters.chooseArea') },
-              ...AREAS.map((a) => ({ value: a, label: areaLabel(t, a) })),
-            ]}
-          />
-          <SelectField
-            label={t('fields.estado')}
-            value={form.estado}
-            onChange={(e) => {
-              set('estado', e.target.value);
-            }}
-            options={ESTADOS_ASUNTO.map((s) => ({ value: s, label: t(`matters.estados.${s}`) }))}
           />
           {units.length ? (
             <SelectField
@@ -220,6 +208,37 @@ export function MatterForm({
               ]}
             />
           ) : null}
+          <TextField
+            type="date"
+            label={t('fields.fechaFirma')}
+            optional={t('common.optional')}
+            value={form.fechaFirma}
+            onChange={(e) => {
+              set('fechaFirma', e.target.value);
+            }}
+          />
+          <TextField
+            type="date"
+            label={t('fields.vigenciaHasta')}
+            optional={t('common.optional')}
+            value={form.vigenciaHasta}
+            onChange={(e) => {
+              set('vigenciaHasta', e.target.value);
+            }}
+          />
+          <TextField
+            type="number"
+            min={0}
+            step={1}
+            inputMode="numeric"
+            label={t('fields.diasAvisoPrevio')}
+            optional={t('common.optional')}
+            hint={t('contracts.noticeHint')}
+            value={form.diasAvisoPrevio}
+            onChange={(e) => {
+              set('diasAvisoPrevio', e.target.value);
+            }}
+          />
           <SelectField
             label={t('fields.responsableId')}
             optional={t('common.optional')}
@@ -232,51 +251,35 @@ export function MatterForm({
               ...people.map((u) => ({ value: u.id, label: text(u, 'nombre') ?? '' })),
             ]}
           />
-          <SelectField
-            label={t('fields.prioridad')}
-            optional={t('common.optional')}
-            value={form.prioridad}
-            onChange={(e) => {
-              set('prioridad', e.target.value);
-            }}
-            options={[
-              { value: '', label: t('common.none') },
-              ...PRIORIDADES.map((p) => ({ value: p, label: priorityLabel(t, p) })),
-            ]}
-          />
-          <TextField
-            type="date"
-            label={t('fields.fechaInicio')}
-            optional={t('common.optional')}
-            value={form.fechaInicio}
-            onChange={(e) => {
-              set('fechaInicio', e.target.value);
-            }}
-          />
-          <TextField
-            type="date"
-            label={t('fields.fechaObjetivo')}
-            optional={t('common.optional')}
-            value={form.fechaObjetivo}
-            onChange={(e) => {
-              set('fechaObjetivo', e.target.value);
-            }}
-          />
         </div>
         <CheckboxField
-          label={t('fields.dentroIguala')}
-          hint={t('matters.igualaHint')}
-          checked={form.dentroIguala}
+          label={t('fields.renovacionAutomatica')}
+          hint={t('contracts.autoRenewHint')}
+          checked={form.renovacionAutomatica}
           onChange={(e) => {
-            set('dentroIguala', e.target.checked);
+            set('renovacionAutomatica', e.target.checked);
           }}
         />
+        {contract ? (
+          <SelectField
+            label={t('contracts.document')}
+            hint={t('contracts.documentHint')}
+            value={form.docId}
+            onChange={(e) => {
+              set('docId', e.target.value);
+            }}
+            options={[
+              { value: '', label: t('contracts.documentNone') },
+              ...own.map((d) => ({ value: d.id, label: text(d, 'nombre') ?? '' })),
+            ]}
+          />
+        ) : null}
         <VisibilityField
           value={form.visibilidad}
           onChange={(v) => {
             set('visibilidad', v);
           }}
-          hint={t('matters.visibilityHint')}
+          hint={t('contracts.visibilityHint')}
         />
       </form>
     </Dialog>

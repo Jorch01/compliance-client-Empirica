@@ -73,6 +73,11 @@
   --color-chart-6: var(--chart-6);
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
+  /* The compliance heatmap: steps 1, 3, 6 and 7 of the sequential ramp (DISENO.md § 6). */
+  --color-chart-seq-1: var(--chart-seq-1);
+  --color-chart-seq-3: var(--chart-seq-3);
+  --color-chart-seq-6: var(--chart-seq-6);
+  --color-chart-seq-7: var(--chart-seq-7);
 
   --font-display: var(--brand-font-display);
   --font-sans: var(--brand-font-sans);

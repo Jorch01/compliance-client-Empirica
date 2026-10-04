@@ -26,6 +26,38 @@ const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boole
     dark: true,
   },
   { user: 'socia', paths: ['#/'], dark: true },
+  {
+    user: 'socia',
+    paths: [
+      '#/tramites',
+      '#/tramites/plantillas',
+      '#/compliance',
+      '#/compliance/catalogo',
+      '#/compliance/inhabiles',
+      '#/contratos',
+    ],
+  },
+  {
+    user: 'abogado',
+    paths: [
+      '#/tramites/00000000-0000-4000-8000-000000000f01',
+      '#/compliance/00000000-0000-4000-8000-000000000701',
+      '#/contratos/00000000-0000-4000-8000-000000000f02',
+      '#/solicitudes/00000000-0000-4000-8000-000000000901',
+    ],
+    dark: true,
+  },
+  {
+    user: 'adminA',
+    paths: [
+      '#/tramites',
+      '#/compliance',
+      '#/contratos',
+      '#/compliance/00000000-0000-4000-8000-000000000701',
+    ],
+    dark: true,
+    mobile: true,
+  },
   { user: 'adminA', paths: ['#/', '#/pendientes', '#/equipo'], mobile: true },
   {
     user: 'norte',

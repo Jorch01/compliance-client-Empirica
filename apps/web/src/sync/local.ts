@@ -88,12 +88,18 @@ export interface Enqueue {
  * How a new edit joins the queue. `pending` holds the record's operations
  * not yet in flight, oldest first; `current` is the local record before the
  * edit (its sensitive values are what the server must still have, `base`).
+ *
+ * An edit joins the record's last operation only while nothing else was
+ * queued after it (`tailSeq`, the queue's last position): merged there, a
+ * field naming a record created in between (a request's new matter, a
+ * contract's signed copy) would reach the server before that record exists.
  */
 export function enqueue(
   table: TableName,
   current: Row | undefined,
   pending: readonly OutboxEntry[],
   edit: { opId: string; type: OpType; id: string; fields: Record<string, Value>; at: string },
+  tailSeq?: number,
 ): Enqueue {
   const last = pending[pending.length - 1];
   const sensitive = TABLES[table].sensitive;
@@ -138,7 +144,10 @@ export function enqueue(
 
   switch (edit.type) {
     case 'update':
-      if (last.type === 'create' || last.type === 'update') {
+      if (
+        (last.type === 'create' || last.type === 'update') &&
+        last.seq === (tailSeq ?? last.seq)
+      ) {
         return { remove: [], put: mergeFields() };
       }
       return { remove: [], put: fresh() };
