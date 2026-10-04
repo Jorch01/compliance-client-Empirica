@@ -150,7 +150,11 @@ export const en: Messages = {
       REVOKED: 'This invitation was cancelled.',
       INVALID_LINK:
         'This link is not valid or was already used. Ask the person who invited you for a new one.',
+      TOKEN:
+        'Your Google or Firebase session could not be confirmed. Try again; if it happens again, send the technical detail below to the person who invited you.',
     },
+    retry: 'Try again',
+    details: 'Technical detail',
   },
   lock: {
     title: 'Session locked',
