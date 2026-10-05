@@ -198,6 +198,7 @@ export const es = {
     filings: 'Trámites',
     compliance: 'Compliance',
     contracts: 'Contratos',
+    agenda: 'Agenda',
     groups: { work: 'Seguimiento', admin: 'Administración', company: 'Su empresa' },
   },
   shell: {
@@ -337,6 +338,10 @@ export const es = {
         title: 'Funciona sin conexión',
         body: 'Aquí ves si todo está al día o cuántos cambios esperan a la red. No tienes que hacer nada: se envían solos.',
       },
+      bell: {
+        title: 'Avisos',
+        body: 'La campana cuenta lo que te toca: tareas asignadas, evidencia por validar, solicitudes nuevas. Cada mañana llega además un resumen por correo.',
+      },
     },
     client: {
       welcome: {
@@ -358,6 +363,10 @@ export const es = {
       sync: {
         title: 'Funciona sin conexión',
         body: 'Aquí ve si todo está al día o cuántos cambios esperan a la red. Se envían solos.',
+      },
+      bell: {
+        title: 'Avisos',
+        body: 'La campana le avisa lo que le toca, y cada mañana le llega un resumen por correo. En "Agenda" están sus fechas, también para su calendario.',
       },
     },
     install: {
@@ -592,6 +601,12 @@ export const es = {
       RECHAZADA: 'Cancelada',
     },
     online: 'Las invitaciones necesitan conexión.',
+    emailOption: 'Enviarle el enlace por correo',
+    emailOptionHint:
+      'Lo envía el portal, en el idioma elegido. El enlace también aparece aquí para copiarlo.',
+    emailedTo: 'El portal envió la invitación a {{email}}.',
+    emailQuota: 'Hoy ya no quedan correos en la cuota del portal: comparte tú el enlace.',
+    emailFailed: 'El correo no salió: comparte tú el enlace.',
   },
   requests: {
     filter: 'Mostrar',
@@ -1298,6 +1313,109 @@ export const es = {
     notFound: 'No encontramos este contrato. Puede que lo hayan borrado o que ya no tengas acceso.',
     visibilityHint:
       'Un contrato interno no lo ve el cliente, ni sus comentarios ni sus documentos.',
+  },
+  notices: {
+    title: 'Avisos',
+    intro:
+      'Lo que el portal te avisa: tareas que te asignaron, evidencia por revisar, solicitudes nuevas y conflictos. Toca un aviso para ir a lo que dice.',
+    bell: 'Avisos',
+    bellUnread_one: '{{count}} aviso sin leer',
+    bellUnread_other: '{{count}} avisos sin leer',
+    unread: 'sin leer',
+    markAll: 'Marcar todo como leído',
+    empty: 'No tienes avisos.',
+    digestTitle: 'Resumen diario por correo',
+    digestLabel: 'Recibir el resumen diario',
+    digestHint:
+      'Cada mañana, desde las {{hour}}:00 (hora de Cancún): lo vencido, lo de hoy y lo de los próximos días. Si no hay nada, no llega.',
+    kinds: {
+      TAREA_ASIGNADA: 'Te asignaron la tarea "{{titulo}}".',
+      TAREA_EN_REVISION: 'El cliente terminó la tarea "{{titulo}}": falta revisarla.',
+      EVIDENCIA_ENVIADA: 'Llegó evidencia de "{{titulo}}" para validar.',
+      EVIDENCIA_VALIDADA: 'El despacho validó la evidencia de "{{titulo}}".',
+      EVIDENCIA_RECHAZADA: 'El despacho pidió corregir la evidencia de "{{titulo}}".',
+      SOLICITUD_NUEVA: 'Solicitud nueva: "{{titulo}}".',
+      CONFLICTO: 'Dos cambios chocaron en "{{titulo}}": elige cuál se queda.',
+      INVITACION_POR_APROBAR: 'La invitación de {{titulo}} espera tu aprobación.',
+      SUGERENCIA_RESPONDIDA: 'Respondieron tu sugerencia: "{{titulo}}".',
+      CALENDARIO_REVERTIDO:
+        'Un cambio hecho en Google Calendar no se aplicó: "{{titulo}}" se cambia en el portal.',
+      CUOTA_CORREO:
+        'Al portal le quedan {{titulo}} correos por hoy. Los resúmenes que no salgan hoy no se reenvían; las invitaciones se pueden compartir con su enlace.',
+    },
+  },
+  agenda: {
+    title: 'Agenda',
+    intro:
+      'Vencimientos, citas y audiencias de lo que ves, día por día. Llévala a tu calendario con tu enlace personal.',
+    filterLabel: 'Mostrar',
+    filters: { all: 'Todo', deadlines: 'Vencimientos', appointments: 'Citas y audiencias' },
+    info: {
+      title: 'La agenda',
+      purpose: 'Ver en un solo lugar qué vence y qué citas vienen, de todo lo que puedes ver.',
+      howToRead: [
+        'Arriba, lo vencido: fechas límite que ya pasaron sin cumplirse.',
+        'Después, cada día con lo que vence o está agendado. El reloj marca un vencimiento; el calendario, una cita o audiencia.',
+        '"Plazo fatal" en rojo: un plazo que no se puede mover. "En revisión": ya se entregó y el despacho lo revisa.',
+        'Toca un renglón para abrir la tarea, la obligación, el trámite, el contrato o la cita.',
+      ],
+      example:
+        '"Todo el día · Fin de vigencia: Arrendamiento de oficinas" significa que ese día termina el contrato.',
+    },
+    empty: 'No vence nada ni hay citas en los próximos meses.',
+    overdue_one: '{{count}} vencido',
+    overdue_other: '{{count}} vencidos',
+    allDay: 'Todo el día',
+    fatal: 'Plazo fatal',
+    inReview: 'En revisión',
+    newAppointment: 'Nueva cita',
+    editAppointment: 'Editar cita',
+    appointment: 'Cita',
+    titleField: 'Título',
+    type: 'Tipo',
+    types: { CITA: 'Cita', REUNION: 'Reunión', AUDIENCIA: 'Audiencia' },
+    unit: 'Unidad',
+    wholeClient: 'Toda la empresa',
+    date: 'Fecha',
+    start: 'Empieza',
+    end: 'Termina',
+    when: 'Cuándo',
+    endAfterStart: 'La hora de término debe ser después de la de inicio.',
+    deleteTitle: 'Borrar cita',
+    deleteBody: '"{{titulo}}" sale de la agenda y de los calendarios.',
+  },
+  calendar: {
+    title: 'Tu calendario',
+    intro:
+      'Lleva esta agenda a Google Calendar, Outlook o el calendario de tu iPhone o Mac. Se actualiza sola.',
+    createLink: 'Crear mi enlace de calendario',
+    linkReady: 'Tu enlace personal está listo',
+    linkLabel: 'Enlace personal de calendario',
+    copy: 'Copiar enlace',
+    addGoogle: 'Agregar a Google Calendar',
+    addApple: 'Agregar a Apple Calendar',
+    onlyOnce:
+      'Es personal: muestra solo lo que tú puedes ver, así que no lo compartas. Se muestra esta vez; si lo pierdes, crea otro y el anterior deja de funcionar.',
+    howTo: '¿Cómo lo agrego?',
+    howGoogle:
+      'Google Calendar: usa el botón o, en la computadora, "Otros calendarios" → "+" → "Desde URL" y pega el enlace. Google lo actualiza cada varias horas.',
+    howOutlook:
+      'Outlook: "Agregar calendario" → "Suscribirse desde la web" y pega el enlace. Si Outlook no lo acepta, usa Google Calendar o Apple Calendar.',
+    howApple:
+      'iPhone, iPad o Mac: el botón de Apple lo abre en Calendario; confirma con "Suscribirse".',
+    revoke: 'Desactivar mi enlace',
+    revoked: 'Listo: tu enlace anterior ya no funciona.',
+    googleFirm: 'El calendario del despacho en Google',
+    googleClient: 'El calendario de {{client}} en Google',
+    googleHintFirm:
+      'Se comparte con tu cuenta de Google y puedes editarlo: una cita que muevas ahí se mueve también en el portal. Los vencimientos se cambian en el portal.',
+    googleHintClient:
+      'Se comparte con tu cuenta de Google (la de tu correo del portal), solo para ver. Google te avisa antes de cada fecha.',
+    googleAdd: 'Compartirlo con mi cuenta de Google',
+    googleShared: 'Listo: el calendario ya está compartido con tu cuenta.',
+    googleOpen: 'Abrir en Google Calendar',
+    partialScope:
+      'Ves solo algunas unidades: usa tu enlace personal, que muestra exactamente lo que te toca.',
   },
   notFound: {
     title: 'No encontramos esta página',

@@ -202,6 +202,7 @@ export const en: Messages = {
     filings: 'Filings',
     compliance: 'Compliance',
     contracts: 'Contracts',
+    agenda: 'Agenda',
     groups: { work: 'Follow-up', admin: 'Administration', company: 'Your company' },
   },
   shell: {
@@ -341,6 +342,10 @@ export const en: Messages = {
         title: 'Works offline',
         body: 'Here you see whether everything is up to date or how many changes are waiting for the network. Nothing to do: they are sent automatically.',
       },
+      bell: {
+        title: 'Notices',
+        body: 'The bell counts what is yours: tasks assigned, evidence to validate, new requests. Every morning a summary also arrives by email.',
+      },
     },
     client: {
       welcome: {
@@ -362,6 +367,10 @@ export const en: Messages = {
       sync: {
         title: 'Works offline',
         body: 'Here you see whether everything is up to date or how many changes are waiting for the network. They are sent automatically.',
+      },
+      bell: {
+        title: 'Notices',
+        body: 'The bell tells you what is yours, and every morning a summary arrives by email. "Agenda" has your dates, also for your calendar.',
       },
     },
     install: {
@@ -597,6 +606,12 @@ export const en: Messages = {
       RECHAZADA: 'Cancelled',
     },
     online: 'Invitations need a connection.',
+    emailOption: 'Email them the link',
+    emailOptionHint:
+      'The portal sends it, in the chosen language. The link also shows here to copy.',
+    emailedTo: 'The portal emailed the invitation to {{email}}.',
+    emailQuota: 'The portal has no emails left for today: share the link yourself.',
+    emailFailed: 'The email did not go out: share the link yourself.',
   },
   requests: {
     filter: 'Show',
@@ -1306,6 +1321,113 @@ export const en: Messages = {
     notFound:
       'We could not find this contract. It may have been deleted, or you no longer have access.',
     visibilityHint: 'The client does not see an internal contract, nor its comments or documents.',
+  },
+  notices: {
+    title: 'Notices',
+    intro:
+      'What the portal lets you know: tasks assigned to you, evidence to review, new requests and conflicts. Tap a notice to go to what it is about.',
+    bell: 'Notices',
+    bellUnread_one: '{{count}} unread notice',
+    bellUnread_other: '{{count}} unread notices',
+    unread: 'unread',
+    markAll: 'Mark all as read',
+    empty: 'You have no notices.',
+    digestTitle: 'Daily summary by email',
+    digestLabel: 'Get the daily summary',
+    digestHint:
+      'Every morning from {{hour}}:00 (Cancún time): what is overdue, due today and coming up. If there is nothing, it does not arrive.',
+    kinds: {
+      TAREA_ASIGNADA: 'You were assigned the task "{{titulo}}".',
+      TAREA_EN_REVISION: 'The client finished the task "{{titulo}}": it needs review.',
+      EVIDENCIA_ENVIADA: 'Evidence for "{{titulo}}" arrived for validation.',
+      EVIDENCIA_VALIDADA: 'The firm validated the evidence for "{{titulo}}".',
+      EVIDENCIA_RECHAZADA: 'The firm asked for corrections to the evidence for "{{titulo}}".',
+      SOLICITUD_NUEVA: 'New request: "{{titulo}}".',
+      CONFLICTO: 'Two changes clashed on "{{titulo}}": choose which one stays.',
+      INVITACION_POR_APROBAR: 'The invitation for {{titulo}} awaits your approval.',
+      SUGERENCIA_RESPONDIDA: 'Your suggestion got an answer: "{{titulo}}".',
+      CALENDARIO_REVERTIDO:
+        'A change made in Google Calendar was not applied: "{{titulo}}" is changed in the portal.',
+      CUOTA_CORREO:
+        'The portal has {{titulo}} emails left for today. Summaries not sent today are not resent; invitations can be shared with their link.',
+    },
+  },
+  agenda: {
+    title: 'Agenda',
+    intro:
+      'Deadlines, appointments and hearings for what you see, day by day. Take it to your calendar with your personal link.',
+    filterLabel: 'Show',
+    filters: {
+      all: 'Everything',
+      deadlines: 'Deadlines',
+      appointments: 'Appointments and hearings',
+    },
+    info: {
+      title: 'The agenda',
+      purpose:
+        'See in one place what is due and which appointments are coming, for everything you can see.',
+      howToRead: [
+        'At the top, what is overdue: deadlines that passed without being met.',
+        'Then each day with what is due or scheduled. The clock marks a deadline; the calendar, an appointment or hearing.',
+        '"Fatal deadline" in red: a deadline that cannot be moved. "In review": it was delivered and the firm is reviewing it.',
+        'Tap a line to open the task, obligation, filing, contract or appointment.',
+      ],
+      example: '"All day · End of term: Office lease" means the contract ends that day.',
+    },
+    empty: 'Nothing is due and there are no appointments in the coming months.',
+    overdue_one: '{{count}} overdue',
+    overdue_other: '{{count}} overdue',
+    allDay: 'All day',
+    fatal: 'Fatal deadline',
+    inReview: 'In review',
+    newAppointment: 'New appointment',
+    editAppointment: 'Edit appointment',
+    appointment: 'Appointment',
+    titleField: 'Title',
+    type: 'Type',
+    types: { CITA: 'Appointment', REUNION: 'Meeting', AUDIENCIA: 'Hearing' },
+    unit: 'Unit',
+    wholeClient: 'The whole company',
+    date: 'Date',
+    start: 'Starts',
+    end: 'Ends',
+    when: 'When',
+    endAfterStart: 'The end time must be after the start time.',
+    deleteTitle: 'Delete appointment',
+    deleteBody: '"{{titulo}}" leaves the agenda and the calendars.',
+  },
+  calendar: {
+    title: 'Your calendar',
+    intro:
+      'Take this agenda to Google Calendar, Outlook or the calendar on your iPhone or Mac. It updates by itself.',
+    createLink: 'Create my calendar link',
+    linkReady: 'Your personal link is ready',
+    linkLabel: 'Personal calendar link',
+    copy: 'Copy link',
+    addGoogle: 'Add to Google Calendar',
+    addApple: 'Add to Apple Calendar',
+    onlyOnce:
+      'It is personal: it shows only what you can see, so do not share it. It is shown this once; if you lose it, create another and the old one stops working.',
+    howTo: 'How do I add it?',
+    howGoogle:
+      'Google Calendar: use the button or, on a computer, "Other calendars" → "+" → "From URL" and paste the link. Google refreshes it every few hours.',
+    howOutlook:
+      'Outlook: "Add calendar" → "Subscribe from web" and paste the link. If Outlook does not accept it, use Google Calendar or Apple Calendar.',
+    howApple:
+      'iPhone, iPad or Mac: the Apple button opens it in Calendar; confirm with "Subscribe".',
+    revoke: 'Turn off my link',
+    revoked: 'Done: your previous link no longer works.',
+    googleFirm: 'The firm calendar in Google',
+    googleClient: 'The {{client}} calendar in Google',
+    googleHintFirm:
+      'It is shared with your Google account and you can edit it: an appointment you move there also moves in the portal. Deadlines are changed in the portal.',
+    googleHintClient:
+      'It is shared with your Google account (your portal email), view only. Google reminds you before each date.',
+    googleAdd: 'Share it with my Google account',
+    googleShared: 'Done: the calendar is now shared with your account.',
+    googleOpen: 'Open in Google Calendar',
+    partialScope:
+      'You see only some units: use your personal link, which shows exactly what is yours.',
   },
   notFound: {
     title: 'We could not find this page',

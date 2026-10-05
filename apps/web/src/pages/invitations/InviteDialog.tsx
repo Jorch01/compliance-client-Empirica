@@ -16,9 +16,9 @@ import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
 import { Dialog } from '../../ui/Dialog.tsx';
-import { SelectField, TextField } from '../../ui/Field.tsx';
+import { CheckboxField, SelectField, TextField } from '../../ui/Field.tsx';
 import { ScopePicker } from './ScopePicker.tsx';
-import { ShareLink } from './ShareLink.tsx';
+import { EmailOutcome, ShareLink } from './ShareLink.tsx';
 import { useInvitableClients } from './useInvitations.ts';
 
 interface Form {
@@ -30,6 +30,8 @@ interface Form {
   alcance: Alcance | null;
   puesto: string;
   idioma: 'es' | 'en';
+  /** The portal emails the link (F5); it is shown here either way. */
+  enviarCorreo: boolean;
 }
 
 export function InviteDialog({
@@ -57,6 +59,7 @@ export function InviteDialog({
     alcance: null,
     puesto: '',
     idioma: 'es',
+    enviarCorreo: true,
   }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +104,8 @@ export function InviteDialog({
       ...((needsClient || clientOptional) && form.clienteId ? { clienteId: form.clienteId } : {}),
       ...(needsClient ? { alcance } : {}),
       ...(needsClient && form.puesto.trim() ? { puesto: form.puesto.trim() } : {}),
+      // A client admin's invitation waits for the firm: the link goes out once approved.
+      ...(me.isFirm ? { enviarCorreo: form.enviarCorreo } : {}),
     };
     setBusy(true);
     try {
@@ -139,6 +144,7 @@ export function InviteDialog({
     >
       {outcome ? (
         <div className="space-y-3">
+          <EmailOutcome emailedTo={outcome.emailedTo} emailError={outcome.emailError} />
           {outcome.token ? (
             <ShareLink
               token={outcome.token}
@@ -252,9 +258,18 @@ export function InviteDialog({
               { value: 'en', label: t('language.en') },
             ]}
           />
-          {!me.isFirm ? (
+          {me.isFirm ? (
+            <CheckboxField
+              label={t('invitations.emailOption')}
+              hint={t('invitations.emailOptionHint')}
+              checked={form.enviarCorreo}
+              onChange={(e) => {
+                set('enviarCorreo', e.target.checked);
+              }}
+            />
+          ) : (
             <p className="text-sm text-muted-foreground">{t('invitations.pendingNote')}</p>
-          ) : null}
+          )}
         </form>
       )}
     </Dialog>

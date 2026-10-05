@@ -10,6 +10,7 @@ import { usePortal } from '../session/context.ts';
 import { Drawer } from '../ui/Drawer.tsx';
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx';
 import { Icon, type IconName } from '../ui/Icon.tsx';
+import { Bell } from './Bell.tsx';
 import { CrashScreen } from './CrashScreen.tsx';
 import { InstallBanner } from './InstallBanner.tsx';
 import { ScopeSelect } from './ScopeSelect.tsx';
@@ -67,7 +68,13 @@ function useNavGroups(): NavGroup[] {
         ]
       : [];
     return [
-      { key: 'home', items: [{ href: '/', label: t('nav.controlCenter'), icon: 'home' }] },
+      {
+        key: 'home',
+        items: [
+          { href: '/', label: t('nav.controlCenter'), icon: 'home' },
+          { href: '/agenda', label: t('nav.agenda'), icon: 'calendar' },
+        ],
+      },
       {
         key: 'work',
         label: t('nav.groups.work'),
@@ -106,6 +113,7 @@ function useNavGroups(): NavGroup[] {
           icon: 'list',
           ...(pending > 0 ? { badge: pending } : {}),
         },
+        { href: '/agenda', label: t('nav.agenda'), icon: 'calendar' },
       ],
     },
     {
@@ -319,6 +327,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
           <div className="ml-auto flex items-center gap-1">
             <SyncIndicator />
+            <Bell />
             <UserMenu />
           </div>
         </div>

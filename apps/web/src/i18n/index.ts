@@ -83,4 +83,29 @@ export function formatDateTime(value: string | number | null | undefined): strin
   }).format(date);
 }
 
+/** "10:00–11:00 a.m." for a stretch of one day (or just "10:00 a.m."), in Cancún. */
+export function formatTimeRange(start: string, end: string | null): string {
+  const from = new Date(start);
+  if (Number.isNaN(from.getTime())) return start;
+  const format = new Intl.DateTimeFormat(locale(), {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: TIME_ZONE,
+  });
+  const to = end ? new Date(end) : null;
+  return to && to.getTime() > from.getTime() ? format.formatRange(from, to) : format.format(from);
+}
+
+/** "lunes, 5 de octubre" for a day ("2026-10-05"). */
+export function formatDayHeading(day: string): string {
+  const date = new Date(`${day}T12:00:00-05:00`);
+  if (Number.isNaN(date.getTime())) return day;
+  return new Intl.DateTimeFormat(locale(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: TIME_ZONE,
+  }).format(date);
+}
+
 export const languageTag = locale;

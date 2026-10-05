@@ -6,6 +6,7 @@
  * two devices of a real deployment.
  *
  *   POST /mock-api/exec      the API, exactly as the Web App answers it
+ *   GET  /mock-api/exec      ?action=ics&token=…: the personal calendar feed
  *   GET  /mock-api/users     demo users to sign in as
  *   POST /mock-api/token     an ID token for any e-mail, always verified
  *   GET  /mock-api/instance  changes when the server restarts (the browser wipes its copy)
@@ -27,6 +28,7 @@ interface World {
 interface Backend {
   world: World;
   handle(body: string): unknown;
+  feed(token: string): string;
   instance: string;
 }
 
@@ -39,10 +41,14 @@ async function start(apiSrc: string): Promise<Backend> {
   const router = (await load('router.ts')) as {
     handleRequest(env: unknown, body: string): unknown;
   };
+  const calendar = (await load('calendar/feed.ts')) as {
+    icsFeed(env: unknown, token: string): string;
+  };
   const world = harness.createWorld({ now: () => Date.now() });
   return {
     world,
     handle: (body) => router.handleRequest(world.env, body),
+    feed: (token) => calendar.icsFeed(world.env, token),
     instance: randomUUID(),
   };
 }
@@ -91,6 +97,18 @@ export function mockApi(apiSrc: string): Plugin {
           case 'POST /mock-api/exec':
             send(res, 200, b.handle(await readBody(req)));
             return;
+          case 'GET /mock-api/exec': {
+            const params = new URLSearchParams(url.split('?')[1] ?? '');
+            if (params.get('action') !== 'ics') {
+              send(res, 404, { error: 'not found' });
+              return;
+            }
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-store');
+            res.end(b.feed(params.get('token') ?? ''));
+            return;
+          }
           case 'GET /mock-api/instance':
             send(res, 200, { instance: b.instance });
             return;
