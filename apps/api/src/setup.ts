@@ -20,6 +20,7 @@ import { Writer } from './db/writer.ts';
 import { PROP, type Env } from './env.ts';
 import { ApiError } from './errors.ts';
 import type { GFolder, GSheet, GSpreadsheet } from './google.ts';
+import { mailAllowed } from './mail/send.ts';
 
 export const SPREADSHEET_NAME = 'EMPIRICA_PORTAL_DB';
 export const ROOT_FOLDER_NAME = 'Empírica Portal';
@@ -60,12 +61,18 @@ export interface SetupReport {
  * the editor asks for it). The firm's calendar is created here the first
  * time; the emails left today are reported.
  */
+/** What to do when Google's consent window left a permission out (consent.ts). */
+const GRANT_AGAIN =
+  'ejecuta setup otra vez y, en la ventana de Google, marca «Seleccionar todo» antes de «Continuar»';
+
 export function checkCalendarAndMail(env: Env, report: SetupReport): void {
   const cal = calendarService(env);
-  if (!cal) {
+  if (!env.g.Calendar) {
     report.warnings.push(
-      'Calendar no está activado: el servicio avanzado de Calendar falta en appsscript.json o no se autorizó.',
+      'Calendar no está activado: el servicio avanzado de Calendar falta en appsscript.json.',
     );
+  } else if (!cal) {
+    report.warnings.push(`Falta el permiso de calendarios: ${GRANT_AGAIN}.`);
   } else {
     try {
       const existed = Boolean(env.prop(PROP.firmCalendarId));
@@ -77,6 +84,10 @@ export function checkCalendarAndMail(env: Env, report: SetupReport): void {
         `Calendar: no se pudo crear el calendario del despacho (${error instanceof Error ? error.message : String(error)}).`,
       );
     }
+  }
+  if (!mailAllowed(env)) {
+    report.warnings.push(`Falta el permiso de correo: ${GRANT_AGAIN}.`);
+    return;
   }
   try {
     report.checked.push(

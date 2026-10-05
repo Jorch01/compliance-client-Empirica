@@ -5,6 +5,7 @@ import { purgeAppliedOps, runNightly } from './maintenance.ts';
 import { Device, op } from './testing/device.ts';
 import { ID } from '@empirica/shared/testing';
 import { CONFIG_DEFAULTS } from './config.ts';
+import { SCOPES, requireAllScopes } from './consent.ts';
 import { PROP } from './env.ts';
 import { runSetup } from './setup.ts';
 import { createWorld } from './testing/harness.ts';
@@ -76,6 +77,34 @@ describe('setup()', () => {
     const v = createWorld({ data: null });
     v.google.calendarAuthorized = false;
     expect(runSetup(v.env).warnings.join(' ')).toContain('Calendar no está activado');
+  });
+
+  it('asks for the permissions left out in Google’s consent window, and says which', () => {
+    const v = createWorld({ data: null });
+    v.google.grantedScopes.delete(SCOPES.calendar);
+    v.google.grantedScopes.delete(SCOPES.mail);
+    const before = { ...v.google.calendar.calls };
+    // In the editor Google ends the run and shows its window again.
+    expect(() => {
+      requireAllScopes(v.env);
+    }).toThrow(/Authorization is required/);
+    const warnings = runSetup(v.env).warnings.join(' ');
+    expect(warnings).toContain('Falta el permiso de calendarios');
+    expect(warnings).toContain('Falta el permiso de correo');
+    expect(warnings).toContain('«Seleccionar todo»');
+    expect(v.google.calendar.calls).toEqual(before);
+
+    v.google.grantedScopes.add(SCOPES.calendar);
+    v.google.grantedScopes.add(SCOPES.mail);
+    requireAllScopes(v.env);
+    const report = runSetup(v.env);
+    expect(report.warnings.join(' ')).not.toContain('Falta el permiso');
+    expect(report.checked).toEqual(
+      expect.arrayContaining([
+        'Calendar: el calendario del despacho existe.',
+        'Correo: quedan 100 destinatarios hoy.',
+      ]),
+    );
   });
 
   it('is idempotent: a second run creates nothing', () => {

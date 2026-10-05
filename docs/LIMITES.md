@@ -1,6 +1,6 @@
 # Límites técnicos y cuotas
 
-**Fecha de verificación: 2 de octubre de 2026.** Agregados el 3 de octubre de 2026: versiones de Apps Script (§ 1), inicio de sesión con Google fuera de Firebase Hosting (§ 4) y la pantalla de consentimiento de Google (§ 4). Agregado el 4 de octubre de 2026: archivos de los documentos (§ 1). **Revisado el 5 de octubre de 2026** para la Fase 5: correo, triggers y Calendar (§ 1 y § 3), con el presupuesto al final.
+**Fecha de verificación: 2 de octubre de 2026.** Agregados el 3 de octubre de 2026: versiones de Apps Script (§ 1), inicio de sesión con Google fuera de Firebase Hosting (§ 4) y la pantalla de consentimiento de Google (§ 4). Agregado el 4 de octubre de 2026: archivos de los documentos (§ 1). **Revisado el 5 de octubre de 2026** para la Fase 5: correo, triggers y Calendar (§ 1 y § 3), con el presupuesto al final, y el consentimiento por permisos y el editor (§ 1).
 
 **Cómo se verificó.** Cada cifra se consultó en la documentación oficial vigente (Google Developers, Firebase, Google AI for Developers, GitHub Docs, WebKit) mediante búsqueda web el día indicado. El entorno de desarrollo bloquea la descarga directa de esas páginas, así que cada cifra se tomó del extracto de la página oficial que devolvió la búsqueda, con su enlace. Antes de la Fase 1 conviene abrir los enlaces y confirmar las cifras marcadas con ⚠, porque Google cambia algunas sin aviso.
 
@@ -68,6 +68,17 @@ Fuentes: [Versions](https://developers.google.com/apps-script/guides/versions), 
 | Versiones por proyecto                   | 200 (para todos los proyectos desde el 1 de junio de 2024). Cada publicación del Web App con `clasp update-deployment` crea una                                          | ✅  |
 | Borrar versiones                         | Solo a mano, en el editor (**Historial del proyecto**), y solo las que no usa una implementación activa. La API de Apps Script crea, lee y lista versiones; no las borra | ✅  |
 | Varias cuentas de Google en un navegador | No lo admiten ni Apps Script ni los Web Apps. Al autorizar, el editor regresa con otra cuenta y dice "No se pudo abrir el archivo en este momento"                       | ✅  |
+
+### Permisos y editor (verificado el 5 de octubre de 2026)
+
+Fuentes: [Authorization Scopes](https://developers.google.com/apps-script/concepts/scopes), [Class ScriptApp](https://developers.google.com/apps-script/reference/script/script-app), [Use the command-line interface with clasp](https://developers.google.com/apps-script/guides/clasp) y lo que pasó al publicar la Fase 5.
+
+| Dato                                 | Valor                                                                                                                                                                                                                |     |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Consentimiento por permisos          | En el editor, la ventana de Google deja conceder solo algunos de los permisos del manifiesto. Lo no concedido falla al usarse ("You do not have permission to call …")                                               | ✅  |
+| Pedirlos otra vez                    | `ScriptApp.requireAllScopes(AuthMode.FULL)` termina la ejecución y muestra la ventana con lo que falte; `getAuthorizationInfo(AuthMode.FULL, scopes)` dice si falta algo, sin detener nada                           | ✅  |
+| Web App y activadores sin un permiso | Siguen corriendo; solo falla la llamada al servicio sin permiso. Visto en producción: el Web App de la Fase 5 respondió a la comprobación de salud sin Calendar ni correo concedidos                                 | ✅  |
+| Guardar en el editor                 | Reemplaza el contenido completo del proyecto, igual que `clasp push`: una pestaña abierta antes de que el CI suba el código lo revierte al guardar. Visto en producción al agregar un servicio desde una pestaña así | ✅  |
 
 ### Archivos de los documentos (verificado el 4 de octubre de 2026)
 

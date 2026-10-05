@@ -225,8 +225,16 @@ export interface GoogleGlobals {
       };
     };
     deleteTrigger(trigger: GTrigger): unknown;
+    /** Granular consent (consent.ts): what the owner granted, and asking again. */
+    AuthMode: { FULL: unknown };
+    AuthorizationStatus: { REQUIRED: unknown; NOT_REQUIRED: unknown };
+    getAuthorizationInfo(
+      authMode: unknown,
+      oAuthScopes: string[],
+    ): { getAuthorizationStatus(): unknown };
+    requireAllScopes?(authMode: unknown): void;
   };
-  /** Present once the owner authorized Calendar (F5): see `calendarOf`. */
+  /** Present when the advanced Calendar service is on (F5); its permission: consent.ts. */
   Calendar?: GCalendarService;
   MailApp: {
     sendEmail(message: GMailMessage): unknown;

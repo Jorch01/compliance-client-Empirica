@@ -94,8 +94,9 @@ export function rollbackTarget(
 export function rolledBackMessage(versionNumber: number, url: string, last: string): string {
   return (
     `La versión nueva no respondió y el Web App volvió a la versión ${String(versionNumber)}: el portal sigue funcionando. ` +
-    'Si la versión nueva pide permisos nuevos (como Calendar y correo en la Fase 5), la cuenta propietaria debe autorizarlos: ' +
-    'abre el editor de Apps Script con esa cuenta, ejecuta la función setup y acepta los permisos; luego vuelve a ejecutar este job ("Re-run jobs"). ' +
+    'Si la respuesta habla de autorización, la cuenta propietaria debe aceptar los permisos nuevos: ' +
+    'abre el editor de Apps Script con esa cuenta (en incógnito), ejecuta la función setup y acepta los permisos marcando «Seleccionar todo»; ' +
+    'luego vuelve a ejecutar este job ("Re-run jobs"). ' +
     `(${url}; respuesta: ${last.slice(0, 200)})`
   );
 }

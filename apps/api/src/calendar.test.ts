@@ -7,6 +7,7 @@ import type { CalendarShareData, CalendarSubscribeData } from '@empirica/shared'
 import { ID } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
 import { icsFeed } from './calendar/feed.ts';
+import { SCOPES } from './consent.ts';
 import { syncCalendars } from './calendar/sync.ts';
 import { PROP } from './env.ts';
 import type { GCalendarEvent } from './google.ts';
@@ -161,6 +162,22 @@ describe('the firm calendar', () => {
     const w = createWorld();
     w.google.calendarAuthorized = false;
     expect(syncCalendars(w.env).skipped).toBe('CALENDAR_NOT_AUTHORIZED');
+  });
+
+  it('waits quietly while the owner left the Calendar permission out, and starts once granted', () => {
+    const w = createWorld();
+    // Google's consent window lets the account grant only some permissions.
+    w.google.grantedScopes.delete(SCOPES.calendar);
+    const before = { ...w.google.calendar.calls };
+    expect(syncCalendars(w.env).skipped).toBe('CALENDAR_NOT_AUTHORIZED');
+    expect(w.google.calendar.calls).toEqual(before);
+    const res = w.call('calendar.share', {}, { as: ID.socio });
+    expect(res.ok ? null : res.error.code).toBe('NOT_IMPLEMENTED');
+    expect(w.google.calendar.calls).toEqual(before);
+
+    w.google.grantedScopes.add(SCOPES.calendar);
+    expect(syncCalendars(w.env)).toMatchObject({ skipped: null, failed: 0 });
+    expect(keys(w, firmId(w)).length).toBeGreaterThan(0);
   });
 });
 

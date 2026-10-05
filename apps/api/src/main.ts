@@ -6,6 +6,7 @@
 import { API_VERSION, toProjectIso } from '@empirica/shared';
 import { icsFeed } from './calendar/feed.ts';
 import { syncCalendars as runCalendarSync, type CalendarSyncReport } from './calendar/sync.ts';
+import { requireAllScopes } from './consent.ts';
 import { createEnv, type Env } from './env.ts';
 import type { GoogleGlobals } from './google.ts';
 import { runDigest, type DigestReport } from './mail/digest.ts';
@@ -54,9 +55,15 @@ export function doPost(e?: { postData?: { contents?: string } }): unknown {
   return json(handleRequest(env(), e?.postData?.contents ?? ''));
 }
 
-/** Run once from the editor (and after each update): creates whatever is missing. */
+/**
+ * Run once from the editor (and after each update): creates whatever is
+ * missing. First, if the owner left a permission out in Google's consent
+ * window, Google ends this run and shows the window again.
+ */
 export function setup(): SetupReport {
-  const report = runSetup(env());
+  const e = env();
+  requireAllScopes(e);
+  const report = runSetup(e);
   console.log(
     [
       `Hoja: https://docs.google.com/spreadsheets/d/${report.spreadsheetId}`,

@@ -10,14 +10,14 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                                  |
 | 3   | Restringir las API keys         | Paso 3                                               | No                                                            | ✔ 3 oct                                                                    |
 | 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json`            |
-| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct. Firebase: lo confirma `setup` (paso 9, punto 4)    |
+| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct; Firebase ✔ 5 oct (lo confirmó `setup`)             |
 | 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                                  |
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`             |
 | 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages, con **Enforce HTTPS** |
 | 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                              |
 | 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                 |
-| 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | Pendiente                                                                  |
-| 12  | Autorizar Calendar y correo     | Paso 11, el día que se fusione la Fase 5             | No                                                            | Pendiente                                                                  |
+| 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                    |
+| 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | Pendiente                                                                  |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -167,7 +167,7 @@ Cuando el código ya esté en Apps Script:
 3. Google pedirá autorización (es normal: el proyecto es tuyo y no está publicado en ninguna tienda):
    **Revisar permisos** → elige la cuenta del paso 1 → "Google no verificó esta app" → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**.
    Los permisos que pide son exactamente estos: tus hojas de cálculo, tu Drive, conectarse a servicios externos (para verificar las sesiones con Firebase) y programar tareas (el respaldo nocturno).
-   Desde la Fase 5 pide además tus calendarios y enviar correo (paso 11).
+   Desde la Fase 5 pide además tus calendarios y enviar correo (paso 11): marca «Seleccionar todo».
    El aviso de que Google no verificó la app no es un problema: la verificación es para apps que autorizan otras personas, y esta solo la autoriza la cuenta del paso 1. Los usuarios del portal nunca ven esta pantalla.
    Si después de **Permitir** aparece "No se pudo abrir el archivo en este momento", había otra cuenta abierta: cierra esa pestaña y repite desde el punto 1 en una ventana de incógnito nueva. Los permisos ya quedaron dados; por eso, la segunda vez Google dice que la app "ya tiene acceso" a 4 servicios.
 4. Abajo, en el registro de ejecución, debe aparecer `Hoja: https://docs.google.com/…` con lo que se creó: el libro `EMPIRICA_PORTAL_DB`, la carpeta `Empírica Portal` con `Clientes` y `Respaldos`, los dos socios como administradores y el respaldo de las 3:00. Si dice "Aviso: ADMIN_EMAILS está vacío", revisa el paso 5 y vuelve a ejecutar `setup` (puede ejecutarse las veces que sea: solo crea lo que falta).
@@ -202,18 +202,20 @@ Hasta ahora `portal.empirica.mx` muestra una portada provisional. Cuando apruebe
 
 **En iPhone o iPad con el portal instalado** (agregado a la pantalla de inicio), la ventana de "Continuar con Google" puede no responder; ahí conviene entrar con correo y contraseña. La solución definitiva queda para la Fase 7 (`PLAN.md`, D29).
 
-### Paso 11 · Calendarios y correos (el día que se fusione la Fase 5)
+### Paso 11 · Calendarios y correos (al fusionar la Fase 5)
 
-La Fase 5 necesita dos permisos nuevos de la cuenta del paso 1: **sus calendarios** (el portal crea y escribe "Empírica · Despacho" y los de los clientes) y **enviar correo como ella** (el resumen diario y las invitaciones, con el nombre "Empírica Portal"). Google exige que esa cuenta los acepte una vez, en el editor; nadie más puede hacerlo por ella.
+La Fase 5 necesita dos permisos nuevos de la cuenta del paso 1: **sus calendarios** (el portal crea y escribe "Empírica · Despacho" y los de los clientes) y **enviar correo como ella** (el resumen diario y las invitaciones, con el nombre "Empírica Portal"). Google exige que esa cuenta los acepte en el editor; nadie más puede hacerlo por ella. Mientras falten, el portal funciona igual: solo los calendarios de Google y los correos esperan, sin errores.
 
-1. Fusiona la propuesta de cambios de la Fase 5 cuando te avise. En **Actions**, el job **Desplegar el backend (Apps Script)** terminará **en rojo** con el mensaje "La versión nueva no respondió y el Web App volvió a la versión …". Es lo esperado: el código nuevo ya está en Apps Script, pero sin los permisos no corre, así que el backend sigue en la versión anterior y el portal funciona. El portal en el navegador sí se actualiza: la Agenda y la campana funcionan; el enlace de calendario y los correos esperan a este paso.
-2. Ese mismo día, en una **ventana de incógnito** y solo con la cuenta del paso 1 (como en el paso 9), abre el proyecto `Empírica Portal API`, elige **`setup`** y pulsa **Ejecutar**.
-3. Google pide autorización otra vez: **Revisar permisos** → la cuenta del paso 1 → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**. Ahora la lista incluye ver, editar, compartir y borrar tus calendarios, y enviar correo en tu nombre.
-4. En el registro deben aparecer `Creado: … calendario de Google "Empírica · Despacho"` y `Revisado: Correo: quedan … destinatarios hoy.`; en **Activadores** (el reloj del menú de la izquierda), tres: `nightly` (3:00), `syncCalendars` (cada 15 minutos) y `dailyDigest` (cada hora: manda el resumen una vez al día, desde las 7:00). Si dice "Aviso: Calendar no está activado", en el menú de la izquierda, junto a **Servicios**, pulsa **+** → **Google Calendar API** → **Agregar**, y vuelve a ejecutar `setup`.
-5. En GitHub: **Actions** → la ejecución en rojo → **Re-run jobs** → **Re-run failed jobs**. En unos minutos queda en verde: el backend nuevo ya responde.
+**Antes de empezar, cierra todas las pestañas del editor de Apps Script.** El código lo sube GitHub; si una pestaña del editor quedó abierta desde antes, al guardar cualquier cosa en ella (por ejemplo, agregar un servicio) reemplaza el código nuevo por su copia vieja. Por eso este paso no pide tocar **Servicios** ni ningún archivo: el servicio de Calendar ya viene en el código.
+
+1. Fusiona la propuesta de cambios cuando te avise y espera a que **Actions** quede en verde (unos 3 minutos).
+2. Abre una **ventana de incógnito**, entra a <https://script.google.com> solo con la cuenta del paso 1 (como en el paso 9) y abre el proyecto `Empírica Portal API`. Elige **`setup`** y pulsa **Ejecutar**.
+3. Google muestra su ventana de permisos (**Revisar permisos** → la cuenta del paso 1 → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)**). En la lista de permisos, **marca la casilla «Seleccionar todo»** (o, al menos, las de tus calendarios y enviar correo) y pulsa **Continuar**. Google deja conceder solo algunos permisos: lo que quede sin marcar no se concede.
+4. Google termina esa ejecución después de pedir los permisos: pulsa **Ejecutar** otra vez.
+5. El registro debe decir `Creado: calendario de Google "Empírica · Despacho"` (o, si ya existía, `Revisado: Calendar: el calendario del despacho existe.`) y `Revisado: Correo: quedan … destinatarios hoy.` Si dice `Aviso: Falta el permiso de …`, repite desde el punto 2 y revisa que las casillas queden marcadas. En **Activadores** (el reloj del menú de la izquierda) debe haber tres: `nightly` (3:00), `syncCalendars` (cada 15 minutos) y `dailyDigest` (cada hora: manda el resumen una vez al día, desde las 7:00).
 6. Prueba: entra al portal como socio → **Agenda** → **Compartirlo con mi cuenta de Google** → **Abrir en Google Calendar**. En 15 minutos aparece "Empírica · Despacho" con los vencimientos. Mueve una cita en Google Calendar: en 15 minutos o menos el portal la muestra en la nueva hora.
 
-Mientras no autorices, el respaldo nocturno tampoco corre (Google manda a la cuenta del paso 1 un correo con las fallas): por eso conviene hacerlo el mismo día.
+Si alguna vez quieres revisar o quitar estos permisos: <https://myaccount.google.com/permissions> con la cuenta del paso 1 → **Empírica Portal API**.
 
 **La hora del resumen y los días de espera** están en la pestaña `Config` del libro: `horaResumen` (7), `diasEsperaCliente` (3) y `reservaCorreos` (10, los correos que se guardan para invitaciones). Se cambian ahí, en la columna `valor`.
 

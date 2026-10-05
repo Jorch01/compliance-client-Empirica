@@ -24,6 +24,7 @@ import type {
   GValidationBuilder,
   GoogleGlobals,
 } from '../google.ts';
+import manifest from '../../appsscript.json' with { type: 'json' };
 import { FakeCalendar, FakeMail } from './calendar.ts';
 
 const OUT_OF_BOUNDS = 'The coordinates of the range are outside the dimensions of the sheet.';
@@ -482,8 +483,14 @@ export class FakeGoogle {
   readonly firebase: FakeFirebase;
   readonly calendar = new FakeCalendar();
   readonly mail = new FakeMail();
-  /** False until the owner authorizes Calendar: the advanced service is missing. */
+  /** False while the advanced Calendar service is off: the `Calendar` global is missing. */
   calendarAuthorized = true;
+  /**
+   * The manifest's permissions the owner granted. Google's consent screen
+   * lets the account leave some out (granular consent): take one away to
+   * see the portal wait for it.
+   */
+  readonly grantedScopes = new Set<string>(manifest.oauthScopes);
   /** Formulas that reached a cell: must stay zero. */
   formulas: string[] = [];
   lockBusy = false;
@@ -531,6 +538,16 @@ export class FakeGoogle {
     const sheet = this.spreadsheet().getSheetByName(name);
     if (!sheet) throw new Error(`No sheet ${name}`);
     return sheet;
+  }
+
+  /** What Apps Script says when the owner did not grant email. */
+  #needsMail(method: string): void {
+    const scope = 'https://www.googleapis.com/auth/script.send_mail';
+    if (!this.grantedScopes.has(scope)) {
+      throw new Error(
+        `You do not have permission to call ${method}. Required permissions: ${scope}`,
+      );
+    }
   }
 
   #buildGlobals(): GoogleGlobals & { ContentService: unknown; console: Console } {
@@ -689,15 +706,31 @@ export class FakeGoogle {
           const i = this.triggers.findIndex((x) => x.handler === t.getHandlerFunction());
           if (i >= 0) this.triggers.splice(i, 1);
         },
+        AuthMode: { FULL: 'FULL' },
+        AuthorizationStatus: { REQUIRED: 'REQUIRED', NOT_REQUIRED: 'NOT_REQUIRED' },
+        getAuthorizationInfo: (_mode, scopes) => ({
+          getAuthorizationStatus: () =>
+            scopes.every((s) => this.grantedScopes.has(s)) ? 'NOT_REQUIRED' : 'REQUIRED',
+        }),
+        // In the editor Google ends the run and shows its consent window again.
+        requireAllScopes: () => {
+          if (manifest.oauthScopes.some((s) => !this.grantedScopes.has(s))) {
+            throw new Error('Authorization is required to perform that action.');
+          }
+        },
       },
       get Calendar() {
         return self.calendarAuthorized ? self.calendar : undefined;
       },
       MailApp: {
         sendEmail: (message) => {
+          this.#needsMail('MailApp.sendEmail');
           this.mail.sendEmail(message);
         },
-        getRemainingDailyQuota: () => this.mail.getRemainingDailyQuota(),
+        getRemainingDailyQuota: () => {
+          this.#needsMail('MailApp.getRemainingDailyQuota');
+          return this.mail.getRemainingDailyQuota();
+        },
       },
       ContentService: {
         MimeType: { JSON: 'application/json', ICAL: 'text/calendar' },

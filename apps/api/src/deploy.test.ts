@@ -69,7 +69,9 @@ describe('publication (deploy.ts)', () => {
     expect(rollbackTarget({ deploymentId: ID })).toBeNull();
     const message = rolledBackMessage(7, webAppUrl(ID), '<html>Authorization is required</html>');
     expect(message).toContain('volvió a la versión 7: el portal sigue funcionando');
-    expect(message).toContain('ejecuta la función setup y acepta los permisos');
+    expect(message).toContain(
+      'ejecuta la función setup y acepta los permisos marcando «Seleccionar todo»',
+    );
     expect(message).toContain('Authorization is required');
   });
 
