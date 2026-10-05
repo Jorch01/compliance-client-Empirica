@@ -6,6 +6,8 @@
  */
 import {
   ACTIONS,
+  CalendarShareSchema,
+  CalendarSubscribeSchema,
   ConflictResolveSchema,
   FileDownloadSchema,
   FileUploadSchema,
@@ -28,6 +30,7 @@ import {
 import type * as z from 'zod/mini';
 import { saveMembership, updateProfile, updateUser } from './actions/admin.ts';
 import { bootstrap } from './actions/bootstrap.ts';
+import { shareCalendar, subscribeCalendar } from './actions/calendar.ts';
 import { resolveConflict } from './actions/conflicts.ts';
 import { downloadFile, uploadFile } from './actions/files.ts';
 import {
@@ -157,6 +160,12 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
         break;
       case 'files.download':
         data = downloadFile(env, session, parse(FileDownloadSchema, payload));
+        break;
+      case 'calendar.subscribe':
+        data = subscribeCalendar(env, session, parse(CalendarSubscribeSchema, payload));
+        break;
+      case 'calendar.share':
+        data = shareCalendar(env, session, parse(CalendarShareSchema, payload));
         break;
     }
     return { ok: true, data, serverNow, ...(requestId ? { requestId } : {}) };

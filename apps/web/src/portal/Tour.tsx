@@ -15,8 +15,8 @@ import { InstallInstructions } from './InstallInstructions.tsx';
 import { isInstalled } from './install.ts';
 import { TourContext, type TourContextValue } from './tour-context.ts';
 
-type FirmStep = 'welcome' | 'nav' | 'client' | 'tiles' | 'sync';
-type ClientStep = 'welcome' | 'nav' | 'unit' | 'pending' | 'sync';
+type FirmStep = 'welcome' | 'nav' | 'client' | 'tiles' | 'sync' | 'bell';
+type ClientStep = 'welcome' | 'nav' | 'unit' | 'pending' | 'sync' | 'bell';
 
 interface Step {
   key: string;
@@ -27,8 +27,8 @@ interface Step {
   install?: boolean;
 }
 
-const FIRM: readonly FirmStep[] = ['welcome', 'nav', 'client', 'tiles', 'sync'];
-const CLIENT: readonly ClientStep[] = ['welcome', 'nav', 'unit', 'pending', 'sync'];
+const FIRM: readonly FirmStep[] = ['welcome', 'nav', 'client', 'tiles', 'sync', 'bell'];
+const CLIENT: readonly ClientStep[] = ['welcome', 'nav', 'unit', 'pending', 'sync', 'bell'];
 
 const seenKey = (userId: string): string => `empirica.tour.${userId}`;
 

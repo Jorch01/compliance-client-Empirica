@@ -209,6 +209,7 @@ export const TABLE_NAMES = [
   'Bitacora',
   'Reportes',
   'OpsAplicadas',
+  'Calendario',
 ] as const;
 export type TableName = (typeof TABLE_NAMES)[number];
 
@@ -864,6 +865,25 @@ export const TABLES: Record<TableName, TableDef> = {
       col('usuarioId', { type: 'string' }),
       col('resultado', { type: 'json' }),
       col('fecha', { type: 'datetime' }),
+    ],
+    { sync: 'none', audience: 'firm' },
+  ),
+
+  /**
+   * Which Google Calendar event shows which agenda item, and what was
+   * written to it (F5): the server's own bookkeeping, never on a device.
+   * `calendario` is DESPACHO or a client's id; `clave`, the item's key.
+   */
+  Calendario: table(
+    'Calendario',
+    [
+      col('calendario', { type: 'string', required: true }),
+      col('clave', { type: 'string', required: true }),
+      col('eventId', { type: 'string' }),
+      col('hash', { type: 'string' }),
+      col('inicio', { type: 'string' }),
+      col('fin', { type: 'string' }),
+      col('titulo', { type: 'string' }),
     ],
     { sync: 'none', audience: 'firm' },
   ),

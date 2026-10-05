@@ -8,7 +8,13 @@ import { PULLED_TABLES, TABLES, type TableName } from '../domain/tables.ts';
 import type { Row, Value } from '../domain/values.ts';
 import { ID, demoData, uid, type Dataset } from '../testing/fixtures.ts';
 import { buildUserContext, userHasClientAccess, type UserContext } from './context.ts';
-import { authorizeConflictResolution, authorizeDownload, authorizeUpload } from './online.ts';
+import {
+  authorizeConflictResolution,
+  authorizeDownload,
+  authorizeUpload,
+  clientCalendarRole,
+  firmCalendarRole,
+} from './online.ts';
 import { canRead, projectRow } from './read.ts';
 import { buildSnapshot } from './snapshot.ts';
 import { authorizeWrite, onlyToggled, type OpType, type WriteLookup } from './write.ts';
@@ -1046,5 +1052,28 @@ describe('rules inside the cells', () => {
       ok: true,
       fields: { estado: 'EN_CURSO' },
     });
+  });
+});
+
+describe('the portal calendars in one’s own Google Calendar (D49)', () => {
+  const w = world();
+
+  it('the firm calendar holds every client: only the partners, as writers', () => {
+    expect(firmCalendarRole(w.ctx(ID.socio))).toBe('writer');
+    for (const id of [ID.abogado, ID.asistente, ...CLIENT_USERS_OF_A]) {
+      expect(firmCalendarRole(w.ctx(id))).toBeNull();
+    }
+  });
+
+  it('a client calendar: its users who see the whole client, as readers', () => {
+    const access = (userId: string) => w.ctx(userId).clients.get(A);
+    expect(clientCalendarRole(access(ID.cAdmin))).toBe('reader');
+    expect(clientCalendarRole(access(ID.cLectura))).toBe('reader');
+    // A unit: the personal feed shows exactly that part.
+    expect(clientCalendarRole(access(ID.cColab))).toBeNull();
+    expect(clientCalendarRole(access(ID.cAdminSur))).toBeNull();
+    // The firm sees the client in the firm calendar; nobody without access sees anything.
+    for (const id of FIRM_OF_A) expect(clientCalendarRole(access(id))).toBeNull();
+    expect(clientCalendarRole(w.ctx(ID.cB).clients.get(A))).toBeNull();
   });
 });

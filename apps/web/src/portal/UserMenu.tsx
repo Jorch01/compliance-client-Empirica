@@ -85,7 +85,7 @@ function LogoutDialog({ open, onClose }: { open: boolean; onClose: () => void })
 /** Who is signed in, preferences, the tour and signing out. */
 export function UserMenu() {
   const { t } = useTranslation();
-  const { me } = usePortal();
+  const { me, call } = usePortal();
   const { start } = useTour();
   const feedback = useFeedback();
   const [logout, setLogout] = useState(false);
@@ -113,7 +113,12 @@ export function UserMenu() {
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">{t('shell.preferences')}</p>
-              <PreferencesInline />
+              <PreferencesInline
+                onLanguage={(idioma) => {
+                  // Emails and the calendar feed follow; offline, the device keeps it anyway.
+                  call('profile.update', { idioma }).catch(() => undefined);
+                }}
+              />
             </div>
             <div className="flex flex-col items-stretch gap-1 border-t border-border pt-3">
               <Button

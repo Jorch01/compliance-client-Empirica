@@ -99,6 +99,29 @@ describe('bundled Apps Script', () => {
     expect(pulled.data.changes.filter((c) => c.row.clienteId === ID.clienteB)).toEqual([]);
   });
 
+  it('serves the personal calendar feed as text/calendar, and runs the F5 triggers', () => {
+    const token = google.firebase.issue({ uid: 'fb-colab', email: 'norte@cliente-a.example' });
+    const sub = post<{ token: string }>({
+      v: 1,
+      action: 'calendar.subscribe',
+      idToken: token,
+      payload: {},
+    });
+    if (!sub.ok) throw new Error(sub.error.message);
+    const feed = call<TextOutput>('doGet', { parameter: { action: 'ics', token: sub.data.token } });
+    expect(feed.mimeType).toBe('text/calendar');
+    expect(feed.content).toContain('BEGIN:VEVENT');
+    const nobody = call<TextOutput>('doGet', { parameter: { action: 'ics', token: 'x' } });
+    expect(nobody.content).toContain('END:VCALENDAR');
+    expect(nobody.content).not.toContain('BEGIN:VEVENT');
+    // The triggers' entry points work inside the bundle too.
+    expect(call<{ skipped: string | null; failed: number }>('syncCalendars')).toMatchObject({
+      skipped: null,
+      failed: 0,
+    });
+    expect(call<{ failed: number }>('dailyDigest')).toMatchObject({ failed: 0 });
+  });
+
   it('answers errors in the envelope, never with an exception', () => {
     const res = post({ v: 1, action: 'sync.pull', payload: { cursor: 0 } });
     expect(res).toMatchObject({ ok: false, error: { code: 'UNAUTHENTICATED' } });

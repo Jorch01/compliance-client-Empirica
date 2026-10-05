@@ -6,8 +6,18 @@ import { Icon } from '../ui/Icon.tsx';
 
 const THEME_ICON = { system: 'monitor', light: 'sun', dark: 'moon' } as const;
 
-/** Language and theme, as two compact selects (screens before signing in, user menu). */
-export function PreferencesInline({ className = '' }: { className?: string }) {
+/**
+ * Language and theme, as two compact selects (screens before signing in, user
+ * menu). Signed in, the language is also the one of the person's emails and
+ * calendar feed: `onLanguage` tells the server.
+ */
+export function PreferencesInline({
+  className = '',
+  onLanguage,
+}: {
+  className?: string;
+  onLanguage?: (language: Language) => void;
+}) {
   const { t } = useTranslation();
   const [lang, setLang] = useState<Language>(currentLanguage());
   const [theme, setThemeState] = useState<ThemePreference>(themePreference());
@@ -28,6 +38,7 @@ export function PreferencesInline({ className = '' }: { className?: string }) {
             const next = e.target.value as Language;
             setLang(next);
             setLanguage(next);
+            onLanguage?.(next);
           }}
         >
           {LANGUAGES.map((l) => (

@@ -6,9 +6,37 @@ import { buttonClass } from '../../ui/button-class.ts';
 import { Icon } from '../../ui/Icon.tsx';
 import { invitationLink } from './useInvitations.ts';
 
+/** Whether the portal emailed the link (F5), and why not when it could not. */
+export function EmailOutcome({
+  emailedTo,
+  emailError,
+}: {
+  emailedTo?: string | undefined;
+  emailError?: string | undefined;
+}) {
+  const { t } = useTranslation();
+  if (emailedTo) {
+    return (
+      <p role="status" className="flex items-center gap-2">
+        <Icon name="mail" className="size-5 text-success" />
+        {t('invitations.emailedTo', { email: emailedTo })}
+      </p>
+    );
+  }
+  if (!emailError) return null;
+  return (
+    <p
+      role="status"
+      className="rounded-control border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-subtle-foreground"
+    >
+      {emailError === 'QUOTA' ? t('invitations.emailQuota') : t('invitations.emailFailed')}
+    </p>
+  );
+}
+
 /**
  * The invitation link, shown once: copied, or sent from the user's own mail
- * (phase 2 sends no e-mail itself, decision D26).
+ * (the portal may also have emailed it, F5).
  */
 export function ShareLink({
   token,

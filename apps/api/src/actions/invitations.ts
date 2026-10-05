@@ -34,9 +34,13 @@ import {
   type Value,
 } from '@empirica/shared';
 import type { Identity, Session } from '../auth.ts';
-import type { Database } from '../db/database.ts';
+import { readAgendaSettings } from '../config.ts';
+import { Database } from '../db/database.ts';
 import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
+import { sendMail } from '../mail/send.ts';
+import { invitationEmail } from '../mail/templates.ts';
+import { saveNotifications } from '../notify.ts';
 import {
   changed,
   freshContext,
@@ -103,6 +107,44 @@ export function invitationView(db: Database, inv: Row, nowMs: number): Invitatio
     aprobadoPor: text(inv, 'aprobadoPor'),
     createdAt: text(inv, 'createdAt') ?? '',
   };
+}
+
+/**
+ * Emails a new link (F5), once the lock is released: sending takes a moment
+ * and must not hold the other writers. The link is returned either way, so
+ * whoever invites can still share it by hand; replies go to them.
+ */
+function withEmail(
+  env: Env,
+  session: Session,
+  outcome: InvitationOutcome,
+  send: boolean | undefined,
+): InvitationOutcome {
+  if (!send || !outcome.token) return outcome;
+  const db = new Database(env);
+  const settings = readAgendaSettings(db.rows('Config'));
+  const inv = outcome.invitation;
+  const invitee = userByEmail(db, inv.email);
+  const client = inv.clienteId ? db.table('Clientes').get(inv.clienteId) : undefined;
+  const email = invitationEmail({
+    lang: invitee && text(invitee, 'idioma') === 'en' ? 'en' : 'es',
+    name: inv.nombre ?? (invitee ? text(invitee, 'nombre') : null),
+    email: inv.email,
+    inviter: text(session.user, 'nombre') ?? 'Empírica Legal Lab',
+    client: client ? (text(client, 'nombreComercial') ?? text(client, 'razonSocial')) : null,
+    link: `${settings.portalUrl.replace(/\/*$/, '/')}#/invitacion/${outcome.token}`,
+    until: (inv.venceEn ?? '').slice(0, 10),
+  });
+  const result = sendMail(env, {
+    to: inv.email,
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+    replyTo: text(session.user, 'email'),
+  });
+  return result.sent
+    ? { ...outcome, emailedTo: inv.email }
+    : { ...outcome, emailError: result.error ?? 'UNKNOWN' };
 }
 
 /** The secret of a link: 244 random bits from two UUIDs, as 64 hex characters. */
@@ -180,6 +222,10 @@ export function createInvitation(
   session: Session,
   input: InvitationCreate,
 ): InvitationOutcome {
+  return withEmail(env, session, createUnderLock(env, session, input), input.enviarCorreo);
+}
+
+function createUnderLock(env: Env, session: Session, input: InvitationCreate): InvitationOutcome {
   return underLock(env, session.user.id, (r) => {
     const ctx = freshContext(r.db, session.user.id);
     const email = lowerEmail(input.email);
@@ -288,6 +334,28 @@ export function createInvitation(
       clienteId,
       AUDITED,
     );
+    if (needsApproval && clienteId) {
+      // The firm approves it: the client's lawyer and the partners hear at once.
+      const cliente = r.db.table('Clientes').get(clienteId);
+      const lawyer = cliente ? text(cliente, 'abogadoResponsableId') : null;
+      const partners = r.db
+        .rows('Usuarios')
+        .filter((u) => !u.deleted && u.lado === 'EMPIRICA' && u.rolBase === 'SOCIO_ADMIN')
+        .map((u) => u.id);
+      saveNotifications(
+        r.db,
+        r.writer,
+        [...new Set([lawyer, ...partners])].map((usuarioId) => ({
+          usuarioId,
+          tipo: 'INVITACION_POR_APROBAR' as const,
+          about: null,
+          mensaje: input.nombre.trim() || email,
+          link: '/usuarios',
+          clienteId,
+        })),
+        ctx.userId,
+      );
+    }
     return {
       invitation: invitationView(r.db, inv, r.nowMs),
       ...(secret ? { token: secret.token } : {}),
@@ -305,6 +373,14 @@ function managed(r: LockedRun, ctx: UserContext, invitacionId: string): Row {
 }
 
 export function decideInvitation(
+  env: Env,
+  session: Session,
+  input: { invitacionId: string; approve: boolean; enviarCorreo?: boolean | undefined },
+): InvitationOutcome {
+  return withEmail(env, session, decideUnderLock(env, session, input), input.enviarCorreo);
+}
+
+function decideUnderLock(
   env: Env,
   session: Session,
   input: { invitacionId: string; approve: boolean },
@@ -376,6 +452,14 @@ export function decideInvitation(
 
 /** A new link for an invitation that was sent (or expired): the old one stops working. */
 export function resendInvitation(
+  env: Env,
+  session: Session,
+  input: { invitacionId: string; enviarCorreo?: boolean | undefined },
+): InvitationOutcome {
+  return withEmail(env, session, resendUnderLock(env, session, input), input.enviarCorreo);
+}
+
+function resendUnderLock(
   env: Env,
   session: Session,
   input: { invitacionId: string },

@@ -24,6 +24,7 @@ import type {
   GValidationBuilder,
   GoogleGlobals,
 } from '../google.ts';
+import { FakeCalendar, FakeMail } from './calendar.ts';
 
 const OUT_OF_BOUNDS = 'The coordinates of the range are outside the dimensions of the sheet.';
 
@@ -477,8 +478,12 @@ export class FakeGoogle {
   readonly files = new Map<string, FakeFile>();
   readonly props = new Map<string, string>();
   readonly cache = new Map<string, { value: string; expires: number }>();
-  readonly triggers: { handler: string; hour: number }[] = [];
+  readonly triggers: { handler: string; hour?: number; minutes?: number }[] = [];
   readonly firebase: FakeFirebase;
+  readonly calendar = new FakeCalendar();
+  readonly mail = new FakeMail();
+  /** False until the owner authorizes Calendar: the advanced service is missing. */
+  calendarAuthorized = true;
   /** Formulas that reached a cell: must stay zero. */
   formulas: string[] = [];
   lockBusy = false;
@@ -539,6 +544,8 @@ export class FakeGoogle {
       return builder;
     };
     const trigger = (handler: string): GTrigger => ({ getHandlerFunction: () => handler });
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- the Calendar getter below reads the flag live
+    const self = this;
 
     return {
       SpreadsheetApp: {
@@ -664,11 +671,36 @@ export class FakeGoogle {
                 }),
               }),
             }),
+            everyMinutes: (minutes) => ({
+              create: () => {
+                this.triggers.push({ handler, minutes });
+                return trigger(handler);
+              },
+            }),
+            everyHours: (hours) => ({
+              create: () => {
+                this.triggers.push({ handler, minutes: hours * 60 });
+                return trigger(handler);
+              },
+            }),
           }),
         }),
+        deleteTrigger: (t) => {
+          const i = this.triggers.findIndex((x) => x.handler === t.getHandlerFunction());
+          if (i >= 0) this.triggers.splice(i, 1);
+        },
+      },
+      get Calendar() {
+        return self.calendarAuthorized ? self.calendar : undefined;
+      },
+      MailApp: {
+        sendEmail: (message) => {
+          this.mail.sendEmail(message);
+        },
+        getRemainingDailyQuota: () => this.mail.getRemainingDailyQuota(),
       },
       ContentService: {
-        MimeType: { JSON: 'application/json' },
+        MimeType: { JSON: 'application/json', ICAL: 'text/calendar' },
         createTextOutput(content: string) {
           return {
             content,

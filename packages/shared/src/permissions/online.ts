@@ -1,9 +1,10 @@
 /**
  * Online actions that are not edits of a record through `sync.push`:
- * deciding a conflict, and the file of a document. Same rule as the rest
- * (write.ts): what the user cannot see is NOT_FOUND, never FORBIDDEN.
+ * deciding a conflict, the file of a document, and seeing a portal calendar
+ * in one's own Google Calendar. Same rule as the rest (write.ts): what the
+ * user cannot see is NOT_FOUND, never FORBIDDEN.
  */
-import { isFirmRole } from '../domain/enums.ts';
+import { CLIENT_ROLES, isFirmRole } from '../domain/enums.ts';
 import { TABLES, isTableName } from '../domain/tables.ts';
 import { text, type Row } from '../domain/values.ts';
 import type { UserContext } from './context.ts';
@@ -96,4 +97,33 @@ export function authorizeDownload(
   if (!clienteId) return deny('NOT_FOUND', 'NOT_FOUND');
   if (!text(documento, 'driveFileId')) return deny('NOT_FOUND', 'NOT_UPLOADED');
   return { ok: true, clienteId };
+}
+
+export type GoogleCalendarRole = 'writer' | 'reader';
+
+/**
+ * Who may see the firm's Google calendar in their own Google Calendar
+ * (D49, PERMISOS.md note 11). It holds every client, internal records too,
+ * so only the partners who administer the portal, as writers: an
+ * appointment they move there comes back to the portal. A lawyer or an
+ * assistant sees only their clients: their personal feed shows that.
+ */
+export function firmCalendarRole(user: {
+  lado: unknown;
+  rolBase: unknown;
+}): GoogleCalendarRole | null {
+  return user.lado === 'EMPIRICA' && user.rolBase === 'SOCIO_ADMIN' ? 'writer' : null;
+}
+
+/**
+ * Who may see a client's Google calendar (D49): it holds what the client
+ * sees, so its users whose access covers the whole client, as readers. A
+ * user of some units (or some matters) has the personal feed instead, which
+ * shows exactly their part; the firm sees the client in the firm calendar.
+ */
+export function clientCalendarRole(
+  access: { rol: unknown; alcance: unknown } | undefined,
+): GoogleCalendarRole | null {
+  if (!access || !CLIENT_ROLES.some((r) => r === access.rol)) return null;
+  return access.alcance === null || access.alcance === undefined ? 'reader' : null;
 }

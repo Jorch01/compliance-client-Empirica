@@ -188,6 +188,7 @@ export const POLICIES: Record<TableName, RolePolicies> = {
   Bitacora: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   Reportes: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   OpsAplicadas: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
+  Calendario: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
 };
 
 export type Operation = 'create' | 'update' | 'delete';

@@ -36,6 +36,8 @@ import type { Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import { conflictLink } from './conflicts.ts';
 import { placeDocumentFile } from './files.ts';
+import { saveNotifications, type NotificationDraft } from '../notify.ts';
+import { draftsFor } from '../notify-rules.ts';
 import { LOCK_WAIT_MS, changed, type LockedRun } from './locked.ts';
 
 export function push(
@@ -115,6 +117,8 @@ class PushRun {
    * date, at the end. With the periods that lost a validated record.
    */
   readonly #obligations = new Map<string, { clienteId: string | null; reopened: Set<string> }>();
+  /** Who to tell about this run's changes (F5): written once, at the end. */
+  readonly #notes: NotificationDraft[] = [];
 
   constructor(
     env: Env,
@@ -301,6 +305,8 @@ class PushRun {
       this.#refreshDueDate(id, clienteId, [...reopened]);
     }
     this.#obligations.clear();
+    saveNotifications(this.#db, this.#writer, this.#notes, this.#ctx.userId);
+    this.#notes.length = 0;
   }
 
   /**
@@ -352,6 +358,7 @@ class PushRun {
     after: Row,
     clienteId: string | null,
   ): void {
+    this.#notes.push(...draftsFor(this.#db, this.#ctx, table, before, after, clienteId));
     // A task created, closed, reopened, moved, deleted or restored: its matter's progress.
     if (
       table === 'Tareas' &&
@@ -475,7 +482,13 @@ class PushRun {
         usuarioId,
         clienteId,
         tipo: 'CONFLICTO',
-        mensaje: `Dos cambios distintos a "${c.field}" en ${table}: se conservó el valor vigente y falta tu decisión.`,
+        // The record's name: the bell words the rest, in the reader's language.
+        mensaje: (
+          text(row, 'titulo') ??
+          text(row, 'nombre') ??
+          text(row, 'contraparte') ??
+          `${table} · ${c.field}`
+        ).slice(0, 300),
         link: conflictLink(conflict.id),
         leida: false,
       });

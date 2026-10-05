@@ -1,5 +1,6 @@
 import { Route, Switch } from 'wouter';
 import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
+import { AgendaPage } from '../pages/Agenda.tsx';
 import { ClientHome } from '../pages/ClientHome.tsx';
 import { ClientsPage } from '../pages/Clients.tsx';
 import { CompliancePage } from '../pages/Compliance.tsx';
@@ -18,6 +19,7 @@ import { HelpPage } from '../pages/Help.tsx';
 import { MatterDetailPage } from '../pages/MatterDetail.tsx';
 import { MattersPage } from '../pages/Matters.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
+import { NoticesPage } from '../pages/Notices.tsx';
 import { ObligationDetailPage } from '../pages/ObligationDetail.tsx';
 import { PendingPage } from '../pages/Pending.tsx';
 import { PeoplePage } from '../pages/People.tsx';
@@ -104,6 +106,15 @@ function Routes() {
       </Route>
       <Route path="/solicitudes/:id">
         <RequestDetailPage />
+      </Route>
+      <Route path="/agenda">
+        <AgendaPage />
+      </Route>
+      <Route path="/agenda/:id">
+        <AgendaPage />
+      </Route>
+      <Route path="/avisos">
+        <NoticesPage />
       </Route>
       <Route path="/ayuda">
         <HelpPage />

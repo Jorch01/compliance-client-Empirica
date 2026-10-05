@@ -122,7 +122,11 @@ test('an invitation: the firm shares the link, the person signs in and sees thei
   await form.getByLabel('Correo electrónico').fill('nueva@cliente-a.example');
   await form.getByLabel('Solo estas unidades').check();
   await form.getByLabel('Unidad Norte').check();
+  await expect(form.getByLabel('Enviarle el enlace por correo')).toBeChecked();
   await form.getByRole('button', { name: 'Crear invitación' }).click();
+  await expect(
+    form.getByText('El portal envió la invitación a nueva@cliente-a.example.'),
+  ).toBeVisible();
   const link = await form.getByLabel('Enlace de la invitación').inputValue();
   expect(link).toMatch(/#\/invitacion\/[0-9a-f]{64}$/);
   await firm.close();

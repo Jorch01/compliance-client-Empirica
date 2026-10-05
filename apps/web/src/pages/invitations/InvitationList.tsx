@@ -10,7 +10,7 @@ import { Button } from '../../ui/Button.tsx';
 import { EmptyState, Spinner } from '../../ui/Card.tsx';
 import { Icon } from '../../ui/Icon.tsx';
 import { StatusBadge, type Tone } from '../../ui/StatusBadge.tsx';
-import { ShareLink } from './ShareLink.tsx';
+import { EmailOutcome, ShareLink } from './ShareLink.tsx';
 import type { InvitationsState } from './useInvitations.ts';
 
 const TONE: Record<EstadoInvitacion, Tone> = {
@@ -46,7 +46,12 @@ function InvitationRow({
   const names = useNames();
   const [busy, setBusy] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<{ token: string; venceEn: string | null } | null>(null);
+  const [token, setToken] = useState<{
+    token: string;
+    venceEn: string | null;
+    emailedTo?: string | undefined;
+    emailError?: string | undefined;
+  } | null>(null);
 
   const manages =
     me.isAdmin ||
@@ -68,12 +73,22 @@ function InvitationRow({
           ? await call<InvitationOutcome>('invitations.decide', {
               invitacionId: inv.id,
               approve: action === 'approve',
+              enviarCorreo: action === 'approve',
             })
           : await call<InvitationOutcome>(
               action === 'resend' ? 'invitations.resend' : 'invitations.revoke',
-              { invitacionId: inv.id },
+              action === 'resend'
+                ? { invitacionId: inv.id, enviarCorreo: true }
+                : { invitacionId: inv.id },
             );
-      if (data.token) setToken({ token: data.token, venceEn: data.invitation.venceEn });
+      if (data.token) {
+        setToken({
+          token: data.token,
+          venceEn: data.invitation.venceEn,
+          emailedTo: data.emailedTo,
+          emailError: data.emailError,
+        });
+      }
       void engine.sync();
       onChanged();
     } catch (e) {
@@ -146,7 +161,8 @@ function InvitationRow({
         </p>
       ) : null}
       {token ? (
-        <div className="mt-3">
+        <div className="mt-3 space-y-3">
+          <EmailOutcome emailedTo={token.emailedTo} emailError={token.emailError} />
           <ShareLink
             token={token.token}
             email={inv.email}

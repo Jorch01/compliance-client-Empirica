@@ -45,20 +45,44 @@ describe('setup()', () => {
     expect(file?.parent?.id).toBe(w.google.props.get(PROP.rootFolderId));
   });
 
-  it('creates the partners as SOCIO_ADMIN, the default settings and the backup trigger', () => {
+  it('creates the partners as SOCIO_ADMIN, the default settings and the triggers', () => {
     expect(w.rows('Usuarios').map((u) => [u.email, u.rolBase, u.estado, u.lado])).toEqual([
       ['socia@despacho.example', 'SOCIO_ADMIN', 'ACTIVO', 'EMPIRICA'],
       ['socio@despacho.example', 'SOCIO_ADMIN', 'ACTIVO', 'EMPIRICA'],
     ]);
     expect(w.rows('Config').map((c) => c.clave)).toEqual(CONFIG_DEFAULTS.map((d) => d.clave));
-    expect(w.google.triggers).toEqual([{ handler: 'nightly', hour: 3 }]);
+    expect(w.google.triggers).toEqual([
+      { handler: 'nightly', hour: 3 },
+      { handler: 'syncCalendars', minutes: 15 },
+      { handler: 'dailyDigest', minutes: 60 },
+    ]);
+  });
+
+  it('creates the firm calendar once, and says how many emails are left today', () => {
+    expect(w.setupReport.created).toContain('calendario de Google "Empírica · Despacho"');
+    const id = w.google.props.get(PROP.firmCalendarId) ?? '';
+    expect(w.google.calendar.calendars.get(id)?.summary).toBe('Empírica · Despacho');
+    const again = runSetup(w.env);
+    expect(again.checked).toEqual(
+      expect.arrayContaining([
+        'Calendar: el calendario del despacho existe.',
+        'Correo: quedan 100 destinatarios hoy.',
+      ]),
+    );
+    expect(w.google.calendar.calendars.size).toBe(1);
+  });
+
+  it('warns when Calendar is not enabled yet', () => {
+    const v = createWorld({ data: null });
+    v.google.calendarAuthorized = false;
+    expect(runSetup(v.env).warnings.join(' ')).toContain('Calendar no está activado');
   });
 
   it('is idempotent: a second run creates nothing', () => {
     const again = runSetup(w.env);
     expect(again.created).toEqual([]);
     expect(w.rows('Usuarios')).toHaveLength(2);
-    expect(w.google.triggers).toHaveLength(1);
+    expect(w.google.triggers).toHaveLength(3);
   });
 
   it('adds a column the code needs without touching the others', () => {
@@ -77,9 +101,9 @@ describe('setup()', () => {
   });
 
   it('confirms that sign-in will work: both Firebase properties and a server key that works', () => {
-    expect(w.setupReport.checked).toEqual([
+    expect(w.setupReport.checked).toContain(
       `Firebase: proyecto ${w.google.firebase.projectId}; la key del servidor funciona.`,
-    ]);
+    );
     expect(w.setupReport.warnings.join(' ')).not.toMatch(/FIREBASE/);
   });
 
@@ -87,7 +111,7 @@ describe('setup()', () => {
     const v = createWorld({ data: null });
     v.google.props.delete(PROP.firebaseApiKey);
     const report = runSetup(v.env);
-    expect(report.checked).toEqual([]);
+    expect(report.checked.filter((c) => c.startsWith('Firebase'))).toEqual([]);
     expect(report.warnings.join(' ')).toContain(
       'Falta FIREBASE_SERVER_API_KEY en Script Properties',
     );
@@ -103,7 +127,7 @@ describe('setup()', () => {
       'FIREBASE_SERVER_API_KEY no funciona con Identity Toolkit (400: API key not valid.)',
     );
     expect(warnings).not.toContain(wrongKey);
-    expect(report.checked).toEqual([]);
+    expect(report.checked.filter((c) => c.startsWith('Firebase'))).toEqual([]);
 
     v.google.props.set(PROP.firebaseApiKey, v.google.firebase.apiKey);
     v.google.firebase.failWith = 503;
