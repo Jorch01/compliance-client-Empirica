@@ -1416,6 +1416,8 @@ export const es = {
     googleOpen: 'Abrir en Google Calendar',
     partialScope:
       'Ves solo algunas unidades: usa tu enlace personal, que muestra exactamente lo que te toca.',
+    firmPartnersOnly:
+      'El calendario del despacho en Google tiene a todos los clientes y lo ven los socios. Tu enlace personal muestra tus clientes, también lo interno.',
   },
   notFound: {
     title: 'No encontramos esta página',

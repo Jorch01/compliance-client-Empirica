@@ -60,13 +60,18 @@ test('an appointment written in the portal reaches the agenda and the personal f
   await context.close();
 });
 
-test('a client sees a shared appointment but cannot change it; a unit user gets the personal link only', async ({
+test('a client sees a shared appointment but cannot change it; Google calendars only for who sees the whole', async ({
   browser,
 }) => {
   const firmDevice = await device(browser);
   const firm = await firmDevice.newPage();
   await signIn(firm, 'abogado');
   await firm.goto('#/agenda');
+  // A lawyer sees only their clients: the firm calendar (every client) is for the partners.
+  await expect(firm.getByText(/lo ven los socios/)).toBeVisible();
+  await expect(
+    firm.getByRole('button', { name: 'Compartirlo con mi cuenta de Google' }),
+  ).toHaveCount(0);
   await firm.getByRole('button', { name: 'Nueva cita' }).click();
   const form = firm.getByRole('dialog', { name: 'Nueva cita' });
   await form.getByLabel('Título').fill('Revisión con el cliente');
@@ -107,6 +112,20 @@ test('a client sees a shared appointment but cannot change it; a unit user gets 
   ).toHaveCount(0);
   await expect(unit.getByRole('button', { name: 'Crear mi enlace de calendario' })).toBeVisible();
   await unitDevice.close();
+
+  const partnerDevice = await device(browser);
+  const partner = await partnerDevice.newPage();
+  await signIn(partner, 'socia');
+  await partner.goto('#/agenda');
+  await partner.getByRole('button', { name: 'Compartirlo con mi cuenta de Google' }).click();
+  await expect(
+    partner.getByText('Listo: el calendario ya está compartido con tu cuenta.'),
+  ).toBeVisible();
+  await expect(partner.getByRole('link', { name: 'Abrir en Google Calendar' })).toHaveAttribute(
+    'href',
+    /^https:\/\/calendar\.google\.com\/calendar\/r\?cid=/,
+  );
+  await partnerDevice.close();
 });
 
 test('the bell: a client request reaches its lawyer, who opens it from the notice', async ({

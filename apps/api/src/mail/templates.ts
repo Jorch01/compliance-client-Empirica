@@ -62,7 +62,7 @@ const WORDS = {
     more: (n: number) => `y ${String(n)} más en el portal`,
     open: 'Abrir el portal',
     digestFooter:
-      'Recibes este resumen porque tienes acceso al portal de Empírica Legal Lab. Puedes dejar de recibirlo en el portal: Mi cuenta, Avisos.',
+      'Recibes este resumen porque tienes acceso al portal de Empírica Legal Lab. Puedes apagarlo en el portal, en Avisos (la campana de arriba).',
     inviteSubject: 'Te invitaron al portal de Empírica Legal Lab',
     invited: (who: string, client: string | null) =>
       `${who} te invitó al portal de Empírica Legal Lab${client ? ` para ${client}` : ''}.`,
@@ -88,7 +88,7 @@ const WORDS = {
     more: (n: number) => `and ${String(n)} more in the portal`,
     open: 'Open the portal',
     digestFooter:
-      'You receive this summary because you have access to the Empírica Legal Lab portal. You can turn it off in the portal: My account, Notifications.',
+      'You receive this summary because you have access to the Empírica Legal Lab portal. You can turn it off in the portal, in Notices (the bell at the top).',
     inviteSubject: 'You are invited to the Empírica Legal Lab portal',
     invited: (who: string, client: string | null) =>
       `${who} invited you to the Empírica Legal Lab portal${client ? ` for ${client}` : ''}.`,

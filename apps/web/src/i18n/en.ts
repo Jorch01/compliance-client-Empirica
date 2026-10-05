@@ -1428,6 +1428,8 @@ export const en: Messages = {
     googleOpen: 'Open in Google Calendar',
     partialScope:
       'You see only some units: use your personal link, which shows exactly what is yours.',
+    firmPartnersOnly:
+      'The firm calendar in Google has every client and is for the partners. Your personal link shows your clients, internal records too.',
   },
   notFound: {
     title: 'We could not find this page',

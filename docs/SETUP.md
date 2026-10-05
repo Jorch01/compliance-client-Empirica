@@ -17,6 +17,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                              |
 | 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                 |
 | 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | Pendiente                                                                  |
+| 12  | Autorizar Calendar y correo     | Paso 11, el día que se fusione la Fase 5             | No                                                            | Pendiente                                                                  |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -166,6 +167,7 @@ Cuando el código ya esté en Apps Script:
 3. Google pedirá autorización (es normal: el proyecto es tuyo y no está publicado en ninguna tienda):
    **Revisar permisos** → elige la cuenta del paso 1 → "Google no verificó esta app" → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**.
    Los permisos que pide son exactamente estos: tus hojas de cálculo, tu Drive, conectarse a servicios externos (para verificar las sesiones con Firebase) y programar tareas (el respaldo nocturno).
+   Desde la Fase 5 pide además tus calendarios y enviar correo (paso 11).
    El aviso de que Google no verificó la app no es un problema: la verificación es para apps que autorizan otras personas, y esta solo la autoriza la cuenta del paso 1. Los usuarios del portal nunca ven esta pantalla.
    Si después de **Permitir** aparece "No se pudo abrir el archivo en este momento", había otra cuenta abierta: cierra esa pestaña y repite desde el punto 1 en una ventana de incógnito nueva. Los permisos ya quedaron dados; por eso, la segunda vez Google dice que la app "ya tiene acceso" a 4 servicios.
 4. Abajo, en el registro de ejecución, debe aparecer `Hoja: https://docs.google.com/…` con lo que se creó: el libro `EMPIRICA_PORTAL_DB`, la carpeta `Empírica Portal` con `Clientes` y `Respaldos`, los dos socios como administradores y el respaldo de las 3:00. Si dice "Aviso: ADMIN_EMAILS está vacío", revisa el paso 5 y vuelve a ejecutar `setup` (puede ejecutarse las veces que sea: solo crea lo que falta).
@@ -199,6 +201,21 @@ Hasta ahora `portal.empirica.mx` muestra una portada provisional. Cuando apruebe
 7. **Prueba con tu cuenta**: abre `https://portal.empirica.mx` y entra con tu correo de socio (uno de `ADMIN_EMAILS`), con Google o creando una contraseña con ese mismo correo (te llegará un correo para confirmarlo). El portal empieza vacío: crea el primer cliente en **Clientes**, agrégale sus unidades e invita en **Usuarios** a una persona de prueba (por ejemplo, otro correo tuyo) para ver el recorrido completo.
 
 **En iPhone o iPad con el portal instalado** (agregado a la pantalla de inicio), la ventana de "Continuar con Google" puede no responder; ahí conviene entrar con correo y contraseña. La solución definitiva queda para la Fase 7 (`PLAN.md`, D29).
+
+### Paso 11 · Calendarios y correos (el día que se fusione la Fase 5)
+
+La Fase 5 necesita dos permisos nuevos de la cuenta del paso 1: **sus calendarios** (el portal crea y escribe "Empírica · Despacho" y los de los clientes) y **enviar correo como ella** (el resumen diario y las invitaciones, con el nombre "Empírica Portal"). Google exige que esa cuenta los acepte una vez, en el editor; nadie más puede hacerlo por ella.
+
+1. Fusiona la propuesta de cambios de la Fase 5 cuando te avise. En **Actions**, el job **Desplegar el backend (Apps Script)** terminará **en rojo** con el mensaje "La versión nueva no respondió y el Web App volvió a la versión …". Es lo esperado: el código nuevo ya está en Apps Script, pero sin los permisos no corre, así que el backend sigue en la versión anterior y el portal funciona. El portal en el navegador sí se actualiza: la Agenda y la campana funcionan; el enlace de calendario y los correos esperan a este paso.
+2. Ese mismo día, en una **ventana de incógnito** y solo con la cuenta del paso 1 (como en el paso 9), abre el proyecto `Empírica Portal API`, elige **`setup`** y pulsa **Ejecutar**.
+3. Google pide autorización otra vez: **Revisar permisos** → la cuenta del paso 1 → **Configuración avanzada** → **Ir a Empírica Portal API (no seguro)** → **Permitir**. Ahora la lista incluye ver, editar, compartir y borrar tus calendarios, y enviar correo en tu nombre.
+4. En el registro deben aparecer `Creado: … calendario de Google "Empírica · Despacho"` y `Revisado: Correo: quedan … destinatarios hoy.`; en **Activadores** (el reloj del menú de la izquierda), tres: `nightly` (3:00), `syncCalendars` (cada 15 minutos) y `dailyDigest` (cada hora: manda el resumen una vez al día, desde las 7:00). Si dice "Aviso: Calendar no está activado", en el menú de la izquierda, junto a **Servicios**, pulsa **+** → **Google Calendar API** → **Agregar**, y vuelve a ejecutar `setup`.
+5. En GitHub: **Actions** → la ejecución en rojo → **Re-run jobs** → **Re-run failed jobs**. En unos minutos queda en verde: el backend nuevo ya responde.
+6. Prueba: entra al portal como socio → **Agenda** → **Compartirlo con mi cuenta de Google** → **Abrir en Google Calendar**. En 15 minutos aparece "Empírica · Despacho" con los vencimientos. Mueve una cita en Google Calendar: en 15 minutos o menos el portal la muestra en la nueva hora.
+
+Mientras no autorices, el respaldo nocturno tampoco corre (Google manda a la cuenta del paso 1 un correo con las fallas): por eso conviene hacerlo el mismo día.
+
+**La hora del resumen y los días de espera** están en la pestaña `Config` del libro: `horaResumen` (7), `diasEsperaCliente` (3) y `reservaCorreos` (10, los correos que se guardan para invitaciones). Se cambian ahí, en la columna `valor`.
 
 ### Actualizar el aviso de privacidad
 

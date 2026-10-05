@@ -216,17 +216,47 @@ describe('a client calendar', () => {
 });
 
 describe('the firm calendar in one’s own Google Calendar', () => {
-  it('is shared with a firm user as writer, and taken away on request', () => {
+  const acl = (w: World): Map<string, unknown> =>
+    w.google.calendar.calendars.get(firmId(w))?.acl ?? new Map<string, unknown>();
+
+  it('is shared with a partner as writer, and taken away on request', () => {
     const w = createWorld();
-    const data = share(w, ID.abogado);
+    const data = share(w, ID.socio);
     expect(data.calendarId).toBe(firmId(w));
-    const acl = (): Map<string, unknown> =>
-      w.google.calendar.calendars.get(firmId(w))?.acl ?? new Map<string, unknown>();
-    expect(acl().get('user:abogado@despacho.example')).toMatchObject({ role: 'writer' });
-    expect(w.ok<CalendarShareData>('calendar.share', { remove: true }, { as: ID.abogado })).toEqual(
-      { calendarId: null, addUrl: null },
+    expect(acl(w).get('user:socia@despacho.example')).toMatchObject({ role: 'writer' });
+    expect(w.ok<CalendarShareData>('calendar.share', { remove: true }, { as: ID.socio })).toEqual({
+      calendarId: null,
+      addUrl: null,
+    });
+    expect(acl(w).has('user:socia@despacho.example')).toBe(false);
+  });
+
+  it('is not for a lawyer, who sees only their clients: the personal feed shows them', () => {
+    const w = createWorld();
+    for (const as of [ID.abogado, ID.asistente]) {
+      const res = w.call('calendar.share', {}, { as });
+      expect(res.ok ? null : [res.error.code, res.error.details?.reason]).toEqual([
+        'FORBIDDEN',
+        'PARTIAL_SCOPE',
+      ]);
+    }
+    // Shared by hand, or before a partner stopped being one: the next run takes it away.
+    share(w, ID.socio);
+    w.google.calendar.Acl.insert(
+      { role: 'writer', scope: { type: 'user', value: 'abogado@despacho.example' } },
+      firmId(w),
     );
-    expect(acl().has('user:abogado@despacho.example')).toBe(false);
+    expect(syncCalendars(w.env).revoked).toBe(1);
+    expect([...acl(w).keys()].sort()).toEqual([
+      'user:portal-owner@example.com',
+      'user:socia@despacho.example',
+    ]);
+    // The lawyer's feed: their client, internal records too; nothing of the others.
+    w.edit('Tareas', ID.tB, { fechaLimite: '2026-10-21' });
+    const feed = icsFeed(w.env, subscribe(w, ID.abogado));
+    expect(feed).toContain('Entregar acta constitutiva');
+    expect(icsFeed(w.env, subscribe(w, ID.socio))).toContain('Enviar logotipo');
+    expect(feed).not.toContain('Enviar logotipo');
   });
 });
 

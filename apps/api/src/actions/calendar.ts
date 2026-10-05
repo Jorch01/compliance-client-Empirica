@@ -3,11 +3,15 @@
  * - calendar.subscribe: a new secret for the personal feed (the old one stops
  *   working), or none at all (`revoke`);
  * - calendar.share: sees a portal calendar in one's own Google Calendar, the
- *   firm's (firm users) or a client's (users of the whole client), or stops
- *   seeing it (`remove`). A client's calendar is created the first time.
+ *   firm's (the partners: it holds every client) or a client's (users of the
+ *   whole client), or stops seeing it (`remove`). A client's calendar is
+ *   created the first time. Whoever sees only part of the portal's clients
+ *   or units uses the personal feed, which shows exactly that part.
  */
 import {
   PROJECT_TIME_ZONE,
+  clientCalendarRole,
+  firmCalendarRole,
   isFirmRole,
   text,
   type CalendarShareData,
@@ -72,6 +76,13 @@ export function shareCalendar(
     if (session.ctx.lado !== 'EMPIRICA') {
       throw new ApiError('FORBIDDEN', 'El calendario del despacho es solo para el despacho.');
     }
+    if (!firmCalendarRole(session.ctx)) {
+      throw new ApiError(
+        'FORBIDDEN',
+        'El calendario del despacho tiene todos los clientes: lo ven los socios. Tu enlace personal muestra tus clientes.',
+        { reason: 'PARTIAL_SCOPE' },
+      );
+    }
     const googleId = firmCalendarId(env, cal);
     if (input.remove) revokeAccess(cal, googleId, email);
     else grantAccess(cal, googleId, FIRM_CALENDAR, email);
@@ -87,7 +98,7 @@ export function shareCalendar(
       'El despacho ve todos los clientes en el calendario del despacho.',
     );
   }
-  if (access.alcance) {
+  if (!clientCalendarRole(access)) {
     throw new ApiError(
       'FORBIDDEN',
       'Tu acceso es a una parte del cliente: usa tu enlace personal, que muestra exactamente esa parte.',

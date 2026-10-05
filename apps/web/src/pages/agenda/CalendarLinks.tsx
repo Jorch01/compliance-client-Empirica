@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CalendarShareData, CalendarSubscribeData } from '@empirica/shared';
+import {
+  clientCalendarRole,
+  firmCalendarRole,
+  type CalendarShareData,
+  type CalendarSubscribeData,
+} from '@empirica/shared';
 import { apiErrorText } from '../../i18n/errors.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
@@ -14,8 +19,9 @@ import { feedUrl, googleSubscribeUrl, webcalUrl } from './agenda.ts';
  * "Mi calendario": the agenda in the person's own calendar app.
  * - The personal link (ICS): exactly what they may see, in Google, Outlook
  *   or Apple. Shown once; a new one replaces it.
- * - Google Calendar, at once: the firm's calendar for the firm, a client's
- *   calendar for users of the whole client.
+ * - Google Calendar, at once: the firm's calendar (every client) for the
+ *   partners, a client's calendar for users of the whole client. Whoever
+ *   sees only part (a lawyer's clients, a client's units) has the link.
  */
 export function CalendarLinks() {
   const { t } = useTranslation();
@@ -35,7 +41,8 @@ export function CalendarLinks() {
     ? undefined
     : (me.clients.find((c) => c.id === scope.clientId) ??
       (me.clients.length === 1 ? me.clients[0] : undefined));
-  const wholeClient = Boolean(client && !client.alcance);
+  const firmCalendar = firmCalendarRole(me) !== null;
+  const clientCalendar = clientCalendarRole(client) !== null;
 
   const run = async (kind: 'link' | 'revoke' | 'google'): Promise<void> => {
     setBusy(kind);
@@ -134,7 +141,7 @@ export function CalendarLinks() {
           {t('calendar.revoke')}
         </Button>
 
-        {me.isFirm || wholeClient ? (
+        {firmCalendar || clientCalendar ? (
           <div className="space-y-2 border-t border-border pt-4">
             <p className="font-medium">
               {me.isFirm
@@ -164,10 +171,10 @@ export function CalendarLinks() {
               </Button>
             )}
           </div>
-        ) : client ? (
+        ) : me.isFirm || client ? (
           <p className="flex items-start gap-2 border-t border-border pt-4 text-muted-foreground">
-            <Icon name="info" className="mt-0.5 size-4" />
-            {t('calendar.partialScope')}
+            <Icon name="info" className="mt-0.5 size-4 shrink-0" />
+            {me.isFirm ? t('calendar.firmPartnersOnly') : t('calendar.partialScope')}
           </p>
         ) : null}
 
