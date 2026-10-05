@@ -86,6 +86,7 @@ function useNavGroups(): NavGroup[] {
           { href: '/contratos', label: t('nav.contracts'), icon: 'contract' },
           { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
           { href: '/documentos', label: t('nav.documents'), icon: 'file' },
+          { href: '/reportes', label: t('nav.reports'), icon: 'activity' },
         ],
       },
       {
@@ -126,6 +127,10 @@ function useNavGroups(): NavGroup[] {
         { href: '/contratos', label: t('nav.contracts'), icon: 'contract' },
         { href: '/solicitudes', label: t('nav.requests'), icon: 'inbox' },
         { href: '/documentos', label: t('nav.documents'), icon: 'file' },
+        // The monthly report goes to whoever sees the whole company.
+        ...(access && !access.alcance
+          ? [{ href: '/reportes', label: t('nav.reports'), icon: 'activity' as const }]
+          : []),
       ],
     },
     {

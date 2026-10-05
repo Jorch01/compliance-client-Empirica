@@ -22,6 +22,8 @@ import { NotFound } from '../pages/NotFound.tsx';
 import { NoticesPage } from '../pages/Notices.tsx';
 import { ObligationDetailPage } from '../pages/ObligationDetail.tsx';
 import { PendingPage } from '../pages/Pending.tsx';
+import { ReportDetailPage } from '../pages/ReportDetail.tsx';
+import { ReportsPage } from '../pages/Reports.tsx';
 import { PeoplePage } from '../pages/People.tsx';
 import { RequestDetailPage } from '../pages/RequestDetail.tsx';
 import { RequestsPage } from '../pages/Requests.tsx';
@@ -106,6 +108,12 @@ function Routes() {
       </Route>
       <Route path="/solicitudes/:id">
         <RequestDetailPage />
+      </Route>
+      <Route path="/reportes">
+        <ReportsPage />
+      </Route>
+      <Route path="/reportes/:clienteId/:periodo">
+        <ReportDetailPage />
       </Route>
       <Route path="/agenda">
         <AgendaPage />

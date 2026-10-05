@@ -33,6 +33,7 @@ const INDEXES: Partial<Record<TableName, string[]>> = {
   Membresias: ['usuarioId'],
   Eventos: ['inicio'],
   Sugerencias: ['usuarioId', 'estado'],
+  Reportes: ['periodo'],
 };
 
 export function storeSchema(table: TableName): string {
@@ -92,7 +93,7 @@ export type PortalDb = Dexie & {
 } & Record<TableName, Table<Row, string>>;
 
 /** Bump when the stores change; Dexie upgrades the database in place. */
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export function dbName(accountId: string): string {
   return `empirica-${accountId}`;

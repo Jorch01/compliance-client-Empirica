@@ -43,7 +43,8 @@ export default defineConfig(({ mode }) => ({
       injectRegister: false,
       registerType: 'prompt',
       injectManifest: {
-        globPatterns: ['**/*.{html,js,css,woff2,svg,png}'],
+        // woff: the report's PDF fonts (pdfmake does not read woff2).
+        globPatterns: ['**/*.{html,js,css,woff2,woff,svg,png}'],
         // Spanish and English need the Latin fonts only.
         globIgnores: [
           '**/*-{cyrillic,cyrillic-ext,greek,vietnamese}-*.woff2',

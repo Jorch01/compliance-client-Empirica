@@ -16,6 +16,7 @@ import { healthIndex, type HealthIndex, type HealthWeights } from './health.ts';
 import { daysBetween, taskLight, type Light } from './lights.ts';
 import { progressOf } from './progress.ts';
 import { addDays, daysInMonth } from './recurrence.ts';
+import { parseInstant, toProjectDate } from '../time.ts';
 import { text, type Row } from './values.ts';
 
 /** The tabs a report reads. */
@@ -186,6 +187,21 @@ export function periodLabel(periodo: string, lang: 'es' | 'en'): string {
   return lang === 'es' ? `${month} de ${y ?? ''}` : `${month} ${y ?? ''}`;
 }
 
+/**
+ * The day a task was done or a matter concluded: its fechaCierre. Before F6
+ * the portal did not record it, so for older records it is the day their
+ * state last changed (the field's timestamp), else their last edit.
+ */
+export function closingDay(row: Row): string | null {
+  const recorded = text(row, 'fechaCierre');
+  if (recorded) return recorded;
+  const stamps = row.fieldTimestamps;
+  const stamp =
+    stamps && typeof stamps === 'object' && !Array.isArray(stamps) ? stamps.estado : undefined;
+  const ms = parseInstant(stamp) ?? parseInstant(row.updatedAt);
+  return ms === null ? null : toProjectDate(ms);
+}
+
 /** First and last day of "2026-09". */
 export function periodBounds(periodo: string): { from: string; to: string } {
   const [y, m] = periodo.split('-').map(Number);
@@ -268,7 +284,7 @@ export function buildReport(data: ReportData, o: ReportOptions): ReportModel {
 
   // Matters: the open ones, and those concluded in the month.
   const matters: ReportMatter[] = asuntos
-    .filter((a) => a.estado !== 'CONCLUIDO' || inMonth(text(a, 'fechaCierre'), from, to))
+    .filter((a) => a.estado !== 'CONCLUIDO' || inMonth(closingDay(a), from, to))
     .map((a) => ({
       id: a.id,
       titulo: text(a, 'titulo') ?? '',
@@ -286,8 +302,8 @@ export function buildReport(data: ReportData, o: ReportOptions): ReportModel {
     );
 
   const closed = tareas
-    .filter((t) => t.estado === 'HECHO' && inMonth(text(t, 'fechaCierre'), from, to))
-    .map((t) => taskOf(t, o.today, text(t, 'fechaCierre')))
+    .filter((t) => t.estado === 'HECHO' && inMonth(closingDay(t), from, to))
+    .map((t) => taskOf(t, o.today, closingDay(t)))
     .sort((a, b) => byDate(a.fecha, b.fecha));
 
   const open = tareas

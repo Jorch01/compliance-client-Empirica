@@ -30,6 +30,8 @@ interface Form {
   abogadoResponsableId: string;
   estado: string;
   idioma: string;
+  /** '' = as the firm (Config.modoIA). */
+  modoIA: string;
 }
 
 const formOf = (c: Row | null): Form => ({
@@ -41,6 +43,7 @@ const formOf = (c: Row | null): Form => ({
   abogadoResponsableId: (c && text(c, 'abogadoResponsableId')) ?? '',
   estado: (c && text(c, 'estado')) ?? 'ACTIVO',
   idioma: (c && text(c, 'idioma')) ?? 'es',
+  modoIA: (c && text(c, 'modoIA')) ?? '',
 });
 
 /**
@@ -220,6 +223,20 @@ export function ClientForm({
             options={[
               { value: 'es', label: t('language.es') },
               { value: 'en', label: t('language.en') },
+            ]}
+          />
+          <SelectField
+            label={t('ai.mode')}
+            hint={t('ai.modeHint')}
+            disabled={!editable('modoIA')}
+            value={form.modoIA}
+            onChange={(e) => {
+              set('modoIA', e.target.value);
+            }}
+            options={[
+              { value: '', label: t('ai.modes.DEFAULT') },
+              { value: 'METADATA_ONLY', label: t('ai.modes.METADATA_ONLY') },
+              { value: 'OFF', label: t('ai.modes.OFF') },
             ]}
           />
         </div>

@@ -60,6 +60,21 @@ const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boole
   },
   { user: 'adminA', paths: ['#/', '#/pendientes', '#/equipo', '#/agenda'], mobile: true },
   { user: 'abogado', paths: ['#/agenda', '#/avisos'] },
+  // F6: the monthly reports, the draft with its preview, and the client's list.
+  {
+    user: 'abogado',
+    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-09'],
+  },
+  {
+    user: 'socia',
+    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-08'],
+    dark: true,
+  },
+  {
+    user: 'adminA',
+    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-08'],
+    mobile: true,
+  },
   { user: 'socia', paths: ['#/agenda', '#/avisos'], dark: true },
   {
     user: 'norte',

@@ -424,6 +424,8 @@ export interface ClientSummary {
   nombreComercial: string | null;
   rol: Rol;
   alcance: Alcance | null;
+  /** Whether the AI helpers are on for this client (a Gemini key, and its mode is not OFF). */
+  ia: boolean;
 }
 
 export interface BootstrapData {
@@ -490,7 +492,7 @@ export interface PushData {
  * apps are asked to reload instead of failing to sync. `Config.minAppVersion`
  * can only raise it further.
  */
-export const MIN_APP_VERSION = '0.2.1';
+export const MIN_APP_VERSION = '0.6.0';
 
 /** Compares dotted versions ("1.2.10" > "1.2.9"). */
 export function compareVersions(a: string, b: string): number {

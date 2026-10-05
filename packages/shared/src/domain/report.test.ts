@@ -192,6 +192,36 @@ describe('the monthly report', () => {
     expect(report.solicitudes.map((s) => s.titulo)).toEqual(['Revisar NDA']);
   });
 
+  it('tasks done before the portal recorded the day count by when their state changed', () => {
+    const report = buildReport(
+      {
+        Tareas: [
+          row(40, {
+            titulo: 'Cerrada en septiembre',
+            estado: 'HECHO',
+            fieldTimestamps: { estado: '2026-09-29T23:30:00.000-05:00' },
+            updatedAt: '2026-10-02T10:00:00.000-05:00',
+          }),
+          row(41, {
+            titulo: 'Cerrada en octubre',
+            estado: 'HECHO',
+            fieldTimestamps: { estado: '2026-10-01T09:00:00.000-05:00' },
+          }),
+          row(42, {
+            titulo: 'Sin rastro',
+            estado: 'HECHO',
+            updatedAt: '2026-09-15T12:00:00.000-05:00',
+          }),
+        ],
+      },
+      OPTIONS,
+    );
+    expect(report.tareasCerradas.map((t) => [t.titulo, t.fecha])).toEqual([
+      ['Sin rastro', '2026-09-15'],
+      ['Cerrada en septiembre', '2026-09-29'],
+    ]);
+  });
+
   it('caps the open tasks it lists and counts the rest', () => {
     const tareas = Array.from({ length: MAX_PENDING_TASKS + 4 }, (_, i) =>
       row(200 + i, { titulo: `T${String(i)}`, estado: 'POR_HACER' }),

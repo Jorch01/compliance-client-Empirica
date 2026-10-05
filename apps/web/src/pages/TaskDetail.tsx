@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'wouter';
-import { ESTADOS_TAREA, text, type Row } from '@empirica/shared';
+import { ESTADOS_TAREA, text, type AiTextData, type Row } from '@empirica/shared';
 import { usePendingIds, useRow } from '../data/hooks.ts';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
@@ -16,6 +16,7 @@ import { Card, EmptyState, PageHeader, Spinner } from '../ui/Card.tsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.tsx';
 import { SelectField } from '../ui/Field.tsx';
 import { Icon } from '../ui/Icon.tsx';
+import { aiOn } from './common/ai.ts';
 import { Checklist } from './common/Checklist.tsx';
 import { Comments } from './common/Comments.tsx';
 import { Documents } from './common/Documents.tsx';
@@ -68,7 +69,7 @@ function ClientMoves({ task }: { task: Row }) {
 export function TaskDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { me, engine } = usePortal();
+  const { me, engine, call } = usePortal();
   const [, navigate] = useLocation();
   const names = useNames();
   const task = useRow('Tareas', id);
@@ -226,7 +227,21 @@ export function TaskDetailPage() {
               </p>
             ) : null}
           </Card>
-          <Comments table="Tareas" record={task} />
+          <Comments
+            table="Tareas"
+            record={task}
+            {...(me.isFirm &&
+            !deleted &&
+            aiOn(me, clientId) &&
+            estado !== 'HECHO' &&
+            task.ladoResponsable !== 'EMPIRICA' &&
+            task.visibilidad === 'COMPARTIDO'
+              ? {
+                  reminder: async () =>
+                    (await call<AiTextData>('ai.reminder', { tareaId: task.id })).data.texto,
+                }
+              : {})}
+          />
         </div>
         <div className="space-y-6">
           <Card title={t('matters.summary')}>

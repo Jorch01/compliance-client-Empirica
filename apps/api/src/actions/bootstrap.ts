@@ -8,6 +8,7 @@
  * free: it is never worth making the user wait for it).
  */
 import {
+  aiModeOf,
   buildSnapshot,
   parseInstant,
   text,
@@ -15,6 +16,7 @@ import {
   type BootstrapData,
   type Row,
 } from '@empirica/shared';
+import { geminiKey } from '../ai/gemini.ts';
 import type { Session } from '../auth.ts';
 import type { Settings } from '../config.ts';
 import { Database, Sequence } from '../db/database.ts';
@@ -63,6 +65,8 @@ export function bootstrap(
     config: db.rows('Config'),
   });
   const self = snapshot.Usuarios.find((u) => u.id === user.id) ?? { id: user.id };
+  const firmMode = db.rows('Config').find((c) => !c.deleted && c.clave === 'modoIA');
+  const aiKey = geminiKey(env) !== null;
 
   return {
     user: self,
@@ -75,6 +79,8 @@ export function bootstrap(
           nombreComercial: cliente ? text(cliente, 'nombreComercial') : null,
           rol: access.rol,
           alcance: access.alcance,
+          ia:
+            aiKey && aiModeOf(firmMode ? text(firmMode, 'valor') : null, cliente?.modoIA) !== 'OFF',
         };
       })
       .sort((a, b) => a.razonSocial.localeCompare(b.razonSocial, 'es')),

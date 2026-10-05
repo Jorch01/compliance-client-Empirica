@@ -3,6 +3,7 @@
  * and branches, and one user per role and scope. Only used by tests; never
  * bundled. Every name is invented ("Cliente Demo, S.A. de C.V.").
  */
+import { reportId } from '../domain/report.ts';
 import type { Row, Value } from '../domain/values.ts';
 import type { TableName } from '../domain/tables.ts';
 
@@ -124,9 +125,9 @@ export const ID = {
   // Feedback about the portal
   sugColab: uid(0xf11),
   sugB: uid(0xf12),
-  // F6: a monthly report being prepared, and one already sent.
-  repBorrador: uid(0xf21),
-  repEnviado: uid(0xf22),
+  // F6: a monthly report being prepared, and one already sent (one id per client and month).
+  repBorrador: reportId(uid(0x1a), '2026-09'),
+  repEnviado: reportId(uid(0x1a), '2026-08'),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';

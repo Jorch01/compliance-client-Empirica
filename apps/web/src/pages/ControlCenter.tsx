@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
-import type { InvitationsListData, Row } from '@empirica/shared';
+import type { HealthIndex, InvitationsListData, Row } from '@empirica/shared';
 import { usePendingIds } from '../data/hooks.ts';
 import { groupTasks, isOpenRequest, worstOf } from '../domain/dashboard.ts';
 import { todayInCancun } from '../domain/deadlines.ts';
@@ -12,12 +12,15 @@ import { Card, EmptyState, PageHeader } from '../ui/Card.tsx';
 import { Dialog } from '../ui/Dialog.tsx';
 import { Icon } from '../ui/Icon.tsx';
 import { InfoButton } from '../ui/InfoButton.tsx';
+import { AskPortal } from './common/AskPortal.tsx';
 import { RequestList } from './common/RequestList.tsx';
 import { SemaforoBadge } from './common/Semaforo.tsx';
 import { TaskList } from './common/TaskList.tsx';
 import { Tile } from './common/Tile.tsx';
 import { Upcoming } from './common/Upcoming.tsx';
 import { ComplianceSummary } from './compliance/ComplianceSummary.tsx';
+import { useHealthByClient } from './reports/data.ts';
+import { HealthBadge, HealthCard } from './reports/HealthBadge.tsx';
 
 type TileKey = 'overdue' | 'dueSoon' | 'inReview' | 'newRequests' | 'waitingClient';
 
@@ -43,10 +46,15 @@ function usePendingApprovals(): number {
   return count;
 }
 
+function HealthCell({ health, client }: { health: HealthIndex | undefined; client: string }) {
+  return health ? <HealthBadge health={health} client={client} /> : <span>—</span>;
+}
+
 function ClientsTable({ tasks, requests }: { tasks: Row[]; requests: Row[] }) {
   const { t } = useTranslation();
   const { clients, setClient } = useScope();
   const today = todayInCancun();
+  const health = useHealthByClient(today);
   const rows = useMemo(
     () =>
       clients.map((client) => {
@@ -66,7 +74,7 @@ function ClientsTable({ tasks, requests }: { tasks: Row[]; requests: Row[] }) {
   if (!clients.length) return <EmptyState icon="building" title={t('dashboard.noClients')} />;
   return (
     <div className="-mx-5 overflow-x-auto">
-      <table className="w-full min-w-[40rem] text-left text-sm">
+      <table className="w-full min-w-[46rem] text-left text-sm">
         <thead className="text-muted-foreground">
           <tr className="border-b border-border">
             <th scope="col" className="px-5 py-2 font-medium">
@@ -74,6 +82,9 @@ function ClientsTable({ tasks, requests }: { tasks: Row[]; requests: Row[] }) {
             </th>
             <th scope="col" className="px-3 py-2 font-medium">
               {t('dashboard.columns.status')}
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              {t('health.column')}
             </th>
             <th scope="col" className="px-3 py-2 text-right font-medium">
               {t('dashboard.overdue')}
@@ -105,6 +116,9 @@ function ClientsTable({ tasks, requests }: { tasks: Row[]; requests: Row[] }) {
               </th>
               <td className="px-3 py-3">
                 <SemaforoBadge light={light} />
+              </td>
+              <td className="px-3 py-3">
+                <HealthCell health={health?.get(client.id)} client={clientName(client)} />
               </td>
               <td className="px-3 py-3 text-right tabular-nums">{groups.overdue.length}</td>
               <td className="px-3 py-3 text-right tabular-nums">{groups.dueSoon.length}</td>
@@ -219,6 +233,8 @@ export function ControlCenter() {
           </Card>
         )}
         <div className="min-w-0 space-y-6">
+          {scope.clientId ? <HealthCard clientId={scope.clientId} /> : null}
+          <AskPortal />
           <Upcoming />
           <ComplianceSummary />
         </div>

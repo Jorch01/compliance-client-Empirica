@@ -12,5 +12,6 @@ await i18n.changeLanguage('es');
 // test starts from an empty page, and without what the last one stored.
 afterEach(() => {
   cleanup();
-  localStorage.clear();
+  // A test that runs in Node (the report's PDF) has no browser storage.
+  if (typeof localStorage !== 'undefined') localStorage.clear();
 });
