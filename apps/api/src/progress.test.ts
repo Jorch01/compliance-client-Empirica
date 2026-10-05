@@ -91,3 +91,28 @@ describe('a matter’s progress', () => {
     expect(progress).toHaveLength(1);
   });
 });
+
+describe('the day a task or a matter closed (F6)', () => {
+  it('is set by the server when it closes, kept while closed, cleared when reopened', () => {
+    const w = createWorld();
+    const firm = new Device(w, ID.abogado);
+    const closedOn = (table: 'Tareas' | 'Asuntos', id: string): unknown =>
+      w.row(table, id)?.fechaCierre ?? null;
+
+    firm.push([op('Tareas', 'update', ID.tDespacho, { estado: 'HECHO' })]);
+    expect(closedOn('Tareas', ID.tDespacho)).toBe('2026-10-02');
+    // Another edit while done keeps the day.
+    w.clock.set('2026-10-05T09:00:00.000-05:00');
+    const later = { at: '2026-10-05T08:59:00.000-05:00' };
+    firm.push([op('Tareas', 'update', ID.tDespacho, { prioridad: 'ALTA' }, later)]);
+    expect(closedOn('Tareas', ID.tDespacho)).toBe('2026-10-02');
+    firm.push([op('Tareas', 'update', ID.tDespacho, { estado: 'EN_CURSO' }, later)]);
+    expect(closedOn('Tareas', ID.tDespacho)).toBeNull();
+
+    firm.push([op('Asuntos', 'update', ID.asNorte, { estado: 'CONCLUIDO' }, later)]);
+    expect(closedOn('Asuntos', ID.asNorte)).toBe('2026-10-05');
+    // The device cannot set it.
+    const res = firm.push([op('Tareas', 'update', ID.tNorte1, { fechaCierre: '2026-01-01' })]);
+    expect(res[0]).toMatchObject({ status: 'rejected', reason: 'SERVER_MANAGED' });
+  });
+});

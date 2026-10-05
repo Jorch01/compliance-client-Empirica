@@ -3,6 +3,7 @@
  * does not have yet: the first request after the deploy creates it, so the
  * portal never breaks waiting for someone to run setup() by hand.
  */
+import { DEFAULT_HEALTH_WEIGHTS } from '@empirica/shared';
 import { ID } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
 import { PROP } from './env.ts';
@@ -48,6 +49,28 @@ describe('the spreadsheet follows the deployed data model', () => {
     expect(w.row('Sugerencias', ID.sugColab)?.mensaje).toBe(
       'Sería útil ver los pendientes por fecha.',
     );
+  });
+
+  it('a deploy that adds a setting: the next request creates it with its default', () => {
+    const w = createWorld();
+    const sheet = w.google.sheet('Config');
+    const at = (sheet.grid[0] ?? []).indexOf('clave');
+    // The previous version had no health weights.
+    sheet.grid.splice(
+      sheet.grid.findIndex((line) => line[at] === 'pesosSalud'),
+      1,
+    );
+    w.google.props.set(PROP.schemaVersion, 'version-anterior');
+
+    w.ok('sync.pull', { cursor: 0 }, { as: ID.socio });
+    const added = w.rows('Config').filter((c) => c.clave === 'pesosSalud');
+    expect(added.map((c) => c.valor)).toEqual([JSON.stringify(DEFAULT_HEALTH_WEIGHTS)]);
+    // Numbered like any change: devices receive it.
+    expect(added[0]?.serverSeq).toEqual(expect.any(Number));
+    // And only once.
+    w.google.props.set(PROP.schemaVersion, 'version-anterior');
+    w.ok('sync.pull', { cursor: 0 }, { as: ID.socio });
+    expect(w.rows('Config').filter((c) => c.clave === 'pesosSalud')).toHaveLength(1);
   });
 
   it('with the model unchanged, a request touches no tab and takes no lock', () => {

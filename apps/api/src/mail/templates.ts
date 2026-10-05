@@ -72,6 +72,13 @@ const WORDS = {
     inviteFooter:
       'Si no esperabas este correo, ignóralo: sin aceptar el enlace no se crea ningún acceso.',
     linkLine: 'Enlace',
+    reportSubject: (client: string, period: string) => `Reporte mensual · ${client} · ${period}`,
+    reportIntro: (period: string) =>
+      `Les compartimos el reporte de seguimiento de ${period}. Va adjunto en PDF y también está en el portal, en Reportes.`,
+    reportSummary: 'Resumen',
+    reportOpen: 'Ver en el portal',
+    reportFooter:
+      'Reciben este correo porque tienen acceso al portal de Empírica Legal Lab. Para cualquier duda, respondan a este mensaje.',
   },
   en: {
     digestSubject: (day: string) => `Portal summary · ${day}`,
@@ -98,6 +105,13 @@ const WORDS = {
     inviteFooter:
       'If you did not expect this email, ignore it: no access is created unless the link is accepted.',
     linkLine: 'Link',
+    reportSubject: (client: string, period: string) => `Monthly report · ${client} · ${period}`,
+    reportIntro: (period: string) =>
+      `Here is the follow-up report for ${period}. It is attached as a PDF and is also in the portal, under Reports.`,
+    reportSummary: 'Summary',
+    reportOpen: 'View in the portal',
+    reportFooter:
+      'You receive this email because you have access to the Empírica Legal Lab portal. For any question, reply to this message.',
   },
 } as const;
 
@@ -251,5 +265,54 @@ export function invitationEmail(input: InvitationEmailInput): Email {
     text: [hello, '', invited, how, '', `${w.accept}: ${input.link}`, '', w.inviteFooter].join(
       '\n',
     ),
+  };
+}
+
+export interface ReportEmailInput {
+  lang: AgendaLanguage;
+  name: string | null;
+  email: string;
+  client: string;
+  /** "septiembre de 2026". */
+  period: string;
+  /** The executive summary the lawyer wrote, if any. */
+  summary: string | null;
+  link: string;
+}
+
+/** The monthly report, to each user of the whole company (F6); the PDF goes attached. */
+export function reportEmail(input: ReportEmailInput): Email {
+  const w = WORDS[input.lang];
+  const hello = w.hello(input.name ?? input.email);
+  const intro = w.reportIntro(input.period);
+  const paragraphs = (input.summary ?? '')
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const summaryHtml = paragraphs.length
+    ? `<p style="margin:16px 0 6px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${C.heading};">${escapeHtml(w.reportSummary)}</p>` +
+      paragraphs
+        .map((p) => `<p style="margin:0 0 10px;">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+        .join('')
+    : '';
+  return {
+    subject: w.reportSubject(input.client, input.period),
+    html: layout(
+      w.reportSubject(input.client, input.period),
+      `<p style="margin:0 0 12px;">${escapeHtml(hello)}</p><p style="margin:0;">${escapeHtml(intro)}</p>` +
+        summaryHtml +
+        button(input.link, w.reportOpen),
+      w.reportFooter,
+    ),
+    text: [
+      hello,
+      '',
+      intro,
+      ...(paragraphs.length ? ['', `${w.reportSummary}:`, ...paragraphs] : []),
+      '',
+      `${w.reportOpen}: ${input.link}`,
+      '',
+      w.reportFooter,
+    ].join('\n'),
   };
 }

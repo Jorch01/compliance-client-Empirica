@@ -156,6 +156,8 @@ export interface GMailMessage {
   htmlBody?: string;
   name?: string;
   replyTo?: string;
+  /** The monthly report's PDF (F6). */
+  attachments?: GBlob[];
 }
 
 export interface GoogleGlobals {
@@ -205,6 +207,9 @@ export interface GoogleGlobals {
     base64Encode(data: GBytes): string;
     newBlob(data: GBytes, contentType?: string, name?: string): GBlob;
     getUuid(): string;
+    /** A date as text in a time zone ("yyyy-MM-dd"): California's day for the AI quota. */
+    formatDate(date: Date, timeZone: string, format: string): string;
+    sleep(milliseconds: number): void;
   };
   DriveApp: {
     getFolderById(id: string): GFolder;

@@ -20,6 +20,7 @@ export * from './domain/notifications.ts';
 export * from './domain/lights.ts';
 export * from './domain/health.ts';
 export * from './domain/report.ts';
+export * from './domain/ai.ts';
 export * from './time.ts';
 export * from './permissions/policies.ts';
 export * from './permissions/context.ts';

@@ -26,6 +26,7 @@ import type {
 } from '../google.ts';
 import manifest from '../../appsscript.json' with { type: 'json' };
 import { FakeCalendar, FakeMail } from './calendar.ts';
+import { FakeGemini } from './gemini.ts';
 
 const OUT_OF_BOUNDS = 'The coordinates of the range are outside the dimensions of the sheet.';
 
@@ -483,6 +484,9 @@ export class FakeGoogle {
   readonly firebase: FakeFirebase;
   readonly calendar = new FakeCalendar();
   readonly mail = new FakeMail();
+  readonly gemini = new FakeGemini();
+  /** Pauses asked for (Utilities.sleep), in milliseconds: tests never wait. */
+  readonly sleeps: number[] = [];
   /** False while the advanced Calendar service is off: the `Calendar` global is missing. */
   calendarAuthorized = true;
   /**
@@ -636,7 +640,9 @@ export class FakeGoogle {
           const result =
             url === 'https://identitytoolkit.googleapis.com/v1/accounts:lookup'
               ? this.firebase.lookup(params.headers?.['x-goog-api-key'], params.payload ?? '')
-              : { status: 404, body: { error: { message: 'NOT_FOUND' } } };
+              : url.startsWith('https://generativelanguage.googleapis.com/')
+                ? this.gemini.handle(url, params.method, params.headers ?? {}, params.payload ?? '')
+                : { status: 404, body: { error: { message: 'NOT_FOUND' } } };
           return {
             getResponseCode: () => result.status,
             getContentText: () => JSON.stringify(result.body),
@@ -660,6 +666,16 @@ export class FakeGoogle {
         newBlob: (data, contentType, name) =>
           new FakeBlob(unsigned(data), contentType ?? null, name ?? null),
         getUuid: () => randomUUID(),
+        formatDate: (date, timeZone) =>
+          new Intl.DateTimeFormat('en-CA', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(date),
+        sleep: (ms) => {
+          this.sleeps.push(ms);
+        },
       },
       DriveApp: {
         getFolderById: (id) => {

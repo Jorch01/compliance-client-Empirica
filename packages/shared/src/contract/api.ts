@@ -311,9 +311,12 @@ export const ReportSendSchema = z.object({
 
 export interface ReportSendData {
   row: Row;
-  /** Who received it by email. */
+  /** Who the email reached (the report is in the portal for all of `row.enviadoA`). */
   enviadoA: string[];
-  /** Why the email did not go (QUOTA, NO_PERMISSION or Google's words); the report is sent anyway. */
+  /**
+   * Why an email did not go: NO_RECIPIENTS (nobody sees the whole client
+   * yet), QUOTA, NO_PERMISSION or Google's words. The report is sent anyway.
+   */
   emailError?: string;
 }
 

@@ -77,9 +77,11 @@ export function setup(): SetupReport {
   return report;
 }
 
-/** Daily time trigger (created by setup): backup and cleanup. */
+/** Daily time trigger (created by setup): backup, cleanup and, on the first, the reports' notice. */
 export function nightly(): void {
-  runNightly(env());
+  const e = env();
+  ensureSchema(e);
+  runNightly(e);
 }
 
 /** Hourly time trigger (created by setup): the daily summary, once, from its hour on. */

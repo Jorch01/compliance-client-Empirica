@@ -148,6 +148,44 @@ export interface ReportModel {
   solicitudes: ReportRequest[];
 }
 
+const MONTHS = {
+  es: [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ],
+  en: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+} as const;
+
+/** "septiembre de 2026" / "September 2026". */
+export function periodLabel(periodo: string, lang: 'es' | 'en'): string {
+  const [y, m] = periodo.split('-');
+  const month = MONTHS[lang][Number(m) - 1] ?? periodo;
+  return lang === 'es' ? `${month} de ${y ?? ''}` : `${month} ${y ?? ''}`;
+}
+
 /** First and last day of "2026-09". */
 export function periodBounds(periodo: string): { from: string; to: string } {
   const [y, m] = periodo.split('-').map(Number);

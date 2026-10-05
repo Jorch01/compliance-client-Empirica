@@ -35,6 +35,7 @@ export type AuditAction =
   | 'ARCHIVO'
   | 'RECHAZO'
   | 'TOCAR'
+  | 'ENVIAR'
   | 'SISTEMA';
 
 export class Writer {

@@ -5,6 +5,7 @@
  */
 import {
   DEFAULT_FATAL_REMINDERS,
+  DEFAULT_HEALTH_WEIGHTS,
   DEFAULT_GENERAL_REMINDERS,
   MIN_APP_VERSION,
   compareVersions,
@@ -34,6 +35,16 @@ export const CONFIG_DEFAULTS: readonly ConfigDefault[] = [
   { clave: 'diasEsperaCliente', valor: '3', publica: true },
   { clave: 'urlPortal', valor: 'https://portal.empirica.mx/', publica: true },
   { clave: 'reservaCorreos', valor: '10', publica: false },
+  // F6: the AI model ('' = the portal picks the best stable Flash-Lite), the
+  // day's limit the partner reads in AI Studio ('' = unknown), and the
+  // weights of the health index.
+  { clave: 'modeloIA', valor: '', publica: false },
+  { clave: 'limiteDiarioIA', valor: '', publica: false },
+  {
+    clave: 'pesosSalud',
+    valor: JSON.stringify(DEFAULT_HEALTH_WEIGHTS),
+    publica: true,
+  },
 ];
 
 export interface Settings {

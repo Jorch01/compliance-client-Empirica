@@ -175,9 +175,14 @@ export class FakeCalendar implements GCalendarService {
   };
 }
 
+/** A sent email as a test reads it: the PDF as its name, type, size and first bytes. */
+export type SentMail = Omit<GMailMessage, 'attachments'> & {
+  attachments?: { name: string | null; contentType: string | null; size: number; head: string }[];
+};
+
 /** MailApp: what was sent, and the day's quota of recipients. */
 export class FakeMail {
-  readonly sent: GMailMessage[] = [];
+  readonly sent: SentMail[] = [];
   /** Recipients left today (a free account starts at 100). */
   quota = 100;
   /** Throws on the next send (a rejected address, an outage). */
@@ -194,7 +199,15 @@ export class FakeMail {
       throw new Error('Service invoked too many times for one day: email.');
     }
     this.quota -= recipients;
-    this.sent.push(clone(message));
+    // Attachments kept as what a test can check: name, type and the first bytes.
+    const attachments = (message.attachments ?? []).map((a) => ({
+      name: a.getName(),
+      contentType: a.getContentType(),
+      size: a.getBytes().length,
+      head: String.fromCharCode(...a.getBytes().slice(0, 5)),
+    }));
+    const { attachments: _blobs, ...rest } = message;
+    this.sent.push({ ...clone(rest), ...(attachments.length ? { attachments } : {}) });
   }
 
   getRemainingDailyQuota(): number {
