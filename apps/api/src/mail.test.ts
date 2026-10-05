@@ -5,6 +5,7 @@
 import type { InvitationOutcome } from '@empirica/shared';
 import { ID } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
+import { SCOPES } from './consent.ts';
 import { runDigest } from './mail/digest.ts';
 import { PROP } from './env.ts';
 import { createWorld, type World } from './testing/harness.ts';
@@ -51,6 +52,18 @@ describe('the daily summary', () => {
     w.clock.set('2026-10-03T07:05:00.000-05:00');
     expect(runDigest(w.env).skipped).toBeNull();
     expect(w.google.props.get(PROP.digestSent)).toBe('2026-10-03');
+  });
+
+  it('waits for the owner’s permission to email, without closing the day', () => {
+    const w = withTomorrow();
+    w.google.grantedScopes.delete(SCOPES.mail);
+    expect(runDigest(w.env).skipped).toBe('NO_PERMISSION');
+    expect(w.google.props.has(PROP.digestSent)).toBe(false);
+    expect(w.rows('Notificaciones').filter((n) => n.tipo === 'CUOTA_CORREO')).toEqual([]);
+    // Granted later that day: the next hourly run sends it.
+    w.google.grantedScopes.add(SCOPES.mail);
+    expect(runDigest(w.env)).toMatchObject({ skipped: null, failed: 0, noQuota: 0 });
+    expect(to(w, 'norte@cliente-a.example')).toHaveLength(1);
   });
 
   it('answers to the client’s lawyer, in each person’s language', () => {
@@ -154,6 +167,15 @@ describe('invitations by email', () => {
     expect(email.body).toContain(
       'Socia Demo te invitó al portal de Empírica Legal Lab para Cliente Demo.',
     );
+  });
+
+  it('without the owner’s permission to email, says so and returns the link', () => {
+    const w = createWorld();
+    w.google.grantedScopes.delete(SCOPES.mail);
+    const outcome = invite(w, ID.socio, 'nueva@cliente-a.example');
+    expect(outcome).toMatchObject({ emailError: 'NO_PERMISSION' });
+    expect(outcome.token).toMatch(/^[0-9a-f]{64}$/);
+    expect(w.google.mail.sent).toEqual([]);
   });
 
   it('without emails left today, says so and returns the link', () => {

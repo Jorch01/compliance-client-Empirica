@@ -4,15 +4,22 @@
  * account may email 100 recipients a day (docs/LIMITES.md); MailApp tells
  * how many are left, and a failure never stops the action that sends.
  */
+import { SCOPES, hasScope } from '../consent.ts';
 import type { Env } from '../env.ts';
 
 export const SENDER_NAME = 'Empírica Portal';
 
 export interface MailOutcome {
   sent: boolean;
-  /** QUOTA when the day's emails ran out; otherwise Google's words. */
+  /**
+   * QUOTA when the day's emails ran out; NO_PERMISSION while the owner has
+   * not granted email (consent.ts); otherwise Google's words.
+   */
   error: string | null;
 }
+
+/** Whether the portal may send email at all (the owner granted it). */
+export const mailAllowed = (env: Env): boolean => hasScope(env, SCOPES.mail);
 
 /** Recipients left today (0 if MailApp cannot say). */
 export function remainingQuota(env: Env): number {
@@ -30,6 +37,7 @@ export function sendMail(
   env: Env,
   message: { to: string; subject: string; text: string; html: string; replyTo?: string | null },
 ): MailOutcome {
+  if (!mailAllowed(env)) return { sent: false, error: 'NO_PERMISSION' };
   if (remainingQuota(env) < 1) return { sent: false, error: 'QUOTA' };
   try {
     env.g.MailApp.sendEmail({

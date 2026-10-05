@@ -31,6 +31,7 @@ import {
 } from '@empirica/shared';
 import { changed, underLock } from '../actions/locked.ts';
 import { readAgendaSettings } from '../config.ts';
+import { SCOPES, hasScope } from '../consent.ts';
 import { Database } from '../db/database.ts';
 import type { SheetTable } from '../db/table.ts';
 import { PROP, type Env } from '../env.ts';
@@ -80,7 +81,8 @@ const emptyReport = (): CalendarSyncReport => ({
 
 /** The advanced Calendar service, or null while it is not enabled and authorized. */
 export function calendarService(env: Env): GCalendarService | null {
-  return env.g.Calendar ?? null;
+  // Off, or on without the owner's permission: everything waits (consent.ts).
+  return env.g.Calendar && hasScope(env, SCOPES.calendar) ? env.g.Calendar : null;
 }
 
 /** The firm's calendar, created the first time it is needed. */

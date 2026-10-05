@@ -114,12 +114,13 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-05 | Citas movidas en Google regresan; un vencimiento movido vuelve y se avisa (D48)                                                                 | Los plazos solo se cambian en el portal                                                 |
 | 2026-10-05 | Enlace personal: secreto que se muestra una vez; el servidor guarda su hash (D50)                                                               | Revocable y sin nada que delatar en la hoja                                             |
 | 2026-10-05 | Resumen por trigger horario; 10 correos de reserva; aviso a los socios con menos de 20 (D51)                                                    | 100 destinatarios al día en cuenta gratuita                                             |
-| 2026-10-05 | Permisos de Calendar y correo: el CI regresa a la versión anterior hasta que la cuenta propietaria autorice (D54)                               | Nadie puede autorizar por ella y el portal no debe caerse                               |
+| 2026-10-05 | Permisos de Calendar y correo: sin ellos el portal sigue y calendarios y correos esperan; `setup` los vuelve a pedir (`requireAllScopes`) (D54) | La ventana de Google deja conceder solo algunos permisos                                |
 
 ## Gotchas del entorno
 
 - Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`.
 - La red del entorno de desarrollo bloquea Drive y los dominios de Google Docs; los archivos de marca se trajeron con el conector de Drive.
 - También bloquea `script.google.com`, `developers.google.com`, `firebase.google.com` y `docs.cloud.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
+- **No se edita ni se guarda nada en el editor de Apps Script**: el código lo sube el CI, y guardar desde una pestaña abierta antes lo revierte (pasó al publicar F5). Para Calendar y correo, `setup` en incógnito y «Seleccionar todo» (`docs/SETUP.md`, paso 11).
 - Prettier se corre **desde la raíz** del repo: desde `apps/web` no lee `.prettierignore` y reformatea `tokens.css` (generado).
 - Reglas nuevas de `eslint-plugin-react-hooks` 7: nada de `setState` síncrono dentro de un efecto (derivar en el render o medir con refs) y nada de `Date.now()` en el render; los archivos de componentes solo exportan componentes (hooks y utilidades van en `.ts`).

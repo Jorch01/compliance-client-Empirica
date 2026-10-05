@@ -30,7 +30,7 @@ import { readAgendaSettings } from '../config.ts';
 import { Database } from '../db/database.ts';
 import { PROP, type Env } from '../env.ts';
 import { saveNotifications } from '../notify.ts';
-import { remainingQuota, sendMail } from './send.ts';
+import { mailAllowed, remainingQuota, sendMail } from './send.ts';
 import { digestEmail, waitingLine } from './templates.ts';
 
 /** When the day's emails left fall under this, the administrators are told. */
@@ -78,6 +78,12 @@ export function runDigest(env: Env, options: { force?: boolean } = {}): DigestRe
       return { ...report, skipped: 'EARLY' };
     }
     if (env.prop(PROP.digestSent) === today) return { ...report, skipped: 'DONE' };
+  }
+  // Without the owner's permission nothing goes, and the day stays open:
+  // the summary leaves on the first hourly run after it is granted.
+  if (!mailAllowed(env)) {
+    env.log('Resumen: falta el permiso de correo; sale cuando la cuenta lo autorice');
+    return { ...report, skipped: 'NO_PERMISSION' };
   }
   // Marked first: a run that dies half way never sends twice.
   env.setProp(PROP.digestSent, today);

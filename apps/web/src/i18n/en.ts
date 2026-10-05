@@ -612,6 +612,8 @@ export const en: Messages = {
     emailedTo: 'The portal emailed the invitation to {{email}}.',
     emailQuota: 'The portal has no emails left for today: share the link yourself.',
     emailFailed: 'The email did not go out: share the link yourself.',
+    emailOff:
+      'The portal cannot send emails yet (it still needs to be authorized in Google): share the link yourself.',
   },
   requests: {
     filter: 'Show',

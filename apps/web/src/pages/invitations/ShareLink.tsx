@@ -29,7 +29,11 @@ export function EmailOutcome({
       role="status"
       className="rounded-control border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-subtle-foreground"
     >
-      {emailError === 'QUOTA' ? t('invitations.emailQuota') : t('invitations.emailFailed')}
+      {emailError === 'QUOTA'
+        ? t('invitations.emailQuota')
+        : emailError === 'NO_PERMISSION'
+          ? t('invitations.emailOff')
+          : t('invitations.emailFailed')}
     </p>
   );
 }

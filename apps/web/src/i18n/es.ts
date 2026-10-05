@@ -607,6 +607,8 @@ export const es = {
     emailedTo: 'El portal envió la invitación a {{email}}.',
     emailQuota: 'Hoy ya no quedan correos en la cuota del portal: comparte tú el enlace.',
     emailFailed: 'El correo no salió: comparte tú el enlace.',
+    emailOff:
+      'El portal todavía no puede mandar correos (falta autorizarlo en Google): comparte tú el enlace.',
   },
   requests: {
     filter: 'Mostrar',

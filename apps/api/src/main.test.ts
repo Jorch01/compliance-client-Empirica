@@ -68,6 +68,11 @@ describe('bundled Apps Script', () => {
   });
 
   it('setup() creates the database from inside the bundle', () => {
+    // With a permission left out in Google's window, the editor asks again first.
+    google.grantedScopes.delete('https://www.googleapis.com/auth/script.send_mail');
+    expect(() => call('setup')).toThrow(/Authorization is required/);
+    expect(google.spreadsheets.size).toBe(0);
+    google.grantedScopes.add('https://www.googleapis.com/auth/script.send_mail');
     const report = call<{ created: string[] }>('setup');
     expect(report.created).toContain('hoja EMPIRICA_PORTAL_DB');
     expect(google.spreadsheet().getSheets().length).toBeGreaterThan(20);
