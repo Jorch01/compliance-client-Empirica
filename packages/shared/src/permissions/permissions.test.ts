@@ -505,6 +505,13 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
     create: { fecha: '2026-12-25', descripcion: 'BORRADOR: validar' },
     expected: ['CUD', '', '', '', '', ''],
   },
+  Reportes: {
+    // The September draft of client A: the firm prepares it; sending is online.
+    target: ID.repBorrador,
+    update: { resumen: 'Otro resumen' },
+    create: { clienteId: ID.clienteA, periodo: '2026-07', estado: 'BORRADOR' },
+    expected: ['CUD', 'CU', 'CU', '', '', ''],
+  },
   Sugerencias: {
     // Sent by the unit collaborator: only the administrators answer it.
     target: ID.sugColab,
@@ -546,7 +553,6 @@ describe('the matrix, cell by cell', () => {
     'Invitaciones',
     'Conflictos',
     'Bitacora',
-    'Reportes',
     'OpsAplicadas',
   ] as TableName[])('%s cannot be written through sync, not even by the SOCIO_ADMIN', (table) => {
     const w = world();
@@ -1075,5 +1081,56 @@ describe('the portal calendars in one’s own Google Calendar (D49)', () => {
     // The firm sees the client in the firm calendar; nobody without access sees anything.
     for (const id of FIRM_OF_A) expect(clientCalendarRole(access(id))).toBeNull();
     expect(clientCalendarRole(w.ctx(ID.cB).clients.get(A))).toBeNull();
+  });
+});
+
+describe('monthly reports (F6)', () => {
+  const w = world();
+
+  it('a draft is the firm’s; a sent report reaches the users of the whole company only', () => {
+    for (const firm of FIRM_OF_A) {
+      expect(w.sees(firm, 'Reportes', ID.repBorrador)).toBe(true);
+      expect(w.sees(firm, 'Reportes', ID.repEnviado)).toBe(true);
+    }
+    for (const client of CLIENT_USERS_OF_A) {
+      expect(w.sees(client, 'Reportes', ID.repBorrador)).toBe(false);
+    }
+    expect(w.sees(ID.cAdmin, 'Reportes', ID.repEnviado)).toBe(true);
+    expect(w.sees(ID.cLectura, 'Reportes', ID.repEnviado)).toBe(true);
+    // It speaks of every unit: a user of some units does not get it.
+    expect(w.sees(ID.cColab, 'Reportes', ID.repEnviado)).toBe(false);
+    expect(w.sees(ID.cAdminSur, 'Reportes', ID.repEnviado)).toBe(false);
+    expect(w.sees(ID.cB, 'Reportes', ID.repEnviado)).toBe(false);
+  });
+
+  it('a client user does not receive where it was sent, nor its file in Drive', () => {
+    const copy = projectRow(w.ctx(ID.cAdmin), 'Reportes', w.row('Reportes', ID.repEnviado));
+    expect(copy).toMatchObject({ estado: 'ENVIADO', periodo: '2026-08' });
+    expect(copy).not.toHaveProperty('enviadoA');
+    expect(copy).not.toHaveProperty('pdfId');
+  });
+
+  it('is born a draft; only sending it (online) makes it ENVIADO, and then it is a record', () => {
+    expect(
+      w.write(ID.abogado, 'Reportes', 'create', uid(0x7101), {
+        clienteId: ID.clienteA,
+        periodo: '2026-06',
+        estado: 'ENVIADO',
+      }),
+    ).toMatchObject({ ok: false, reason: 'FORCED_VALUE' });
+    expect(
+      w.write(ID.abogado, 'Reportes', 'update', ID.repBorrador, { estado: 'ENVIADO' }),
+    ).toMatchObject({ ok: false, reason: 'FIELD_NOT_ALLOWED' });
+    expect(
+      w.write(ID.abogado, 'Reportes', 'update', ID.repBorrador, { pdfId: 'otro' }),
+    ).toMatchObject({ ok: false, reason: 'SERVER_MANAGED' });
+    expect(
+      w.write(ID.socio, 'Reportes', 'update', ID.repBorrador, { periodo: '2026-10' }),
+    ).toMatchObject({ ok: false, reason: 'IMMUTABLE' });
+    for (const op of ['update', 'delete', 'restore'] as const) {
+      expect(
+        w.write(ID.socio, 'Reportes', op, ID.repEnviado, op === 'update' ? { resumen: 'x' } : {}),
+      ).toMatchObject({ ok: false, reason: 'FROZEN' });
+    }
   });
 });

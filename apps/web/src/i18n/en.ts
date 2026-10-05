@@ -1352,6 +1352,11 @@ export const en: Messages = {
         'A change made in Google Calendar was not applied: "{{titulo}}" is changed in the portal.',
       CUOTA_CORREO:
         'The portal has {{titulo}} emails left for today. Summaries not sent today are not resent; invitations can be shared with their link.',
+      REPORTE_POR_PREPARAR: 'The report of {{titulo}} is ready to review and send.',
+      REPORTE_ENVIADO: 'The firm sent you the report of {{titulo}}.',
+      IA_CUOTA:
+        'The AI requests are used up for today ({{titulo}} used). They return after midnight in California.',
+      IA_MODELO: 'The configured AI model no longer exists; the portal switched to {{titulo}}.',
     },
   },
   agenda: {

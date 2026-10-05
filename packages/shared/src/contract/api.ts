@@ -41,6 +41,13 @@ export const ACTIONS = [
   'files.download',
   'calendar.subscribe',
   'calendar.share',
+  // F6: the monthly report and the AI helpers (Gemini, from the server only).
+  'reports.send',
+  'reports.download',
+  'ai.status',
+  'ai.summary',
+  'ai.ask',
+  'ai.reminder',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -289,6 +296,65 @@ export interface FileDownloadData {
   mimeType: string;
   base64: string;
 }
+
+/**
+ * Sends a monthly report (F6): the PDF the lawyer's browser made from the
+ * draft they reviewed. The server keeps it in the client's Drive folder,
+ * marks the report ENVIADO (it cannot change any more) and emails it to the
+ * client's users who see the whole company.
+ */
+export const ReportSendSchema = z.object({
+  reporteId: id,
+  /** The PDF, base64; the request body's 2 MB limit applies. */
+  pdf: z.string().check(z.regex(/^[A-Za-z0-9+/]*={0,2}$/)),
+});
+
+export interface ReportSendData {
+  row: Row;
+  /** Who received it by email. */
+  enviadoA: string[];
+  /** Why the email did not go (QUOTA, NO_PERMISSION or Google's words); the report is sent anyway. */
+  emailError?: string;
+}
+
+export const ReportDownloadSchema = z.object({ reporteId: id });
+
+/** The AI as the portal offers it now (IA.md). */
+export interface AiStatusData {
+  /** The firm's mode (Config.modoIA); a client may have its own (Clientes.modoIA). */
+  modo: 'OFF' | 'METADATA_ONLY' | 'FULL';
+  /** Whether the server has a key to call Gemini with. */
+  configurada: boolean;
+  usadasHoy: number;
+  /** The daily limit the partner wrote in Config.limiteDiarioIA, if any. */
+  limiteDiario: number | null;
+  /** Google said today's quota ran out: back after midnight in California. */
+  agotada: boolean;
+}
+
+export const AiSummarySchema = z.object({
+  clienteId: id,
+  periodo: z.string().check(z.regex(/^\d{4}-(0[1-9]|1[0-2])$/)),
+  idioma: z.optional(z.enum(['es', 'en'])),
+});
+
+export interface AiTextData {
+  texto: string;
+}
+
+export const AiAskSchema = z.object({
+  pregunta: z.string().check(z.trim(), z.minLength(3), z.maxLength(500)),
+  /** The client in view; none: all of the user's clients. */
+  clienteId: z.optional(id),
+});
+
+export interface AiAnswerData {
+  respuesta: string;
+  /** The records the answer names, to open them. */
+  enlaces: { titulo: string; ruta: string }[];
+}
+
+export const AiReminderSchema = z.object({ tareaId: id });
 
 export type EstadoInvitacion = (typeof ESTADOS_INVITACION)[number];
 

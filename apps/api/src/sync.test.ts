@@ -54,6 +54,7 @@ function expectedFor(w: World, userId: string): string[] {
     'Notificaciones',
     'Conflictos',
     'Sugerencias',
+    'Reportes',
   ] as TableName[]) {
     for (const row of db.rows(t)) {
       if (!row.deleted && canRead(ctx, t, row, db.lookup())) out.push(`${t}:${row.id}`);
@@ -69,6 +70,19 @@ describe('first download', () => {
 
   it.each(ALL_ACTIVE)('user %s receives exactly what the rules allow', (userId) => {
     expect(keys(new Device(w, userId).sync())).toEqual(expectedFor(w, userId));
+  });
+
+  it('a sent monthly report reaches the users of the whole company; a draft, only the firm', () => {
+    const has = (userId: string, id: string): boolean =>
+      keys(new Device(w, userId).sync()).includes(`Reportes:${id}`);
+    expect(has(ID.abogado, ID.repBorrador)).toBe(true);
+    expect(has(ID.cAdmin, ID.repBorrador)).toBe(false);
+    expect(has(ID.cAdmin, ID.repEnviado)).toBe(true);
+    // A user of one unit: the report speaks of all of them.
+    expect(has(ID.cColab, ID.repEnviado)).toBe(false);
+    const copy = new Device(w, ID.cAdmin).sync().store.get(`Reportes:${ID.repEnviado}`);
+    expect(copy).not.toHaveProperty('pdfId');
+    expect(copy).not.toHaveProperty('enviadoA');
   });
 
   it('a unit user gets its unit, its branches, what is assigned to it, and nothing else', () => {

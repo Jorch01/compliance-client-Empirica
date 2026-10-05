@@ -1344,6 +1344,11 @@ export const es = {
         'Un cambio hecho en Google Calendar no se aplicó: "{{titulo}}" se cambia en el portal.',
       CUOTA_CORREO:
         'Al portal le quedan {{titulo}} correos por hoy. Los resúmenes que no salgan hoy no se reenvían; las invitaciones se pueden compartir con su enlace.',
+      REPORTE_POR_PREPARAR: 'El reporte de {{titulo}} está listo para revisar y enviar.',
+      REPORTE_ENVIADO: 'El despacho te envió el reporte de {{titulo}}.',
+      IA_CUOTA:
+        'Se acabaron por hoy las consultas a la IA ({{titulo}} usadas). Vuelven después de la medianoche de California.',
+      IA_MODELO: 'El modelo de IA configurado ya no existe; el portal cambió a {{titulo}}.',
     },
   },
   agenda: {

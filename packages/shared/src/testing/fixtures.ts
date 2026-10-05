@@ -82,6 +82,9 @@ export const ID = {
   // Feedback about the portal
   sugColab: uid(0xf11),
   sugB: uid(0xf12),
+  // F6: a monthly report being prepared, and one already sent.
+  repBorrador: uid(0xf21),
+  repEnviado: uid(0xf22),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';
@@ -646,7 +649,26 @@ export function demoData(): Dataset {
       }),
     ],
     Bitacora: [],
-    Reportes: [],
+    Reportes: [
+      base(ID.repBorrador, {
+        clienteId: A,
+        periodo: '2026-09',
+        estado: 'BORRADOR',
+        resumen: 'Borrador del resumen (ejemplo).',
+        idioma: 'es',
+      }),
+      base(ID.repEnviado, {
+        clienteId: A,
+        periodo: '2026-08',
+        estado: 'ENVIADO',
+        resumen: 'Resumen de agosto (ejemplo).',
+        idioma: 'es',
+        pdfId: 'drive-reporte-agosto',
+        enviadoA: ['admin@cliente-a.example'],
+        fecha: '2026-09-02T10:00:00.000-05:00',
+        enviadoPor: ID.abogado,
+      }),
+    ],
     OpsAplicadas: [],
     Calendario: [],
   };

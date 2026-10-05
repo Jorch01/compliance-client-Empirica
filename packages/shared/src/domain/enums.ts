@@ -105,6 +105,10 @@ export const ESTADOS_SOLICITUD = [
 export const TIPOS_EVENTO = ['VENCIMIENTO', 'AUDIENCIA', 'CITA', 'REUNION'] as const;
 export const ESTADOS_CONFLICTO = ['PENDIENTE', 'RESUELTO'] as const;
 export const MODOS_IA = ['OFF', 'METADATA_ONLY', 'FULL'] as const;
+export type ModoIA = (typeof MODOS_IA)[number];
+
+/** A monthly report: being prepared by the firm, or sent to the client (F6). */
+export const ESTADOS_REPORTE = ['BORRADOR', 'ENVIADO'] as const;
 
 /** What someone tells the firm about the portal itself. */
 export const TIPOS_SUGERENCIA = ['SUGERENCIA', 'ERROR'] as const;

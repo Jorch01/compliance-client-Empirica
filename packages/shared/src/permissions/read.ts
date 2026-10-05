@@ -155,6 +155,10 @@ function canReadAt(
   if (isFirmRole(access.rol)) return true;
   if (!POLICIES[table][access.rol].read) return false;
   if (def.scope.visibility && row.visibilidad !== 'COMPARTIDO') return false;
+  // A row about all of the client (a monthly report): never for a user of some units.
+  if (def.scope.wholeClient && access.alcance) return false;
+  const states = def.scope.clientStates;
+  if (states && !states.values.includes(text(row, states.column) ?? '')) return false;
 
   const parentRef = parentOf(def, row);
   if (parentRef && def.scope.parent) {

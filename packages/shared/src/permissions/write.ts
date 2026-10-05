@@ -42,7 +42,8 @@ export type DenialReason =
   | 'CHECKLIST_EDIT'
   | 'INVALID_PARENT'
   | 'USER_NOT_IN_CLIENT'
-  | 'CYCLE';
+  | 'CYCLE'
+  | 'FROZEN';
 
 export interface Denial {
   ok: false;
@@ -133,6 +134,11 @@ export function authorizeWrite(
   const rol = roleFor(ctx, def, clienteId);
   if (!rol || !canRead(ctx, def.name, current, lookup)) return deny('NOT_FOUND', 'NOT_FOUND');
   const policy = POLICIES[def.name][rol];
+  // A record already (a sent report): no edit, delete or restore, for anyone.
+  const frozen = def.frozenWhen;
+  if (frozen?.values.includes(text(current, frozen.column) ?? '')) {
+    return deny('FORBIDDEN', 'FROZEN');
+  }
 
   if (input.type === 'delete' || input.type === 'restore') {
     if (policy.delete === false) return deny('FORBIDDEN', 'ROLE');
