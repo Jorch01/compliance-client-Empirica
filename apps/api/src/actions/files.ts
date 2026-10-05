@@ -48,13 +48,13 @@ const invalid = (reason: string, message: string): ApiError =>
 const denied = (verdict: { code: ApiError['code']; reason: string }): ApiError =>
   new ApiError(verdict.code, undefined, { reason: verdict.reason });
 
-function subfolder(parent: GFolder, name: string): GFolder {
+export function subfolder(parent: GFolder, name: string): GFolder {
   const found = parent.getFoldersByName(name);
   return found.hasNext() ? found.next() : parent.createFolder(name);
 }
 
 /** The client's folder, created the first time a file arrives (`Clientes.driveFolderId`). */
-function clientFolder(r: LockedRun, clienteId: string): GFolder {
+export function clientFolder(r: LockedRun, clienteId: string): GFolder {
   const cliente = r.db.table('Clientes').get(clienteId);
   if (!cliente) throw new ApiError('NOT_FOUND');
   const id = text(cliente, 'driveFolderId');

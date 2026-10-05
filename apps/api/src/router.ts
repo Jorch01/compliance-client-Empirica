@@ -6,6 +6,9 @@
  */
 import {
   ACTIONS,
+  AiAskSchema,
+  AiReminderSchema,
+  AiSummarySchema,
   CalendarShareSchema,
   CalendarSubscribeSchema,
   ConflictResolveSchema,
@@ -20,6 +23,8 @@ import {
   ProfileUpdateSchema,
   PullPayloadSchema,
   PushPayloadSchema,
+  ReportDownloadSchema,
+  ReportSendSchema,
   RequestSchema,
   UserUpdateSchema,
   compareVersions,
@@ -29,6 +34,7 @@ import {
 } from '@empirica/shared';
 import type * as z from 'zod/mini';
 import { saveMembership, updateProfile, updateUser } from './actions/admin.ts';
+import { aiAsk, aiReminder, aiStatus, aiSummary } from './actions/ai.ts';
 import { bootstrap } from './actions/bootstrap.ts';
 import { shareCalendar, subscribeCalendar } from './actions/calendar.ts';
 import { resolveConflict } from './actions/conflicts.ts';
@@ -43,6 +49,7 @@ import {
 } from './actions/invitations.ts';
 import { pull } from './actions/pull.ts';
 import { push } from './actions/push.ts';
+import { downloadReport, sendReport } from './actions/reports.ts';
 import { authenticate, rateLimit, verifyIdToken } from './auth.ts';
 import { readSettings } from './config.ts';
 import { Database } from './db/database.ts';
@@ -166,6 +173,24 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
         break;
       case 'calendar.share':
         data = shareCalendar(env, session, parse(CalendarShareSchema, payload));
+        break;
+      case 'reports.send':
+        data = sendReport(env, session, parse(ReportSendSchema, payload));
+        break;
+      case 'reports.download':
+        data = downloadReport(env, session, parse(ReportDownloadSchema, payload));
+        break;
+      case 'ai.status':
+        data = aiStatus(env);
+        break;
+      case 'ai.summary':
+        data = aiSummary(env, session, parse(AiSummarySchema, payload));
+        break;
+      case 'ai.ask':
+        data = aiAsk(env, session, parse(AiAskSchema, payload));
+        break;
+      case 'ai.reminder':
+        data = aiReminder(env, session, parse(AiReminderSchema, payload));
         break;
     }
     return { ok: true, data, serverNow, ...(requestId ? { requestId } : {}) };

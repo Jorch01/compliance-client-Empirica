@@ -18,6 +18,7 @@ import {
   clampStamp,
   projectRow,
   text,
+  toProjectDate,
   toProjectIso,
   validateFields,
   type FieldConflict,
@@ -39,6 +40,9 @@ import { placeDocumentFile } from './files.ts';
 import { saveNotifications, type NotificationDraft } from '../notify.ts';
 import { draftsFor } from '../notify-rules.ts';
 import { LOCK_WAIT_MS, changed, type LockedRun } from './locked.ts';
+
+/** The state that closes a record: its `fechaCierre` is the day it got there. */
+const CLOSED_STATE: Partial<Record<TableName, string>> = { Tareas: 'HECHO', Asuntos: 'CONCLUIDO' };
 
 export function push(
   env: Env,
@@ -255,7 +259,7 @@ class PushRun {
 
     let stored = current;
     if (outcome.row) {
-      stored = this.#writer.save(op.table, current, outcome.row);
+      stored = this.#writer.save(op.table, current, this.#withClosingDate(op.table, outcome.row));
       const action =
         type === 'create'
           ? 'CREAR'
@@ -332,6 +336,30 @@ class PushRun {
       { proximoVencimiento: obligacion.proximoVencimiento ?? null },
       { proximoVencimiento: next },
     );
+  }
+
+  /**
+   * The day a task was done or a matter concluded (F6: the monthly report
+   * lists what closed in the month). Set by the server when the record
+   * reaches its closed state, kept while it stays there, cleared if reopened.
+   */
+  #withClosingDate(table: TableName, row: Row): Row {
+    const closed = CLOSED_STATE[table];
+    if (!closed) return row;
+    const want =
+      row.estado === closed ? (text(row, 'fechaCierre') ?? toProjectDate(this.#nowMs)) : null;
+    if (sameValue(row.fechaCierre ?? null, want)) return row;
+    const stamps =
+      row.fieldTimestamps &&
+      typeof row.fieldTimestamps === 'object' &&
+      !Array.isArray(row.fieldTimestamps)
+        ? (row.fieldTimestamps as Record<string, Value>)
+        : {};
+    return {
+      ...row,
+      fechaCierre: want,
+      fieldTimestamps: { ...stamps, fechaCierre: this.#serverNow },
+    };
   }
 
   /** A matter's progress, counted again after one of its tasks changed. */

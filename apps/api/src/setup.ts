@@ -9,9 +9,11 @@
  * - the initial SOCIO_ADMIN users from the ADMIN_EMAILS property;
  * - the default settings;
  * - the nightly trigger (backup and cleanup).
- * It also checks the Firebase properties sign-in needs (checkFirebase).
+ * It also checks the Firebase properties sign-in needs (checkFirebase), and
+ * the Gemini key of the AI helpers (checkGemini).
  */
 import { TABLES, TABLE_NAMES, allColumns, text, toProjectIso, type Row } from '@empirica/shared';
+import { checkKey, geminiKey } from './ai/gemini.ts';
 import { lookupAccount } from './auth.ts';
 import { calendarService, firmCalendarId } from './calendar/sync.ts';
 import { CONFIG_DEFAULTS } from './config.ts';
@@ -126,6 +128,40 @@ export function checkFirebase(env: Env, report: SetupReport): void {
   );
 }
 
+/**
+ * The AI (F6, IA.md) needs GEMINI_API_KEY. Without it the portal works and
+ * the AI buttons say it is not configured. With it, the key is tried by
+ * listing the models it may use, and the one the portal would pick is
+ * named. The key is never written to the log.
+ */
+export function checkGemini(env: Env, report: SetupReport): void {
+  const key = geminiKey(env);
+  if (!key) {
+    report.warnings.push(
+      `Falta ${PROP.geminiKey} en Script Properties: el portal funciona, pero sin las ayudas de IA (docs/IA.md).`,
+    );
+    return;
+  }
+  let result: ReturnType<typeof checkKey>;
+  try {
+    result = checkKey(env, key);
+  } catch (error) {
+    report.warnings.push(`Gemini no respondió (${String(error).slice(0, 200)}).`);
+    return;
+  }
+  if (!result.ok) {
+    report.warnings.push(
+      `${PROP.geminiKey} no funciona (Google respondió ${String(result.status)}). Crea la clave en Google AI Studio y cópiala tal cual en Script Properties.`,
+    );
+    return;
+  }
+  report.checked.push(
+    result.model
+      ? `Gemini: la clave funciona; el portal usará ${result.model}.`
+      : 'Gemini: la clave funciona, pero Google no ofrece ningún modelo adecuado por ahora.',
+  );
+}
+
 function openOrCreateSpreadsheet(env: Env, report: SetupReport): GSpreadsheet {
   const id = env.prop(PROP.spreadsheetId);
   if (id) {
@@ -222,11 +258,28 @@ function ensureTab(
  * closed lists. Its fingerprint changes only when the model does.
  */
 export function schemaPrint(env: Env): string {
-  const model = TABLE_NAMES.map((name) => [
-    name,
-    allColumns(TABLES[name]).map((c) => [c.name, c.type, ...(c.values ?? [])].join(':')),
-  ]);
+  const model = [
+    ...TABLE_NAMES.map((name) => [
+      name,
+      allColumns(TABLES[name]).map((c) => [c.name, c.type, ...(c.values ?? [])].join(':')),
+    ]),
+    // A new setting is part of the model too: the first request creates it.
+    ['Config', CONFIG_DEFAULTS.map((d) => d.clave)],
+  ];
   return env.sha256Hex(JSON.stringify(model)).slice(0, 16);
+}
+
+/** The settings the code knows and the Config tab lacks, with their defaults. */
+function addMissingSettings(env: Env, db: Database, writer: Writer, report: SetupReport): void {
+  const keys = new Set(db.rows('Config').map((c) => c.clave));
+  for (const d of CONFIG_DEFAULTS) {
+    if (keys.has(d.clave)) continue;
+    writer.save('Config', undefined, {
+      ...base(env.uuid(), writer.meta.serverNow, writer.meta.userId),
+      ...d,
+    });
+    report.created.push(`ajuste ${d.clave}`);
+  }
 }
 
 /**
@@ -252,6 +305,16 @@ export function ensureSchema(env: Env): void {
       warnings: [],
     };
     for (const name of TABLE_NAMES) ensureTab(env, ss, name, report);
+    const db = new Database(env, ss);
+    const seq = new Sequence(env);
+    const writer = new Writer(db, seq, { userId: 'setup', serverNow: toProjectIso(env.now()) });
+    addMissingSettings(env, db, writer, report);
+    if (db.pendingWrites) {
+      writer.audit('SISTEMA', 'Sistema', 'esquema', null, null, { creado: report.created });
+      seq.reserve();
+      db.flush();
+      seq.commit();
+    }
     env.setProp(PROP.schemaVersion, print);
     if (report.created.length) env.log('Esquema actualizado', report.created);
   } finally {
@@ -330,12 +393,7 @@ export function runSetup(env: Env): SetupReport {
       report.created.push(`usuario SOCIO_ADMIN ${email}`);
     }
 
-    const keys = new Set(db.rows('Config').map((c) => c.clave));
-    for (const d of CONFIG_DEFAULTS) {
-      if (keys.has(d.clave)) continue;
-      writer.save('Config', undefined, { ...base(env.uuid(), serverNow, 'setup'), ...d });
-      report.created.push(`ajuste ${d.clave}`);
-    }
+    addMissingSettings(env, db, writer, report);
 
     if (db.pendingWrites)
       writer.audit('SISTEMA', 'Sistema', 'setup', null, null, { creado: report.created });
@@ -363,6 +421,7 @@ export function runSetup(env: Env): SetupReport {
       report.created.push('resumen diario (se revisa cada hora; sale a la hora de horaResumen)');
     }
     checkFirebase(env, report);
+    checkGemini(env, report);
     return report;
   } finally {
     lock.releaseLock();

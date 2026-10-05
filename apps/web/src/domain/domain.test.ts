@@ -175,6 +175,7 @@ describe('what the interface offers', () => {
     nombreComercial: null,
     rol,
     alcance: null,
+    ia: true,
   });
 
   it('the partner may do everything, everywhere', () => {

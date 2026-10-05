@@ -28,6 +28,8 @@ interface SentMail {
   htmlBody?: string;
   name?: string;
   replyTo?: string;
+  /** The monthly report's PDF, as the test double keeps it (F6). */
+  attachments?: { name: string | null; contentType: string | null; size: number }[];
 }
 
 interface World {
@@ -103,6 +105,7 @@ function mailPage(sent: readonly SentMail[], quota: number, note: string): strin
       (m) => `<article>
   <p><strong>${escape(m.subject)}</strong></p>
   <p>Para: ${escape(m.to)}${m.replyTo ? ` · Responder a: ${escape(m.replyTo)}` : ''}${m.name ? ` · De: ${escape(m.name)}` : ''}</p>
+  ${(m.attachments ?? []).map((a) => `<p>Adjunto: ${escape(a.name ?? 'archivo')} (${escape(a.contentType ?? '')}, ${String(Math.round(a.size / 1024))} KB)</p>`).join('')}
   ${m.htmlBody ? `<iframe sandbox="" title="${escape(m.subject)}" srcdoc="${escape(m.htmlBody)}"></iframe>` : `<pre>${escape(m.body)}</pre>`}
 </article>`,
     )
@@ -123,7 +126,7 @@ function mailPage(sent: readonly SentMail[], quota: number, note: string): strin
 </head>
 <body>
 <h1>Correos del modo de demostración</h1>
-<p>Lo que el portal habría mandado desde que arrancó este servidor: el resumen diario y las invitaciones. Nada sale de aquí. Quedan ${String(quota)} destinatarios de 100.</p>
+<p>Lo que el portal habría mandado desde que arrancó este servidor: el resumen diario, las invitaciones y los reportes mensuales. Nada sale de aquí. Quedan ${String(quota)} destinatarios de 100.</p>
 ${note ? `<p role="status">${escape(note)}</p>` : ''}
 <form method="post" action="/mock-api/correos/resumen"><button type="submit">Generar el resumen de hoy</button></form>
 ${items || '<p>Todavía no hay correos.</p>'}

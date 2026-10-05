@@ -56,6 +56,14 @@ export default defineConfig([
         },
       ],
       'no-restricted-globals': ['error', 'process', 'Buffer', '__dirname', 'require'],
+      // The named `z` carries every locale of zod: Code.js grew from 390 KB to 1 MB.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ImportDeclaration[source.value=/^zod/] > ImportSpecifier[imported.name='z']",
+          message: "Use `import * as z from 'zod/mini'`: only what is used is bundled.",
+        },
+      ],
     },
   },
 

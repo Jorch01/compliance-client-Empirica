@@ -11,7 +11,12 @@ import {
   type ApiResponse,
   type Row,
 } from '@empirica/shared';
-import { DEMO_FILE_CONTENT, demoData, type Dataset } from '@empirica/shared/testing';
+import {
+  DEMO_FILE_CONTENT,
+  DEMO_REPORT_PDF,
+  demoData,
+  type Dataset,
+} from '@empirica/shared/testing';
 import { Database, Sequence } from '../db/database.ts';
 import { PROP, createEnv, type Env } from '../env.ts';
 import { handleRequest } from '../router.ts';
@@ -69,14 +74,16 @@ export function createWorld(
   const google = new FakeGoogle(clock.now);
   google.props.set(PROP.firebaseProjectId, google.firebase.projectId);
   google.props.set(PROP.firebaseApiKey, google.firebase.apiKey);
+  google.props.set(PROP.geminiKey, google.gemini.apiKey);
   if (options.adminEmails) google.props.set(PROP.adminEmails, options.adminEmails);
   // Production builds a new Env for every request (and so re-reads the
   // properties); the tests do the same.
   const freshEnv = (): Env => createEnv(google.globals, clock.now);
   const env = freshEnv();
   const setupReport = runSetup(env);
-  // setup() tries the server key once; the tests count only their own lookups.
+  // setup() tries the server key and the Gemini key once; the tests count only their own calls.
   google.firebase.lookups = 0;
+  google.gemini.listCalls = 0;
   const data = options.data === null ? null : (options.data ?? demoData());
   if (data) {
     seed(env, data);
@@ -89,6 +96,18 @@ export function createWorld(
           text(doc, 'nombre') ?? 'documento',
           DEMO_FILE_CONTENT,
           text(doc, 'mimeType') ?? 'application/octet-stream',
+        );
+      }
+    }
+    // And the PDF of each report already sent.
+    for (const report of data.Reportes) {
+      const pdfId = text(report, 'pdfId');
+      if (pdfId) {
+        google.seedFile(
+          pdfId,
+          `Reporte ${text(report, 'periodo') ?? ''}.pdf`,
+          DEMO_REPORT_PDF,
+          'application/pdf',
         );
       }
     }

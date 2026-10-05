@@ -13,11 +13,13 @@ import { buttonClass } from '../ui/button-class.ts';
 import { Card, EmptyState, PageHeader } from '../ui/Card.tsx';
 import { Dialog } from '../ui/Dialog.tsx';
 import { InfoButton } from '../ui/InfoButton.tsx';
+import { AskPortal } from './common/AskPortal.tsx';
 import { SemaforoBadge } from './common/Semaforo.tsx';
 import { TaskList } from './common/TaskList.tsx';
 import { Tile } from './common/Tile.tsx';
 import { Upcoming } from './common/Upcoming.tsx';
 import { ComplianceSummary } from './compliance/ComplianceSummary.tsx';
+import { HealthCard } from './reports/HealthBadge.tsx';
 
 const HUB = '#hub';
 const OTHER = '#other';
@@ -165,7 +167,7 @@ type Open = 'overdue' | 'dueSoon' | null;
  */
 export function ClientHome() {
   const { t } = useTranslation();
-  const { scope, clients, entidades } = useScope();
+  const { scope, clients, entidades, access } = useScope();
   const tasks = useScopedRows('Tareas');
   const requests = useScopedRows('Solicitudes');
   const pendingTasks = usePendingIds('Tareas');
@@ -274,6 +276,8 @@ export function ClientHome() {
           </Card>
         </div>
         <div className="min-w-0 space-y-6">
+          {!access?.alcance ? <HealthCard clientId={client.id} /> : null}
+          <AskPortal />
           <Upcoming limit={6} />
           <ComplianceSummary />
           <TeamCard client={client} />

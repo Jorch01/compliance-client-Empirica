@@ -3,6 +3,7 @@
  * and branches, and one user per role and scope. Only used by tests; never
  * bundled. Every name is invented ("Cliente Demo, S.A. de C.V.").
  */
+import { reportId } from '../domain/report.ts';
 import type { Row, Value } from '../domain/values.ts';
 import type { TableName } from '../domain/tables.ts';
 
@@ -12,6 +13,48 @@ export const uid = (n: number): string =>
 
 /** What the demo documents' files contain: a fictitious, tiny PDF. */
 export const DEMO_FILE_CONTENT = '%PDF-1.4\n% Documento ficticio de demostracion\n%%EOF\n';
+
+/**
+ * A small valid PDF, one page of plain text: the sent report of the demo
+ * data, so the mock portal downloads something a viewer opens. ASCII only
+ * (the standard Helvetica font), with the byte offsets PDF readers expect.
+ */
+export function demoPdf(lines: readonly string[]): string {
+  const escape = (s: string): string => s.replace(/[\\()]/g, (c) => `\\${c}`);
+  const content = [
+    'BT',
+    '/F1 14 Tf',
+    '72 740 Td',
+    '20 TL',
+    ...lines.map((l) => `(${escape(l)}) '`),
+    'ET',
+  ].join('\n');
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${String(content.length)} >>\nstream\n${content}\nendstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objects.forEach((body, i) => {
+    offsets.push(out.length);
+    out += `${String(i + 1)} 0 obj\n${body}\nendobj\n`;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${String(objects.length + 1)}\n0000000000 65535 f \n`;
+  out += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+  out += `trailer\n<< /Size ${String(objects.length + 1)} /Root 1 0 R >>\nstartxref\n${String(xref)}\n%%EOF\n`;
+  return out;
+}
+
+/** The demo's report of August, as it was sent. */
+export const DEMO_REPORT_PDF = demoPdf([
+  'Empirica Legal Lab',
+  'Reporte mensual de demostracion: agosto de 2026',
+  'Cliente Demo, S.A. de C.V. (datos ficticios)',
+]);
 
 export const ID = {
   clienteA: uid(0x1a),
@@ -82,6 +125,9 @@ export const ID = {
   // Feedback about the portal
   sugColab: uid(0xf11),
   sugB: uid(0xf12),
+  // F6: a monthly report being prepared, and one already sent (one id per client and month).
+  repBorrador: reportId(uid(0x1a), '2026-09'),
+  repEnviado: reportId(uid(0x1a), '2026-08'),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';
@@ -646,7 +692,26 @@ export function demoData(): Dataset {
       }),
     ],
     Bitacora: [],
-    Reportes: [],
+    Reportes: [
+      base(ID.repBorrador, {
+        clienteId: A,
+        periodo: '2026-09',
+        estado: 'BORRADOR',
+        resumen: 'Borrador del resumen (ejemplo).',
+        idioma: 'es',
+      }),
+      base(ID.repEnviado, {
+        clienteId: A,
+        periodo: '2026-08',
+        estado: 'ENVIADO',
+        resumen: 'Resumen de agosto (ejemplo).',
+        idioma: 'es',
+        pdfId: 'drive-reporte-agosto',
+        enviadoA: ['admin@cliente-a.example'],
+        fecha: '2026-09-02T10:00:00.000-05:00',
+        enviadoPor: ID.abogado,
+      }),
+    ],
     OpsAplicadas: [],
     Calendario: [],
   };

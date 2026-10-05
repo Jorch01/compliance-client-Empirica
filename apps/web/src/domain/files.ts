@@ -35,7 +35,12 @@ export function formatBytes(bytes: number, locale: string): string {
  * never opened inside the portal: a file runs nothing on this page.
  */
 export function saveFile(nombre: string, mimeType: string, base64: string): void {
-  const url = URL.createObjectURL(new Blob([base64ToBytes(base64)], { type: mimeType }));
+  saveBlob(nombre, new Blob([base64ToBytes(base64)], { type: mimeType }));
+}
+
+/** The same, for a file made in this browser (a report's PDF). */
+export function saveBlob(nombre: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = nombre;

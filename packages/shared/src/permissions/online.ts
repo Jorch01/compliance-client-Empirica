@@ -18,7 +18,8 @@ export type OnlineDenialReason =
   | 'ALREADY_RESOLVED'
   | 'RECORD_DELETED'
   | 'ALREADY_UPLOADED'
-  | 'NOT_UPLOADED';
+  | 'NOT_UPLOADED'
+  | 'ALREADY_SENT';
 
 export type OnlineDecision =
   | { ok: true; clienteId: string }
@@ -124,6 +125,48 @@ export function firmCalendarRole(user: {
 export function clientCalendarRole(
   access: { rol: unknown; alcance: unknown } | undefined,
 ): GoogleCalendarRole | null {
-  if (!access || !CLIENT_ROLES.some((r) => r === access.rol)) return null;
-  return access.alcance === null || access.alcance === undefined ? 'reader' : null;
+  return seesWholeClient(access) ? 'reader' : null;
+}
+
+/**
+ * Whether a client user's access covers the whole client (no units, no
+ * matters): who receives what goes to the client as a whole, its Google
+ * calendar and its monthly report.
+ */
+export function seesWholeClient(access: { rol: unknown; alcance: unknown } | undefined): boolean {
+  if (!access || !CLIENT_ROLES.some((r) => r === access.rol)) return false;
+  return access.alcance === null || access.alcance === undefined;
+}
+
+/**
+ * Who sends a client's monthly report (F6, PERMISOS.md): the SOCIO_ADMIN and
+ * the lawyers of that client. An assistant prepares the draft but does not
+ * send it, and a report goes out once.
+ */
+export function authorizeReportSend(
+  ctx: UserContext,
+  reporte: Row | undefined,
+  lookup: Lookup,
+): OnlineDecision {
+  if (!reporte || reporte.deleted || !canRead(ctx, 'Reportes', reporte, lookup)) {
+    return deny('NOT_FOUND', 'NOT_FOUND');
+  }
+  const clienteId = clientIdOf(TABLES.Reportes, reporte);
+  const rol = clienteId ? ctx.clients.get(clienteId)?.rol : undefined;
+  if (!clienteId || (rol !== 'SOCIO_ADMIN' && rol !== 'ABOGADO')) return deny('FORBIDDEN', 'ROLE');
+  if (reporte.estado === 'ENVIADO') return deny('CONFLICT', 'ALREADY_SENT');
+  return { ok: true, clienteId };
+}
+
+export type AiHelper = 'summary' | 'reminder' | 'ask';
+
+/**
+ * Who uses each AI helper for a client (IA.md): drafting the report's
+ * summary or a reminder is the firm's; asking "what is pending" is for
+ * anyone with access, about what they see.
+ */
+export function mayUseAi(ctx: UserContext, helper: AiHelper, clienteId: string): boolean {
+  const access = ctx.clients.get(clienteId);
+  if (!access) return false;
+  return helper === 'ask' || isFirmRole(access.rol);
 }

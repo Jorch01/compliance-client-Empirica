@@ -133,6 +133,17 @@ const answerFeedback: TablePolicy = {
   update: { fields: ['estado', 'respuesta'] },
 };
 
+/**
+ * A monthly report (F6): the firm prepares the draft (its summary and
+ * language); sending it is an online action (reports.send) that fixes it.
+ */
+const reportDraft: TablePolicy = {
+  read: true,
+  create: { forced: { estado: 'BORRADOR' } },
+  update: { fields: ['resumen', 'idioma'] },
+  delete: false,
+};
+
 const ownNotification: TablePolicy = {
   read: true,
   create: false,
@@ -186,7 +197,10 @@ export const POLICIES: Record<TableName, RolePolicies> = {
     [ownFeedback, ownFeedback, ownFeedback],
   ),
   Bitacora: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
-  Reportes: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
+  Reportes: byRole(
+    [{ ...reportDraft, delete: 'all' }, reportDraft, reportDraft],
+    [READ, READ, READ],
+  ),
   OpsAplicadas: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   Calendario: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
 };

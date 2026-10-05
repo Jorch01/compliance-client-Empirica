@@ -72,7 +72,12 @@ function excerpt(body: string): string {
 }
 
 /** Actions that carry a whole file: they may take minutes on a slow network. */
-const FILE_ACTIONS: ReadonlySet<Action> = new Set(['files.upload', 'files.download']);
+const FILE_ACTIONS: ReadonlySet<Action> = new Set([
+  'files.upload',
+  'files.download',
+  'reports.send',
+  'reports.download',
+]);
 
 export interface CallOptions {
   idToken?: string | null;

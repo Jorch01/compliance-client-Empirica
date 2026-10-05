@@ -14,6 +14,7 @@ import {
   type AgendaItem,
   type Row,
   type UserContext,
+  wholeClientViewer,
 } from '@empirica/shared';
 import type { AgendaSettings } from '../config.ts';
 import type { Database } from '../db/database.ts';
@@ -65,18 +66,7 @@ export function firmReader(db: Database): UserContext {
 }
 
 /** A client as a whole: what a reader of the whole client (no units) sees. */
-export function wholeClientReader(clienteId: string): UserContext {
-  return {
-    userId: 'calendario',
-    email: '',
-    lado: 'CLIENTE',
-    rolBase: 'CLIENTE_LECTURA',
-    isAdmin: false,
-    clients: new Map([
-      [clienteId, { clienteId, rol: 'CLIENTE_LECTURA' as const, alcance: null, units: null }],
-    ]),
-  };
-}
+export const wholeClientReader = (clienteId: string): UserContext => wholeClientViewer(clienteId);
 
 /** The items of rows already filtered, by the firm's settings. */
 export function itemsOf(

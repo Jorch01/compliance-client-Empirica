@@ -2,9 +2,12 @@
  * Nightly jobs (one time trigger, created by setup()):
  * - copy the spreadsheet into Respaldos and keep the last 30 copies;
  * - purge the idempotency records (OpsAplicadas) older than twice the days a
- *   device may stay offline: by then no device can resend those operations.
+ *   device may stay offline: by then no device can resend those operations;
+ * - on the first of the month, tell each client's lawyer that last month's
+ *   report is ready to prepare (F6).
  */
 import { parseInstant, text } from '@empirica/shared';
+import { remindMonthlyReports } from './actions/reports.ts';
 import { runDailyBackup } from './backup.ts';
 import { Database } from './db/database.ts';
 import type { Env } from './env.ts';
@@ -34,9 +37,25 @@ export function purgeAppliedOps(env: Env): number {
   }
 }
 
-export function runNightly(env: Env): { backup: string; removedCopies: number; purgedOps: number } {
+export function runNightly(env: Env): {
+  backup: string;
+  removedCopies: number;
+  purgedOps: number;
+  reportNotices: number;
+} {
   const backup = runDailyBackup(env);
   const purgedOps = purgeAppliedOps(env);
-  env.log('Tareas nocturnas', { respaldo: backup.copy, operacionesDepuradas: purgedOps });
-  return { backup: backup.copy, removedCopies: backup.removed, purgedOps };
+  let reportNotices = 0;
+  try {
+    reportNotices = remindMonthlyReports(env);
+  } catch (error) {
+    // The backup is already made; tomorrow is not the first, so say it in the log.
+    env.log('Aviso de reportes no creado', { error: String(error) });
+  }
+  env.log('Tareas nocturnas', {
+    respaldo: backup.copy,
+    operacionesDepuradas: purgedOps,
+    avisosDeReporte: reportNotices,
+  });
+  return { backup: backup.copy, removedCopies: backup.removed, purgedOps, reportNotices };
 }

@@ -25,6 +25,14 @@ export const NOTIFICATION_KINDS = [
   'CALENDARIO_REVERTIDO',
   /** The daily emails are running out. */
   'CUOTA_CORREO',
+  /** F6: the month's report of a client is ready to review (the 1st, to its lawyer). */
+  'REPORTE_POR_PREPARAR',
+  /** F6: the firm sent the client its monthly report. */
+  'REPORTE_ENVIADO',
+  /** F6: Google said the day's AI quota ran out (to the partners). */
+  'IA_CUOTA',
+  /** F6: the AI model in Config no longer exists; the portal chose another (to the partners). */
+  'IA_MODELO',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

@@ -21,6 +21,7 @@ import { ConfirmDialog } from '../../ui/ConfirmDialog.tsx';
 import { TextArea } from '../../ui/Field.tsx';
 import { FilterButtons } from '../../ui/FilterButtons.tsx';
 import { Icon } from '../../ui/Icon.tsx';
+import { aiErrorText } from './ai.ts';
 
 /** A record's unit, as its comments copy it (`Comentarios.unidadId`). */
 const unitOfRecord = (record: Row): string | null => text(record, 'entidadId');
@@ -151,9 +152,23 @@ function CommentItem({
  * client, and internal (D19: what the firm writes starts internal). A
  * client user sees and writes only the shared one.
  */
-export function Comments({ table, record }: { table: TableName; record: Row }) {
+export function Comments({
+  table,
+  record,
+  reminder,
+}: {
+  table: TableName;
+  record: Row;
+  /**
+   * The firm asks the AI for a reminder to the client (F6): the draft goes
+   * into the box of the shared conversation, never posted on its own.
+   */
+  reminder?: () => Promise<string>;
+}) {
   const { t } = useTranslation();
   const { me, engine } = usePortal();
+  const [drafting, setDrafting] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const clientId = text(record, 'clienteId') ?? '';
   const all = useRows('Comentarios', clientId);
   const pending = usePendingIds('Comentarios');
@@ -210,6 +225,21 @@ export function Comments({ table, record }: { table: TableName; record: Row }) {
     }
   };
 
+  const draftReminder = async (): Promise<void> => {
+    if (!reminder) return;
+    setView('COMPARTIDO');
+    setDrafting(true);
+    setAiError(null);
+    try {
+      const texto = await reminder();
+      setDraft((current) => (current.trim() ? `${current.trim()}\n\n${texto}` : texto));
+    } catch (error) {
+      setAiError(aiErrorText(t, error));
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const hidden = me.isFirm && view === 'COMPARTIDO' && record.visibilidad === 'INTERNO';
   return (
     <Card title={t('comments.title')}>
@@ -260,9 +290,31 @@ export function Comments({ table, record }: { table: TableName; record: Row }) {
               setDraft(e.target.value);
             }}
           />
-          <Button type="submit" size="sm" icon="send" busy={busy} disabled={!draft.trim()}>
-            {t('comments.send')}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="submit" size="sm" icon="send" busy={busy} disabled={!draft.trim()}>
+              {t('comments.send')}
+            </Button>
+            {reminder && me.isFirm ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                icon="sparkles"
+                busy={drafting}
+                onClick={() => void draftReminder()}
+              >
+                {t('ai.reminder')}
+              </Button>
+            ) : null}
+          </div>
+          {reminder && me.isFirm ? (
+            <p className="text-sm text-muted-foreground">{t('ai.reminderHint')}</p>
+          ) : null}
+          {aiError ? (
+            <p role="alert" className="text-sm font-medium text-danger-subtle-foreground">
+              {aiError}
+            </p>
+          ) : null}
         </form>
       ) : null}
     </Card>

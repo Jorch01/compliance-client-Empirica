@@ -6,6 +6,7 @@
  */
 import { SCOPES, hasScope } from '../consent.ts';
 import type { Env } from '../env.ts';
+import type { GBlob } from '../google.ts';
 
 export const SENDER_NAME = 'Empírica Portal';
 
@@ -35,7 +36,14 @@ const masked = (email: string): string => email.replace(/^(.).*(@.*)$/, '$1•�
 
 export function sendMail(
   env: Env,
-  message: { to: string; subject: string; text: string; html: string; replyTo?: string | null },
+  message: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    replyTo?: string | null;
+    attachments?: GBlob[];
+  },
 ): MailOutcome {
   if (!mailAllowed(env)) return { sent: false, error: 'NO_PERMISSION' };
   if (remainingQuota(env) < 1) return { sent: false, error: 'QUOTA' };
@@ -47,6 +55,7 @@ export function sendMail(
       htmlBody: message.html,
       name: SENDER_NAME,
       ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+      ...(message.attachments?.length ? { attachments: message.attachments } : {}),
     });
     return { sent: true, error: null };
   } catch (error) {

@@ -16,6 +16,7 @@ import {
   ESTADOS_MEMBRESIA,
   ESTADOS_OBLIGACION,
   ESTADOS_SOLICITUD,
+  ESTADOS_REPORTE,
   ESTADOS_SUGERENCIA,
   ESTADOS_TAREA,
   ESTADOS_TRAMITE,
@@ -76,6 +77,10 @@ export interface ScopeDef {
    * (comments on any record); `json` when both travel in one JSON column.
    */
   parent?: ParentDef;
+  /** Only client users who see the whole client: the row speaks of all its units (F6 reports). */
+  wholeClient?: boolean;
+  /** Client users see the row only in these states (a report once sent). */
+  clientStates?: { column: string; values: readonly string[] };
 }
 
 /**
@@ -140,6 +145,8 @@ export interface TableDef {
   serverManaged: readonly string[];
   /** Cannot change once the row exists. */
   immutable: readonly string[];
+  /** In these states the row is a record: nobody edits, deletes or restores it (a sent report). */
+  frozenWhen?: { column: string; values: readonly string[] };
 }
 
 /** Columns every tab carries, in this order, before its own. */
@@ -403,6 +410,8 @@ export const TABLES: Record<TableName, TableDef> = {
       col('dentroIguala', { type: 'boolean' }),
       VISIBILIDAD,
       col('avance', { type: 'number' }),
+      // The day it was concluded (F6, for the monthly report); set by the server.
+      col('fechaCierre', { type: 'date' }),
     ],
     {
       sync: 'pushpull',
@@ -417,7 +426,7 @@ export const TABLES: Record<TableName, TableDef> = {
       sensitive: VISIBLE_SCOPE_FIELDS,
       // Counts every task, internal ones too: clients count what they see.
       hiddenFromClients: ['avance'],
-      serverManaged: ['avance'],
+      serverManaged: ['avance', 'fechaCierre'],
       immutable: ['clienteId'],
     },
   ),
@@ -441,6 +450,8 @@ export const TABLES: Record<TableName, TableDef> = {
       VISIBILIDAD,
       col('calendarEventId', { type: 'string' }),
       col('enEsperaDesde', { type: 'datetime' }),
+      // The day it was done (F6, for the monthly report); set by the server.
+      col('fechaCierre', { type: 'date' }),
     ],
     {
       sync: 'pushpull',
@@ -461,7 +472,7 @@ export const TABLES: Record<TableName, TableDef> = {
       },
       sensitive: ['fechaLimite', 'esFatal', 'visibilidad'],
       hiddenFromClients: ['calendarEventId'],
-      serverManaged: ['calendarEventId'],
+      serverManaged: ['calendarEventId', 'fechaCierre'],
       immutable: ['clienteId'],
     },
   ),
@@ -844,17 +855,32 @@ export const TABLES: Record<TableName, TableDef> = {
     'Reportes',
     [
       CLIENTE,
+      // The month it covers: "2026-09". One report per client and month (reportId).
       col('periodo', { type: 'string', required: true }),
       col('docId', { type: 'string' }),
+      // The PDF in the client's Drive folder (Reportes).
       col('pdfId', { type: 'string' }),
       col('enviadoA', { type: 'json' }),
       col('fecha', { type: 'datetime' }),
+      col('estado', { ...e(ESTADOS_REPORTE), required: true }),
+      // The executive summary the lawyer writes (with or without an AI draft).
+      col('resumen', { type: 'text' }),
+      col('idioma', e(IDIOMAS)),
+      ref('enviadoPor', 'Usuarios'),
     ],
     {
-      sync: 'none',
+      sync: 'pushpull',
       audience: 'members',
-      scope: { client: 'clienteId' },
-      immutable: ['clienteId'],
+      // The client sees it once sent, and only whoever sees the whole company.
+      scope: {
+        client: 'clienteId',
+        wholeClient: true,
+        clientStates: { column: 'estado', values: ['ENVIADO'] },
+      },
+      hiddenFromClients: ['enviadoA', 'pdfId', 'docId'],
+      serverManaged: ['docId', 'pdfId', 'enviadoA', 'fecha', 'enviadoPor'],
+      immutable: ['clienteId', 'periodo'],
+      frozenWhen: { column: 'estado', values: ['ENVIADO'] },
     },
   ),
 

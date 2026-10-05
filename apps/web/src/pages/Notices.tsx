@@ -29,6 +29,10 @@ const KIND_ICON: Record<NotificationKind, IconName> = {
   SUGERENCIA_RESPONDIDA: 'message',
   CALENDARIO_REVERTIDO: 'calendar',
   CUOTA_CORREO: 'mail',
+  REPORTE_POR_PREPARAR: 'file',
+  REPORTE_ENVIADO: 'file',
+  IA_CUOTA: 'alert',
+  IA_MODELO: 'info',
 };
 
 /** One notification: what happened, when, and the way to it (opening it marks it read). */

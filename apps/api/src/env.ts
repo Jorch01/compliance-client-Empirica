@@ -23,6 +23,10 @@ export const PROP = {
   calendarSync: 'CALENDAR_SYNC',
   /** The day the daily summary went out (YYYY-MM-DD): never twice a day. */
   digestSent: 'DIGEST_SENT',
+  /** The Gemini key (F6): only the server reads it. */
+  geminiKey: 'GEMINI_API_KEY',
+  /** The day's AI requests, as JSON {dia, usadas, agotada}: Google counts by California's day. */
+  aiUsage: 'AI_USAGE',
 } as const;
 
 export interface Env {
