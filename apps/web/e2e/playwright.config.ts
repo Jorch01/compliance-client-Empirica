@@ -1,7 +1,8 @@
 /**
  * Browser tests of the portal with fictitious data (npm run test:e2e): the
  * mock build (the real backend code with simulated Google services) served
- * locally, driven by Chromium. Two browser contexts are two devices.
+ * locally, driven by Chromium; and by WebKit, Safari's engine, in the CI
+ * (npm run test:e2e:webkit, F7). Two browser contexts are two devices.
  *
  * CHROMIUM_PATH points at an installed Chromium when Playwright's own is not
  * downloaded (development containers); CI installs Playwright's.
@@ -25,9 +26,17 @@ export default defineConfig({
     locale: 'es-MX',
     timezoneId: 'America/Cancun',
     trace: 'retain-on-failure',
-    ...(executablePath ? { launchOptions: { executablePath } } : {}),
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(executablePath ? { launchOptions: { executablePath } } : {}),
+      },
+    },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ],
   webServer: {
     command: `npm run build:mock && npm run preview:mock -- --port ${String(PORT)} --strictPort`,
     cwd: '..',

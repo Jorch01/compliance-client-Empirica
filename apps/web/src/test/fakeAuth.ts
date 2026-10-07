@@ -31,6 +31,7 @@ export function fakeAuth(
     sendVerification: () => Promise.resolve(),
     reload: () => Promise.resolve(current),
     resetPassword: () => Promise.resolve(),
+    addPassword: () => Promise.resolve(),
     reauthenticate: () => Promise.resolve(),
     signOut: () => {
       emit(null);

@@ -30,7 +30,8 @@ npm install            # todo el monorepo (npm workspaces)
 npm run dev            # portal en http://localhost:5173
 npm run dev:mock       # portal con datos ficticios: el backend real (apps/api) dentro de Vite, sin cuentas
 npm run check          # formato + lint + tipos + pruebas (igual que el CI)
-npm run test:e2e       # Playwright sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
+npm run test:e2e       # Playwright (Chromium) sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
+npm run test:e2e:webkit # las mismas en WebKit (Safari); aquí no hay WebKit: corren en el CI
 npm run build          # web (apps/web/dist) y Apps Script (apps/api/build/Code.js)
 npm run size           # peso de la primera carga del portal y su tope (tras build; lo corre el CI)
 npm test               # solo pruebas (Vitest, todos los paquetes)
@@ -131,6 +132,8 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-07 | Cada pantalla, su propio archivo, precargadas en segundo plano; tope de 260 KB a la primera carga en el CI (D67)                                | 312 → 240 KB; que no vuelva a crecer sin darnos cuenta                                  |
 | 2026-10-07 | CSP en una `<meta>` de cada página y el portal no arranca dentro de un marco ajeno (D68)                                                        | GitHub Pages no admite cabeceras propias                                                |
 | 2026-10-07 | `npm audit` de producción en el CI, falla con alta o crítica (D69)                                                                              | Lo de desarrollo no se publica                                                          |
+| 2026-10-07 | En el iPhone instalado, sin respuesta de Google en 15 s, a correo y contraseña; crear contraseña desde el menú de la cuenta (D70)               | La ventana de Google puede no volver dentro de la app instalada                         |
+| 2026-10-07 | Pruebas en el navegador también en WebKit, trabajo propio del CI que bloquea la publicación (D71)                                               | iPhone y Mac usan el motor de Safari                                                    |
 
 ## Gotchas del entorno
 

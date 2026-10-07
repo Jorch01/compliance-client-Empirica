@@ -91,6 +91,8 @@ export const es = {
     google: 'Continuar con Google',
     googleIosHint:
       'En la app instalada en iPhone o iPad, si la ventana de Google no responde, entra con tu correo y contraseña.',
+    googleIosStuck:
+      'Google no respondió dentro de la app instalada. Entra con tu correo y contraseña. Si siempre entras con Google, abre el portal en Safari, entra con Google y crea una contraseña desde el menú de tu cuenta.',
     or: 'o',
     privacy: 'Aviso de privacidad',
     invitationOnly: 'El acceso es por invitación del despacho.',
@@ -115,6 +117,10 @@ export const es = {
         'Se cerró la ventana de Google antes de terminar. Intenta de nuevo o entra con tu correo y contraseña.',
       network: 'Sin conexión. Revisa tu red e intenta de nuevo.',
       'not-allowed': 'Este método de acceso no está activado.',
+      'recent-login':
+        'Por seguridad, Google pide que hayas entrado hace poco. Cierra sesión, vuelve a entrar con Google y crea la contraseña enseguida.',
+      'has-password':
+        'Tu cuenta ya tiene contraseña. Si no la recuerdas, usa «Olvidé mi contraseña» al entrar.',
       unknown: 'No se pudo iniciar sesión. Intenta de nuevo.',
     },
     mock: {
@@ -165,6 +171,15 @@ export const es = {
     reauthTitle: 'Vuelve a iniciar sesión',
     reauthBody:
       'Este dispositivo lleva {{days}} días sin conectarse. Por seguridad, inicia sesión otra vez para ver tus datos.',
+  },
+  account: {
+    googleOnly: 'Entras con Google.',
+    createPassword: 'Crear una contraseña',
+    passwordIntro:
+      'Con una contraseña también podrás entrar con {{email}}, por ejemplo en la app instalada en iPhone, donde la ventana de Google a veces no responde. Podrás seguir entrando con Google.',
+    passwordSave: 'Crear contraseña',
+    passwordSaving: 'Creando…',
+    passwordDone: 'Listo: desde ahora también puedes entrar con {{email}} y esta contraseña.',
   },
   logout: {
     sending: 'Enviando cambios…',
