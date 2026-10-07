@@ -399,7 +399,7 @@ Por fase se agregan: modo mock con MSW y datos 100 % ficticios ("Cliente Demo, S
 | F4   | Trámites, Compliance (con su heatmap y su botón "¿Cómo se lee?"), Contratos, Solicitudes                                                                                                                                                                                                                                                                             | Matriz de compliance y pipeline de trámites                                                       | **Aprobada** (2026-10-04) |
 | F5   | Calendarios (bidireccional, ACL, ICS) y correos                                                                                                                                                                                                                                                                                                                      | Un vencimiento del portal aparece en Calendar y en el ICS; las citas movidas en Calendar regresan | **Aprobada** (2026-10-05) |
 | F6   | IA y reportes mensuales                                                                                                                                                                                                                                                                                                                                              | Reporte PDF de prueba con formato institucional                                                   | **Aprobada** (2026-10-07) |
-| F7   | Rendimiento, auditoría sin conexión (incluido iOS), accesibilidad, seguridad, despliegue en `portal.empirica.mx`, documentación                                                                                                                                                                                                                                      | Checklist de seguridad aprobado y producción                                                      | En curso (§ 21)           |
+| F7   | Rendimiento, auditoría sin conexión (incluido iOS), accesibilidad, seguridad, despliegue en `portal.empirica.mx`, documentación                                                                                                                                                                                                                                      | Checklist de seguridad aprobado y producción                                                      | En revisión (§ 22)        |
 
 ## 12. Riesgos
 
@@ -772,3 +772,55 @@ Nadie más las ve: ni el resto del despacho ni los compañeros del cliente (`PER
 6. Probar en tu iPhone (y en un Android, si tienes) con la lista que te dejaré.
 7. Si alguien del despacho o de los pilotos usa Outlook: agregar su enlace personal de calendario y decirme si lo acepta.
 8. Opcional: subir un archivo de 30 MB para ver si el servidor lo acepta; si pasa, se puede subir el tope de 10 MB.
+
+## 22. Fase 7: qué quedó y cómo probarla
+
+**Qué cambió**
+
+| Área                     | Qué quedó                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendimiento del servidor | Guardar ya no lee la bitácora: con 5,000 entradas, un guardado lee 20 celdas de ella en vez de 100,000 (D64). Cada noche se borran los avisos leídos de hace más de 60 días y los nunca leídos de hace un año; cada dispositivo borra los suyos con la misma regla (D65). La noche del 1 de enero, la bitácora del año anterior pasa por tandas a su propio libro en `Respaldos` (D66) |
+| Rendimiento del portal   | Cada pantalla es su propio archivo y, en cuanto abre el portal, las demás bajan en segundo plano, así que abren al instante y sin red. La primera carga bajó de 312 a 240 KB comprimidos; el CI falla si pasa de 260 (D67)                                                                                                                                                             |
+| Seguridad                | Cada página lleva su política de contenido: solo corre código del portal y del inicio de sesión de Google. El portal no arranca dentro de una página ajena. Los otros sitios solo saben que la visita vino del portal. El CI revisa las dependencias en cada cambio. Lo que la política rechace llega en los reportes de error (D68, D69)                                              |
+| iPhone y Safari          | Esperar a Google ya no bloquea el correo y la contraseña; en la app instalada en iPhone, si Google no responde en 15 segundos, el portal pasa solo a correo y contraseña. Quien entra con Google puede **crear una contraseña** desde el menú de su cuenta (D70). Todas las pruebas en el navegador corren también en WebKit, el motor de Safari (D71)                                 |
+| Accesibilidad            | axe en todas las pantallas, en los dos temas y con los formularios abiertos; recorridos con teclado; 320 px sin desplazamiento lateral. Las pruebas encontraron y quedaron corregidos: Compliance y Reportes se desbordaban a 320 px, la pantalla de "no encontrada" no tenía título, y el foco se perdía al cambiar de pantalla y al cerrar un formulario (D72)                       |
+| Operación                | `OPERACION.md`: lo que corre solo, respaldos y cómo restaurar, publicar y regresar a la versión anterior, rotar llaves, cuotas y qué hacer si algo falla. `ARRANQUE.md`: dar de alta a un cliente piloto. El README, al día                                                                                                                                                            |
+
+**Código**
+
+| Dónde                                                            | Qué                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/src/db/table.ts`, `database.ts`                        | `AppendLog`: agregar a la bitácora leyendo solo su encabezado                                                                                                                |
+| `apps/api/src/db/archive.ts`, `maintenance.ts`                   | El archivo anual por tandas y las limpiezas nocturnas. Pruebas en `maintenance.test.ts` (5,000 entradas, una noche cortada a la mitad, texto que parece fórmula)             |
+| `packages/shared/src/domain/notifications.ts`                    | `isStaleNotice`: la regla de los avisos viejos, la misma en el servidor y en cada dispositivo                                                                                |
+| `apps/web/src/portal/lazy-page.ts`, `scripts/first-load.ts`      | Las pantallas por separado con su precarga; el tope de la primera carga (`npm run size`)                                                                                     |
+| `apps/web/src/security/`                                         | La política de contenido (`csp.ts`) y el bloqueo de marcos (`framed.ts`), con sus pruebas                                                                                    |
+| `apps/web/src/screens/AuthForm.tsx`, `portal/PasswordDialog.tsx` | El paso a correo y contraseña en el iPhone instalado; crear una contraseña                                                                                                   |
+| `apps/web/e2e/`                                                  | `a11y.spec.ts` (todas las pantallas, dos temas), `a11y-dialogs.spec.ts`, `keyboard.spec.ts` (teclado y 320 px), `security.spec.ts`; todas fallan si la política rechaza algo |
+
+**Cómo probarla en modo de demostración** (`npm run dev:mock`, como en la § 15)
+
+1. Con la ventana muy angosta (o en el teléfono), recorre Compliance, Reportes y las demás pantallas: ninguna se desplaza de lado; las tablas se desplazan dentro de su caja.
+2. Solo con el teclado: en una pantalla del portal, **Tab** muestra «Ir al contenido»; **Enter** salta el menú. En **Asuntos**, llega con Tab a **Nuevo asunto**, ábrelo con Enter y ciérralo con **Esc**: el foco vuelve al botón.
+3. Pruebas automáticas: `npm run check` (formato, lint, tipos y 907 pruebas) y `npm run test:e2e` (56 pruebas en Chromium); el CI corre además las 56 en WebKit, la revisión de dependencias y el peso de la primera carga.
+
+La política de contenido y el bloqueo de marcos no están en el modo de desarrollo, que necesita código en línea para recargar al instante; las pruebas del navegador corren sobre la versión compilada, con ambos. Sin red y en el teléfono se prueba con la lista del paso 12.6.
+
+**Con las cuentas reales**, al fusionar: no hay nada que autorizar ni ajustes nuevos. Después:
+
+1. `SETUP.md`, paso 12: las verificaciones de seguridad (dos pasos, GitHub, la key de Gemini, Firebase, un respaldo) y, al final, **entrar de verdad** con Google y con correo en una ventana de incógnito (paso 12.9): es lo único de esta fase que no se puede probar fuera del portal publicado.
+2. `SETUP.md`, paso 12.6: la lista del iPhone y Android.
+3. `ARRANQUE.md`: dar de alta a los pilotos.
+
+**Para aprobar la fase**: el checklist de `SEGURIDAD.md` § 6. Los puntos 1 a 11 son míos y están en verde; los 12 a 18 son tuyos (las verificaciones del paso 12, la prueba en teléfonos y las decisiones de abajo).
+
+**Lo que decidí por defecto y necesito que confirmes** (§ 21, más dos que agregué):
+
+- Sin cifrado propio de la copia local; sin archivos sin conexión; la clasificación y la extracción con IA siguen fuera (D62).
+- **Agregado**: los avisos **nunca leídos** también se borran, al año (el plan solo hablaba de los leídos, a los 60 días): sin eso, los de alguien que nunca abre la campana crecerían sin fin.
+- **Agregado**: **crear una contraseña** para quien entra con Google. Sin ella, el paso a correo y contraseña en el iPhone instalado no le serviría a quien nunca tuvo contraseña.
+
+**Quedó fuera** (no bloquea F7):
+
+- Restaurar un respaldo es manual (`OPERACION.md` § 2); una herramienta de un clic solo se justifica si llega a hacer falta.
+- El diccionario en inglés sigue en la primera carga (unos 20 KB): bajarlo aparte complicaría el reporte en inglés, que lo usa aunque la pantalla esté en español.
