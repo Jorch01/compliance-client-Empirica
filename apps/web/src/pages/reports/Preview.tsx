@@ -15,7 +15,7 @@ function Cell({ cell }: { cell: DocCell }) {
 
 function Table({ table, lang }: { table: DocTable; lang: string }) {
   return (
-    <div className="-mx-1 overflow-x-auto">
+    <div className="relative -mx-1 overflow-x-auto">
       <table className="w-full min-w-[28rem] text-left text-sm" lang={lang}>
         <thead className="bg-primary text-primary-foreground">
           <tr>

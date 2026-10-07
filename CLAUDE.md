@@ -63,7 +63,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - `packages/shared/src` y `apps/api/src` también corren en Apps Script: **sin APIs de Node** fuera de las pruebas (lo vigila ESLint).
 - **Colores**: solo tokens. Tailwind no tiene paleta por defecto. Ningún hex se escribe a mano: se cambia la regla en `scripts/brand/build-tokens.ts` y se regenera. Los archivos generados (`palette.json`, `tokens.json`, `tokens.css`, y `apps/web/public/favicon.svg` e `icons/`, de `npm run brand:icons`) no se formatean con Prettier ni se editan a mano.
 - **Política de contenido (CSP)**: cada build lleva la de `apps/web/src/security/csp.ts` (no el servidor de desarrollo). Un dominio nuevo (script, conexión, marco) se agrega ahí con su prueba; las pruebas en el navegador fallan si la política rechaza algo. Nada de scripts en línea ni `eval`.
-- **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI.
+- **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI. Una pantalla nueva: un `h1`, tablas anchas en `relative overflow-x-auto`, y su ruta en `e2e/a11y.spec.ts` y `e2e/keyboard.spec.ts` (`docs/DISENO.md` § 11).
 - **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales ni el de la cuenta propietaria: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
 - Excepción: el aviso de privacidad (`apps/web/src/legal/aviso-de-privacidad.txt`) publica tal cual el contacto que el despacho ya publica en empirica.mx. Es texto jurídico: solo cambia con el texto que mande el socio, y una prueba compara la página con el archivo palabra por palabra.
 - `brand/private/` (ignorado por git) guarda el archivo maestro de la marca: tiene datos de contacto personales. Solo se publican sus derivados (`spot-colors.json`, `brand/logo/*.svg`).
@@ -134,6 +134,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-07 | `npm audit` de producción en el CI, falla con alta o crítica (D69)                                                                              | Lo de desarrollo no se publica                                                          |
 | 2026-10-07 | En el iPhone instalado, sin respuesta de Google en 15 s, a correo y contraseña; crear contraseña desde el menú de la cuenta (D70)               | La ventana de Google puede no volver dentro de la app instalada                         |
 | 2026-10-07 | Pruebas en el navegador también en WebKit, trabajo propio del CI que bloquea la publicación (D71)                                               | iPhone y Mac usan el motor de Safari                                                    |
+| 2026-10-07 | axe en todas las pantallas (dos temas) y con formularios abiertos; teclado; 320 px; tablas en `relative overflow-x-auto` (D72)                  | WCAG 2.2 AA en todo el portal                                                           |
 
 ## Gotchas del entorno
 

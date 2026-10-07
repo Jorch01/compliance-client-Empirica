@@ -29,13 +29,17 @@ const policyViolations: string[] = [];
 /** A device: its own storage, the tour and the install reminder already dismissed. */
 export async function device(
   browser: Browser,
-  options: { tour?: boolean; mobile?: boolean } = {},
+  options: { tour?: boolean; mobile?: boolean; width?: number } = {},
 ): Promise<BrowserContext> {
   const context = await browser.newContext({
     locale: 'es-MX',
     timezoneId: 'America/Cancun',
     ...(options.mobile
-      ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
+      ? {
+          viewport: { width: options.width ?? 390, height: 844 },
+          isMobile: true,
+          hasTouch: true,
+        }
       : {}),
   });
   context.on('console', (message) => {

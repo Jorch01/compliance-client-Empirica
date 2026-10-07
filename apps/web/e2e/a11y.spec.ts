@@ -1,31 +1,52 @@
 /**
- * WCAG 2.2 AA, checked by axe on the main screens of both sides, in light
- * and dark themes. Contrast of every token pair is also checked in the unit
- * tests (packages/shared/src/brand/tokens.test.ts).
+ * WCAG 2.2 AA, checked by axe on every screen of both sides, each in the
+ * light and the dark theme (F7), with targets of at least 24 px (axe's
+ * target-size). Contrast of every token pair is also checked in the unit
+ * tests (packages/shared/src/brand/tokens.test.ts). Forms and dialogs open:
+ * a11y-dialogs.spec.ts; keyboard and 320 px: keyboard.spec.ts.
  */
 import { audit } from './axe.ts';
 import { device, expect, signIn, test, type DemoUser } from './fixtures.ts';
 
-test('the sign-in screen', async ({ browser }) => {
-  const context = await device(browser);
-  const page = await context.newPage();
-  await page.goto('./');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await audit(page, 'login');
-  await context.close();
-});
+for (const dark of [false, true]) {
+  test(`the sign-in screen${dark ? ' (dark)' : ''}`, async ({ browser }) => {
+    const context = await device(browser);
+    const page = await context.newPage();
+    if (dark) await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('./');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await audit(page, `login${dark ? ' dark' : ''}`);
+    await context.close();
+  });
+}
 
-const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boolean }[] = [
+/** Fictitious ids (packages/shared/src/testing/fixtures.ts). */
+const id = (n: number): string => `00000000-0000-4000-8000-${n.toString(16).padStart(12, '0')}`;
+const MATTER = id(0x402);
+const TASK = id(0x501);
+const OBLIGATION = id(0x701);
+const CONFLICT = id(0xe01);
+const APPOINTMENT = id(0xf03);
+const CLIENT_A = id(0x1a);
+
+/** Every screen, as each role sees it; each one in both themes (F7). */
+const SCREENS: { user: DemoUser; paths: string[]; mobile?: boolean }[] = [
   {
     user: 'socia',
     paths: ['#/', '#/clientes', '#/usuarios', '#/solicitudes', '#/sugerencias', '#/ayuda'],
   },
   {
     user: 'socia',
-    paths: ['#/asuntos', '#/tareas', '#/documentos', '#/conflictos'],
-    dark: true,
+    paths: [
+      '#/asuntos',
+      `#/asuntos/${MATTER}`,
+      '#/tareas',
+      `#/tareas/${TASK}`,
+      '#/documentos',
+      '#/conflictos',
+      `#/conflictos/${CONFLICT}`,
+    ],
   },
-  { user: 'socia', paths: ['#/'], dark: true },
   {
     user: 'socia',
     paths: [
@@ -40,42 +61,41 @@ const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boole
   {
     user: 'abogado',
     paths: [
-      '#/tramites/00000000-0000-4000-8000-000000000f01',
-      '#/compliance/00000000-0000-4000-8000-000000000701',
-      '#/contratos/00000000-0000-4000-8000-000000000f02',
-      '#/solicitudes/00000000-0000-4000-8000-000000000901',
+      `#/tramites/${id(0xf01)}`,
+      `#/compliance/${OBLIGATION}`,
+      `#/contratos/${id(0xf02)}`,
+      `#/solicitudes/${id(0x901)}`,
     ],
-    dark: true,
+  },
+  // F5 and F6: the agenda, the bell, the monthly reports and a draft with its preview.
+  {
+    user: 'abogado',
+    paths: [
+      '#/agenda',
+      `#/agenda/${APPOINTMENT}`,
+      '#/avisos',
+      '#/reportes',
+      `#/reportes/${CLIENT_A}/2026-09`,
+    ],
+  },
+  { user: 'socia', paths: ['#/reportes', `#/reportes/${CLIENT_A}/2026-08`, '#/no-existe'] },
+  {
+    user: 'adminA',
+    paths: ['#/', '#/pendientes', '#/equipo', '#/usuarios', '#/agenda', '#/reportes'],
+    mobile: true,
   },
   {
     user: 'adminA',
     paths: [
       '#/tramites',
       '#/compliance',
+      `#/compliance/${OBLIGATION}`,
       '#/contratos',
-      '#/compliance/00000000-0000-4000-8000-000000000701',
+      `#/tareas/${TASK}`,
+      `#/reportes/${CLIENT_A}/2026-08`,
     ],
-    dark: true,
     mobile: true,
   },
-  { user: 'adminA', paths: ['#/', '#/pendientes', '#/equipo', '#/agenda'], mobile: true },
-  { user: 'abogado', paths: ['#/agenda', '#/avisos'] },
-  // F6: the monthly reports, the draft with its preview, and the client's list.
-  {
-    user: 'abogado',
-    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-09'],
-  },
-  {
-    user: 'socia',
-    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-08'],
-    dark: true,
-  },
-  {
-    user: 'adminA',
-    paths: ['#/reportes', '#/reportes/00000000-0000-4000-8000-00000000001a/2026-08'],
-    mobile: true,
-  },
-  { user: 'socia', paths: ['#/agenda', '#/avisos'], dark: true },
   {
     user: 'norte',
     paths: [
@@ -84,28 +104,30 @@ const SCREENS: { user: DemoUser; paths: string[]; dark?: boolean; mobile?: boole
       '#/solicitudes',
       '#/sugerencias',
       '#/asuntos',
+      `#/asuntos/${MATTER}`,
       '#/documentos',
       '#/agenda',
       '#/avisos',
     ],
-    dark: true,
     mobile: true,
   },
 ];
 
-for (const { user, paths, dark, mobile } of SCREENS) {
-  test(`${user}${dark ? ' (dark)' : ''}${mobile ? ' (phone)' : ''}: ${paths.join(' ')}`, async ({
-    browser,
-  }) => {
-    const context = await device(browser, { mobile: mobile ?? false });
-    const page = await context.newPage();
-    if (dark) await page.emulateMedia({ colorScheme: 'dark' });
-    await signIn(page, user);
-    for (const path of paths) {
-      await page.goto(path);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await audit(page, `${user} ${path}`);
-    }
-    await context.close();
-  });
+for (const { user, paths, mobile } of SCREENS) {
+  for (const dark of [false, true]) {
+    test(`${user}${dark ? ' (dark)' : ''}${mobile ? ' (phone)' : ''}: ${paths.join(' ')}`, async ({
+      browser,
+    }) => {
+      const context = await device(browser, { mobile: mobile ?? false });
+      const page = await context.newPage();
+      if (dark) await page.emulateMedia({ colorScheme: 'dark' });
+      await signIn(page, user);
+      for (const path of paths) {
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await audit(page, `${user} ${path}${dark ? ' dark' : ''}`);
+      }
+      await context.close();
+    });
+  }
 }

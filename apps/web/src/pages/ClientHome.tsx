@@ -54,7 +54,7 @@ function UnitsTable({ tasks }: { tasks: Row[] }) {
   }, [tasks, entidades, today, t]);
 
   return (
-    <div className="-mx-5 overflow-x-auto">
+    <div className="relative -mx-5 overflow-x-auto">
       <table className="w-full min-w-[34rem] text-left text-sm">
         <thead className="text-muted-foreground">
           <tr className="border-b border-border">

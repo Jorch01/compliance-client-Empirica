@@ -78,6 +78,10 @@ test('the portal opens without network, from what the device keeps', async ({ br
   const page = await context.newPage();
   await signIn(page, 'socia');
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  // As when someone opens the portal again: the service worker already serves the page.
+  await page.reload();
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  await expect(page.getByRole('heading', { level: 1, name: 'Hola, Socia' })).toBeVisible();
 
   await context.setOffline(true);
   await page.reload();

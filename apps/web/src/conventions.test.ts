@@ -27,6 +27,17 @@ describe('web conventions', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('every scroll container is positioned, so screen-reader text in it does not widen the page', () => {
+    // An `sr-only` text is absolutely positioned: inside an unpositioned scroll
+    // container it escapes the clipping and makes the page scroll sideways at 320 px.
+    const offenders = Object.entries(sources).flatMap(([path, text]) =>
+      [...text.matchAll(/className="([^"]*\boverflow(?:-x)?-(?:auto|scroll)\b[^"]*)"/g)]
+        .filter((m) => !/\b(?:relative|absolute|fixed|sticky)\b/.test(m[1] ?? ''))
+        .map((m) => `${path}: ${m[1] ?? ''}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it('ships a version its own backend accepts', () => {
     expect(APP_VERSION).not.toBe('0.0.0');
     expect(compareVersions(APP_VERSION, MIN_APP_VERSION)).toBeGreaterThanOrEqual(0);
