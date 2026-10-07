@@ -399,7 +399,7 @@ Por fase se agregan: modo mock con MSW y datos 100 % ficticios ("Cliente Demo, S
 | F4   | Trámites, Compliance (con su heatmap y su botón "¿Cómo se lee?"), Contratos, Solicitudes                                                                                                                                                                                                                                                                             | Matriz de compliance y pipeline de trámites                                                       | **Aprobada** (2026-10-04) |
 | F5   | Calendarios (bidireccional, ACL, ICS) y correos                                                                                                                                                                                                                                                                                                                      | Un vencimiento del portal aparece en Calendar y en el ICS; las citas movidas en Calendar regresan | **Aprobada** (2026-10-05) |
 | F6   | IA y reportes mensuales                                                                                                                                                                                                                                                                                                                                              | Reporte PDF de prueba con formato institucional                                                   | **Aprobada** (2026-10-07) |
-| F7   | Rendimiento, auditoría sin conexión (incluido iOS), accesibilidad, seguridad, despliegue en `portal.empirica.mx`, documentación                                                                                                                                                                                                                                      | Checklist de seguridad aprobado y producción                                                      | En revisión (§ 22)        |
+| F7   | Rendimiento, auditoría sin conexión (incluido iOS), accesibilidad, seguridad, despliegue en `portal.empirica.mx`, documentación                                                                                                                                                                                                                                      | Checklist de seguridad aprobado y producción                                                      | **Aprobada** (2026-10-07) |
 
 ## 12. Riesgos
 
@@ -824,3 +824,30 @@ La política de contenido y el bloqueo de marcos no están en el modo de desarro
 
 - Restaurar un respaldo es manual (`OPERACION.md` § 2); una herramienta de un clic solo se justifica si llega a hacer falta.
 - El diccionario en inglés sigue en la primera carga (unos 20 KB): bajarlo aparte complicaría el reporte en inglés, que lo usa aunque la pantalla esté en español.
+
+## 23. Después de la Fase 7: qué sigue (propuesta, 7 de octubre de 2026)
+
+Las siete fases del plan (§ 11) están aprobadas. Lo que sigue ya no es construir el portal sino ponerlo a trabajar con los pilotos y corregir lo que su uso muestre.
+
+**Ya, para entrar en producción** (lo tuyo, en este orden):
+
+1. En cuanto termine la publicación de la Fase 7 (GitHub → **Actions**, la ejecución de `main` en verde): entrar de verdad con Google y con correo en una ventana de incógnito (`SETUP.md`, paso 12.9).
+2. Las verificaciones de seguridad que faltan (`SETUP.md`, pasos 12.1 a 12.5), con el check nuevo **Pruebas en Safari (WebKit)** en las reglas de `main`.
+3. La prueba en iPhone y Android (`SETUP.md`, paso 12.6). Dime en especial si Google respondió dentro de la app instalada: de eso depende el primer punto de abajo.
+4. Dar de alta a los pilotos (`ARRANQUE.md`) y pedirles que instalen el portal.
+5. Pendientes chicos de fases anteriores: Outlook con el enlace personal (paso 12.7) y la subida de 30 MB (paso 12.8).
+
+**Lo que propongo después: Fase 8, estabilización con los pilotos** (dos a cuatro semanas de uso real; la fase se cierra cuando lo que reporten esté resuelto o decidido):
+
+1. **Google dentro de la app instalada en iPhone**, si el paso 12.6 muestra que no responde: servir el asistente de inicio de sesión de Firebase desde `portal.empirica.mx` (lo que la § 15 dejó como solución) y entrar ahí sin ventana emergente. Te pediría agregar una dirección autorizada en Google Cloud.
+2. **Lo que reporten los pilotos** en **Sugerencias o errores**, por orden de impacto.
+3. **Medir en producción** a la semana: minutos de triggers de Apps Script (se estimaron unos 20 de 90 al día, `LIMITES.md`), correos, consultas a la IA y errores en **Ejecuciones**. Ajustar si algo se acerca a su tope.
+4. **Contenido jurídico real**: las plantillas de trámite y el catálogo de obligaciones que me mandes, cargados tal cual (nada jurídico se inventa).
+
+**Opcionales que quedaron pendientes de tu decisión** (ninguno bloquea a los pilotos):
+
+- Un reporte mensual por unidad de negocio (hoy, uno consolidado por cliente; § 20).
+- Un calendario de Google por abogado (hoy, su enlace personal; § 19).
+- La verificación de marca de Google, para que la pantalla de consentimiento diga "Empírica Portal" (gratuita; § 15).
+- Clasificar solicitudes o extraer fechas de documentos con IA (capa de pago y autorización de cada cliente; D62).
+- Subir el tope de archivos de 10 a 30 MB, si pasa la prueba del paso 12.8.

@@ -19,7 +19,8 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F4 aprobada** (2026-10-04): trámites (tablero y etapas), compliance (matriz, periodos, evidencia y validación), contratos y solicitudes (clasificar y convertir); resumen en `docs/PLAN.md` § 18.
 - **F5 aprobada** (2026-10-05): agenda, enlace personal (ICS), calendarios de Google (el del despacho para los socios y uno por cliente), campana, resumen diario e invitaciones por correo; resumen en `docs/PLAN.md` § 19. La cuenta propietaria autorizó Calendar y correo ese día (`docs/SETUP.md`, paso 11).
 - **F6 aprobada** (2026-10-07): reportes mensuales (PDF hecho en el navegador), índice de salud e IA seudonimizada; resumen en `docs/PLAN.md` § 20.
-- **F7 entregada, en revisión** (2026-10-07): rendimiento, sin conexión e iOS (WebKit en el CI), accesibilidad, seguridad, operación y documentación; plan en `docs/PLAN.md` § 21 y resumen en § 22. Se aprueba con el checklist de `docs/SEGURIDAD.md` § 6 (los puntos del socio están en `docs/SETUP.md`, paso 12).
+- **F7 aprobada** (2026-10-07): rendimiento, sin conexión e iOS (WebKit en el CI), accesibilidad, seguridad, operación y documentación; resumen en `docs/PLAN.md` § 22. Fusionada en `main` (PR #18). Quedan las verificaciones del socio (`docs/SETUP.md`, paso 12).
+- **Qué sigue** (propuesta en `docs/PLAN.md` § 23): producción con los pilotos y una Fase 8 de estabilización; esperar a que el socio la confirme antes de empezarla.
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
 - **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): el portal desde la fusión de F2 (2026-10-04) y el aviso de privacidad en `/privacidad/`. Cada fusión a `main` publica el portal y el backend.
 
