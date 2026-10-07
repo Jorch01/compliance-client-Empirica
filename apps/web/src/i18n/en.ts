@@ -871,6 +871,10 @@ export const en: Messages = {
     report: 'Report the error',
     retry: 'Try again',
     home: 'Go home',
+    chunkTitle: 'This screen could not open',
+    chunkBody:
+      'Its code did not arrive: the connection may have failed, or there is a new version of the portal. Reload the page; nothing you saved is lost.',
+    reload: 'Reload',
   },
   visibility: {
     label: 'Who sees it',

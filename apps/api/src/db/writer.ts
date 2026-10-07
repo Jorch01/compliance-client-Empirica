@@ -104,7 +104,7 @@ export class Writer {
     }
   }
 
-  /** Appends an audit entry. */
+  /** Appends an audit entry (without reading the log: Database.append). */
   audit(
     accion: AuditAction,
     table: TableName | 'Sistema',
@@ -113,7 +113,7 @@ export class Writer {
     antes: Value,
     despues: Value,
   ): void {
-    this.db.table('Bitacora').put({
+    this.db.append('Bitacora', {
       id: this.db.env.uuid(),
       createdAt: this.meta.serverNow,
       createdBy: this.meta.userId,

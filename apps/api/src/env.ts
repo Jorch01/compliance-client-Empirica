@@ -27,6 +27,8 @@ export const PROP = {
   geminiKey: 'GEMINI_API_KEY',
   /** The day's AI requests, as JSON {dia, usadas, agotada}: Google counts by California's day. */
   aiUsage: 'AI_USAGE',
+  /** The last year whose audit entries moved to their own spreadsheet in Respaldos (F7). */
+  auditArchivedYear: 'AUDIT_ARCHIVED_YEAR',
 } as const;
 
 export interface Env {

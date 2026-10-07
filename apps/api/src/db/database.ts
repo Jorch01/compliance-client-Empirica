@@ -23,7 +23,7 @@ import {
 import { PROP, type Env } from '../env.ts';
 import { ApiError } from '../errors.ts';
 import type { GSpreadsheet } from '../google.ts';
-import { SheetTable } from './table.ts';
+import { AppendLog, SheetTable } from './table.ts';
 
 export function openSpreadsheet(env: Env): GSpreadsheet {
   const id = env.prop(PROP.spreadsheetId);
@@ -35,6 +35,7 @@ export class Database {
   readonly env: Env;
   readonly #ss: GSpreadsheet;
   readonly #tables = new Map<TableName, SheetTable>();
+  readonly #logs = new Map<TableName, AppendLog>();
 
   constructor(env: Env, ss: GSpreadsheet = openSpreadsheet(env)) {
     this.env = env;
@@ -48,6 +49,10 @@ export class Database {
   table(name: TableName): SheetTable {
     let t = this.#tables.get(name);
     if (!t) {
+      // Both would write after the same last row.
+      if (this.#logs.get(name)?.pendingWrites) {
+        throw new ApiError('INTERNAL', `La pestaña ${name} se está agregando: no se lee a la vez.`);
+      }
       const sheet = this.#ss.getSheetByName(name);
       if (!sheet) throw new ApiError('INTERNAL', `Falta la pestaña ${name}: ejecuta setup().`);
       t = new SheetTable(sheet, TABLES[name]);
@@ -58,6 +63,27 @@ export class Database {
 
   rows(name: TableName): Row[] {
     return this.table(name).all();
+  }
+
+  /**
+   * Adds a row at the end of an append-only tab (the audit log) without
+   * reading it. If this request already read the tab, the row goes through
+   * that copy instead, so both never write over each other.
+   */
+  append(name: TableName, row: Row): void {
+    const loaded = this.#tables.get(name);
+    if (loaded) {
+      loaded.put(row);
+      return;
+    }
+    let log = this.#logs.get(name);
+    if (!log) {
+      const sheet = this.#ss.getSheetByName(name);
+      if (!sheet) throw new ApiError('INTERNAL', `Falta la pestaña ${name}: ejecuta setup().`);
+      log = new AppendLog(sheet, TABLES[name]);
+      this.#logs.set(name, log);
+    }
+    log.append(row);
   }
 
   /** Lookup used by the permission rules; sees changes made in this request. */
@@ -74,12 +100,15 @@ export class Database {
     for (const name of TABLE_NAMES) {
       const t = this.#tables.get(name);
       if (t?.pendingWrites) t.flush();
+      const log = this.#logs.get(name);
+      if (log?.pendingWrites) log.flush();
     }
   }
 
   get pendingWrites(): number {
     let n = 0;
     for (const t of this.#tables.values()) n += t.pendingWrites;
+    for (const log of this.#logs.values()) n += log.pendingWrites;
     return n;
   }
 }

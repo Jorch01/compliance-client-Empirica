@@ -23,6 +23,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "size": "node scripts/first-load.ts",
     "brand:vector": "node scripts/brand/extract-vector.ts",
     "brand:palette": "node scripts/brand/extract-palette.ts",
     "brand:tokens": "node scripts/brand/build-tokens.ts",

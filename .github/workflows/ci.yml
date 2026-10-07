@@ -48,6 +48,11 @@ jobs:
       - name: Compilar
         run: npm run build
 
+      # What a first visit downloads before the sign-in, under its ceiling
+      # (scripts/first-load.ts): each screen loads when it opens.
+      - name: Peso de la primera carga
+        run: npm run size
+
   # The portal in a real browser (Chromium) against the real backend code
   # with fictitious data: two devices converging after working offline,
   # nothing internal reaching a client, and WCAG 2.2 AA checked by axe.

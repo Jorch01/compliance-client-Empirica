@@ -865,6 +865,10 @@ export const es = {
     report: 'Avisar del error',
     retry: 'Reintentar',
     home: 'Ir al inicio',
+    chunkTitle: 'No se pudo abrir esta pantalla',
+    chunkBody:
+      'Su código no llegó: quizá falló la conexión o hay una versión nueva del portal. Recarga la página; no se pierde nada de lo que guardaste.',
+    reload: 'Recargar',
   },
   visibility: {
     label: 'Quién lo ve',

@@ -32,6 +32,7 @@ npm run dev:mock       # portal con datos ficticios: el backend real (apps/api) 
 npm run check          # formato + lint + tipos + pruebas (igual que el CI)
 npm run test:e2e       # Playwright sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
 npm run build          # web (apps/web/dist) y Apps Script (apps/api/build/Code.js)
+npm run size           # peso de la primera carga del portal y su tope (tras build; lo corre el CI)
 npm test               # solo pruebas (Vitest, todos los paquetes)
 npm run brand:vector   # Pantone y logos desde brand/private/EMPIRICA_FIRMAS.ai (requiere pdftocairo)
 npm run brand:palette  # extrae colores de /brand -> brand/palette.json (requiere pdfimages/poppler)
@@ -123,6 +124,10 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-07 | IA solo en el servidor, `METADATA_ONLY` con marcadores; modelo autodetectado; aviso al 80 % de `limiteDiarioIA` (D60, D61)                      | Términos de la capa gratuita de Gemini                                                  |
 | 2026-10-07 | Sin extracción ni clasificación con IA hasta que el socio decida (D62)                                                                          | Requieren documentos completos o texto libre                                            |
 | 2026-10-07 | App y `MIN_APP_VERSION` 0.6.0; los ajustes nuevos de `Config` se crean solos (D63)                                                              | Una app vieja no tiene dónde guardar los reportes                                       |
+| 2026-10-07 | Bitácora: se agrega al final sin leerla (`AppendLog`, D64)                                                                                      | Leerla en cada guardado hacía cada uno más lento                                        |
+| 2026-10-07 | Avisos leídos, 60 días; sin leer, un año; cada dispositivo los borra con la misma regla (D65)                                                   | La campana y la sincronización leen menos, sin avisar a nadie                           |
+| 2026-10-07 | Bitácora del año anterior a un libro propio en `Respaldos` cada 1 de enero (D66)                                                                | El tope de celdas del libro                                                             |
+| 2026-10-07 | Cada pantalla, su propio archivo, precargadas en segundo plano; tope de 260 KB a la primera carga en el CI (D67)                                | 312 → 240 KB; que no vuelva a crecer sin darnos cuenta                                  |
 
 ## Gotchas del entorno
 
