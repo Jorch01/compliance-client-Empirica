@@ -1349,6 +1349,8 @@ export const es = {
       REPORTE_ENVIADO: 'El despacho te envió el reporte de {{titulo}}.',
       IA_CUOTA:
         'Se acabaron por hoy las consultas a la IA ({{titulo}} usadas). Vuelven después de la medianoche de California.',
+      IA_CUOTA_ALTA:
+        'Van {{titulo}} consultas de IA hoy. Al llegar al límite, la IA se detiene hasta mañana.',
       IA_MODELO: 'El modelo de IA configurado ya no existe; el portal cambió a {{titulo}}.',
     },
   },
@@ -1606,6 +1608,8 @@ export const es = {
     answer: 'Respuesta',
     related: 'Para abrir',
     disclaimer: 'Respuesta de la IA: verifica las fechas en el portal antes de actuar.',
+    usage: 'Consultas de IA hoy: {{used}} de {{limit}}.',
+    usageNoLimit: 'Consultas de IA hoy: {{used}}.',
     reminder: 'Redactar recordatorio con IA',
     reminderHint: 'El borrador queda en el comentario: revísalo antes de publicarlo.',
     errors: {

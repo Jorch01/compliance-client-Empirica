@@ -1,7 +1,7 @@
-import { useState, type SubmitEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
-import type { AiAnswerData } from '@empirica/shared';
+import type { AiAnswerData, AiStatusData } from '@empirica/shared';
 import { useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
@@ -9,6 +9,27 @@ import { Card } from '../../ui/Card.tsx';
 import { TextField } from '../../ui/Field.tsx';
 import { Icon } from '../../ui/Icon.tsx';
 import { aiErrorText, aiOn } from './ai.ts';
+
+/** The partners who administer the portal see today's AI use (online; nothing offline). */
+function useAiStatus(enabled: boolean): AiStatusData | null {
+  const { call } = usePortal();
+  const [status, setStatus] = useState<AiStatusData | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    call<AiStatusData>('ai.status', {})
+      .then(({ data }) => {
+        if (!cancelled) setStatus(data);
+      })
+      .catch(() => {
+        /* offline: nothing to show */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [call, enabled]);
+  return status;
+}
 
 /**
  * "Pregúntale al portal" (IA.md): a question about what this person sees,
@@ -23,7 +44,9 @@ export function AskPortal() {
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<AiAnswerData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  if (!aiOn(me, scope.clientId)) return null;
+  const on = aiOn(me, scope.clientId);
+  const status = useAiStatus(on && me.isAdmin);
+  if (!on) return null;
 
   const ask = async (event: SubmitEvent): Promise<void> => {
     event.preventDefault();
@@ -103,6 +126,15 @@ export function AskPortal() {
           </div>
         ) : null}
       </div>
+      {status ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {status.agotada
+            ? t('ai.errors.AI_QUOTA')
+            : status.limiteDiario
+              ? t('ai.usage', { used: status.usadasHoy, limit: status.limiteDiario })
+              : t('ai.usageNoLimit', { used: status.usadasHoy })}
+        </p>
+      ) : null}
     </Card>
   );
 }

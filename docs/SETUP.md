@@ -4,20 +4,20 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 
 ## 1. Lo que falta, todo junto
 
-| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                                            |
-| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                                                   |
-| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                                         |
-| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | ✔ 3 oct                                                                           |
-| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json`                   |
-| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct; Firebase ✔ 5 oct (lo confirmó `setup`)                    |
-| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | Pendiente                                                                         |
-| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`                    |
-| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages, con **Enforce HTTPS**        |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                                     |
-| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                        |
-| 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                           |
-| 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | ✔ 5 oct: autorizados; `setup` creó "Empírica · Despacho" y lee la cuota de correo |
+| #   | Qué                             | Cómo                                                 | Se manda por el chat                                          | Estado                                                                                      |
+| --- | ------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 1   | Decidir la cuenta propietaria   | Recomendación: una cuenta gratuita dedicada (paso 1) | Sí: el correo de la cuenta                                    | ✔ 3 oct: cuenta dedicada creada                                                             |
+| 2   | Proyecto de Firebase            | Paso 2                                               | Sí: el bloque `firebaseConfig` (no es secreto)                | ✔ 3 oct: proyecto `empirica-portal-d86b4`                                                   |
+| 3   | Restringir las API keys         | Paso 3                                               | No                                                            | ✔ 3 oct                                                                                     |
+| 4   | Proyecto de Apps Script         | Paso 4                                               | Sí: el ID de la secuencia de comandos                         | ✔ 3 oct: es de la cuenta dedicada; ID en `apps/api/.clasp.json`                             |
+| 5   | Script Properties               | Paso 5                                               | **No: son secretos**                                          | `ADMIN_EMAILS` ✔ 3 oct; Firebase ✔ 5 oct (lo confirmó `setup`)                              |
+| 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | ✔ 5 oct: en Script Properties; 7 oct: cifras de cuota (~1,000 a 1,500 al día en Flash-Lite) |
+| 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`                              |
+| 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages, con **Enforce HTTPS**                  |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                                               |
+| 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                                  |
+| 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                                     |
+| 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | ✔ 5 oct: autorizados; `setup` creó "Empírica · Despacho" y lee la cuota de correo           |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -104,6 +104,8 @@ Guarda. Estos valores no aparecen en el repositorio ni en el navegador.
 2. Pégala en Script Properties como `GEMINI_API_KEY` (paso 5). **No me la mandes.**
 3. En AI Studio, abre la página de límites de uso del proyecto y mándame cuántas peticiones por día da para Flash y Flash-Lite.
 4. No actives facturación: el modo `METADATA_ONLY` está pensado para el nivel gratuito (`IA.md`).
+5. Desde la Fase 6 el portal la usa. No hay que autorizar nada nuevo: al fusionar, la primera petición crea los ajustes `modeloIA` (vacío: el portal elige el modelo), `limiteDiarioIA` (1000: el aviso al 80 %) y `pesosSalud`. Si AI Studio muestra otra cifra diaria para tu proyecto, cambia `limiteDiarioIA` en la pestaña `Config`.
+6. Para comprobar la key (opcional): con el editor de Apps Script cerrado desde antes de fusionar, ábrelo en una ventana de incógnito y ejecuta `setup`. El registro dice `Revisado: Gemini: la clave funciona; el portal usará gemini-3.5-flash-lite.` (o qué falla). No edites ni guardes nada en el editor.
 
 ### Paso 7 · Dominio en GoDaddy (cuando publiquemos)
 

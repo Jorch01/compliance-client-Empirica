@@ -32,6 +32,7 @@ const KIND_ICON: Record<NotificationKind, IconName> = {
   REPORTE_POR_PREPARAR: 'file',
   REPORTE_ENVIADO: 'file',
   IA_CUOTA: 'alert',
+  IA_CUOTA_ALTA: 'clock',
   IA_MODELO: 'info',
 };
 

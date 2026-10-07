@@ -35,11 +35,12 @@ export const CONFIG_DEFAULTS: readonly ConfigDefault[] = [
   { clave: 'diasEsperaCliente', valor: '3', publica: true },
   { clave: 'urlPortal', valor: 'https://portal.empirica.mx/', publica: true },
   { clave: 'reservaCorreos', valor: '10', publica: false },
-  // F6: the AI model ('' = the portal picks the best stable Flash-Lite), the
-  // day's limit the partner reads in AI Studio ('' = unknown), and the
-  // weights of the health index.
+  // F6: the AI model ('' = the portal picks the best stable Flash-Lite); the
+  // day's limit of the free tier, for the 80 % warning: the low end of what
+  // the partner read for Flash-Lite (2026-10-07: ~1,000 to 1,500 a day; ''
+  // = unknown, no warning); and the weights of the health index.
   { clave: 'modeloIA', valor: '', publica: false },
-  { clave: 'limiteDiarioIA', valor: '', publica: false },
+  { clave: 'limiteDiarioIA', valor: '1000', publica: false },
   {
     clave: 'pesosSalud',
     valor: JSON.stringify(DEFAULT_HEALTH_WEIGHTS),

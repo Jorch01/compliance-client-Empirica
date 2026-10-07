@@ -1357,6 +1357,8 @@ export const en: Messages = {
       REPORTE_ENVIADO: 'The firm sent you the report of {{titulo}}.',
       IA_CUOTA:
         'The AI requests are used up for today ({{titulo}} used). They return after midnight in California.',
+      IA_CUOTA_ALTA:
+        '{{titulo}} AI requests used today. At the limit, the AI stops until tomorrow.',
       IA_MODELO: 'The configured AI model no longer exists; the portal switched to {{titulo}}.',
     },
   },
@@ -1619,6 +1621,8 @@ export const en: Messages = {
     answer: 'Answer',
     related: 'To open',
     disclaimer: 'AI answer: check the dates in the portal before acting.',
+    usage: 'AI requests today: {{used}} of {{limit}}.',
+    usageNoLimit: 'AI requests today: {{used}}.',
     reminder: 'Draft a reminder with AI',
     reminderHint: 'The draft goes into the comment: review it before posting.',
     errors: {

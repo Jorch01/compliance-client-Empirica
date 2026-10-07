@@ -235,6 +235,26 @@ describe('the model and Google’s limits', () => {
     ).toEqual([[ID.socio, 'gemini-3.5-flash-lite']]);
   });
 
+  it('at 80 % of the day’s limit the partners hear it, once a day', () => {
+    const w = createWorld();
+    const config = w.rows('Config').find((c) => c.clave === 'limiteDiarioIA');
+    // The low end of the free tier the partner read for Flash-Lite.
+    expect(config?.valor).toBe('1000');
+    w.edit('Config', config?.id ?? '', { valor: '5' });
+    for (let i = 0; i < 5; i++) expect(summary(w, ID.abogado).ok).toBe(true);
+    expect(
+      w
+        .rows('Notificaciones')
+        .filter((n) => n.tipo === 'IA_CUOTA_ALTA')
+        .map((n) => [n.usuarioId, n.mensaje]),
+    ).toEqual([[ID.socio, '4/5']]);
+    expect(w.ok<AiStatusData>('ai.status', {}, { as: ID.socio })).toMatchObject({
+      usadasHoy: 5,
+      limiteDiario: 5,
+      agotada: false,
+    });
+  });
+
   it('a per-minute limit: one more try after a pause; twice, try in a minute', () => {
     const w = createWorld();
     w.google.gemini.failNext = ['minute'];
