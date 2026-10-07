@@ -55,6 +55,13 @@ export function captureErrors(): void {
   window.addEventListener('unhandledrejection', (event) => {
     recordError(event.reason);
   });
+  // Something the security policy refused (src/security/csp.ts): say what, and from where.
+  document.addEventListener('securitypolicyviolation', (event) => {
+    const origin = /^https?:/.test(event.blockedURI)
+      ? new URL(event.blockedURI).origin
+      : event.blockedURI;
+    recordError(`CSP ${event.effectiveDirective}: ${origin || 'inline'}`, event.sourceFile);
+  });
 }
 
 export function diagnostics(sync: SyncStatus, route: string): Record<string, JsonValue> {

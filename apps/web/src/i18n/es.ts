@@ -284,6 +284,11 @@ export const es = {
     CLIENTE_COLABORADOR: 'Colaborador',
     CLIENTE_LECTURA: 'Solo lectura',
   },
+  framed: {
+    title: 'Abre el portal en su propia ventana',
+    body: 'Por seguridad, el portal no funciona dentro de otra página.',
+    open: 'Abrir el portal',
+  },
   session: {
     starting: 'Abriendo el portal…',
     needsNetworkTitle: 'Necesitas conexión',

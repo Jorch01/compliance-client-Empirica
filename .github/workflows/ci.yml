@@ -30,6 +30,12 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # What reaches the browser and the server, against the known
+      # vulnerabilities: a high or critical one stops the change. Development
+      # tools are not published (SEGURIDAD.md § 3).
+      - name: Dependencias
+        run: npm audit --omit=dev --audit-level=high
+
       # Cheapest first: a formatting or type error is caught in seconds.
       - name: Formato
         run: npm run format:check

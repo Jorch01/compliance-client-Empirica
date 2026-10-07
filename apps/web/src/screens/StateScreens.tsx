@@ -11,6 +11,7 @@ import { MOCK_MODE } from '../config/api.ts';
 import { reloadToNewVersion } from '../pwa/update.ts';
 import { useSession } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
+import { buttonClass } from '../ui/button-class.ts';
 import { Spinner } from '../ui/Card.tsx';
 import { TextField } from '../ui/Field.tsx';
 import { Icon } from '../ui/Icon.tsx';
@@ -148,6 +149,23 @@ export function ReauthScreen({ days }: { days: number }) {
       }
     >
       <p>{t('lock.reauthBody', { days })}</p>
+    </MessageScreen>
+  );
+}
+
+/** Inside another site's page, where a click could be tricked: the portal only offers to open itself. */
+export function FramedScreen({ href }: { href: string }) {
+  const { t } = useTranslation();
+  return (
+    <MessageScreen
+      title={t('framed.title')}
+      actions={
+        <a href={href} target="_blank" rel="noopener" className={buttonClass('primary')}>
+          {t('framed.open')}
+        </a>
+      }
+    >
+      <p>{t('framed.body')}</p>
     </MessageScreen>
   );
 }

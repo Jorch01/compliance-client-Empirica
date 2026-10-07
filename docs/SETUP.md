@@ -238,6 +238,7 @@ Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es 
 6. **iPhone y Android.** Al cerrar la fase te dejo una lista corta: instalar el portal, usarlo en modo avión y entrar con Google desde la app instalada.
 7. **Outlook** (si alguien lo usa). En Outlook → **Calendario** → **Agregar calendario** → **Suscribirse desde la web** → pega el enlace personal del portal (**Agenda** → **Tu calendario**). Dime si lo acepta y muestra las fechas.
 8. **Opcional: archivos grandes.** Sube a un documento un archivo de unos 30 MB (por ejemplo, un PDF escaneado o un ZIP) y dime si el portal lo acepta. Si pasa, se puede subir el tope de 10 MB (`Config.mbMaxArchivo`).
+9. **Entrar de verdad, después de publicar.** Desde esta fase cada página lleva una política que solo deja cargar lo del portal y lo del inicio de sesión de Google (`SEGURIDAD.md` § 3). Aquí no puedo probar el inicio de sesión real de Google, así que, cuando la fusión se publique, abre `https://portal.empirica.mx` en una ventana de incógnito y entra con **Continuar con Google**; en otra, con correo y contraseña. Si algo no abre o se queda en blanco, dime qué viste o manda un error desde **Sugerencias o errores**: el reporte dice qué bloqueó la política.
 
 ### Actualizar el aviso de privacidad
 

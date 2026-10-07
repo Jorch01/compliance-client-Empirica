@@ -61,6 +61,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - **TypeScript estricto** (`tsconfig.base.json`): `noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `erasableSyntaxOnly` (nada de `enum` ni `namespace`: usar objetos `as const` y uniones), imports relativos **con extensión `.ts`**.
 - `packages/shared/src` y `apps/api/src` también corren en Apps Script: **sin APIs de Node** fuera de las pruebas (lo vigila ESLint).
 - **Colores**: solo tokens. Tailwind no tiene paleta por defecto. Ningún hex se escribe a mano: se cambia la regla en `scripts/brand/build-tokens.ts` y se regenera. Los archivos generados (`palette.json`, `tokens.json`, `tokens.css`, y `apps/web/public/favicon.svg` e `icons/`, de `npm run brand:icons`) no se formatean con Prettier ni se editan a mano.
+- **Política de contenido (CSP)**: cada build lleva la de `apps/web/src/security/csp.ts` (no el servidor de desarrollo). Un dominio nuevo (script, conexión, marco) se agrega ahí con su prueba; las pruebas en el navegador fallan si la política rechaza algo. Nada de scripts en línea ni `eval`.
 - **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI.
 - **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales ni el de la cuenta propietaria: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
 - Excepción: el aviso de privacidad (`apps/web/src/legal/aviso-de-privacidad.txt`) publica tal cual el contacto que el despacho ya publica en empirica.mx. Es texto jurídico: solo cambia con el texto que mande el socio, y una prueba compara la página con el archivo palabra por palabra.
@@ -128,6 +129,8 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-07 | Avisos leídos, 60 días; sin leer, un año; cada dispositivo los borra con la misma regla (D65)                                                   | La campana y la sincronización leen menos, sin avisar a nadie                           |
 | 2026-10-07 | Bitácora del año anterior a un libro propio en `Respaldos` cada 1 de enero (D66)                                                                | El tope de celdas del libro                                                             |
 | 2026-10-07 | Cada pantalla, su propio archivo, precargadas en segundo plano; tope de 260 KB a la primera carga en el CI (D67)                                | 312 → 240 KB; que no vuelva a crecer sin darnos cuenta                                  |
+| 2026-10-07 | CSP en una `<meta>` de cada página y el portal no arranca dentro de un marco ajeno (D68)                                                        | GitHub Pages no admite cabeceras propias                                                |
+| 2026-10-07 | `npm audit` de producción en el CI, falla con alta o crítica (D69)                                                                              | Lo de desarrollo no se publica                                                          |
 
 ## Gotchas del entorno
 

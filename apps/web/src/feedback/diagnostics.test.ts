@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diagnostics, recordError } from './diagnostics.ts';
+import { captureErrors, diagnostics, recordError } from './diagnostics.ts';
 
 const sync = {
   phase: 'idle' as const,
@@ -48,5 +48,21 @@ describe('diagnostics for an error report', () => {
     ]);
     expect(errores[0]?.where).toBe('#/');
     expect(errores[4]).not.toHaveProperty('where');
+  });
+
+  it('notes what the security policy refused: the rule and the origin, not the address', () => {
+    captureErrors();
+    document.dispatchEvent(
+      Object.assign(new Event('securitypolicyviolation'), {
+        blockedURI: 'https://otro.example/script.js?token=secreto',
+        effectiveDirective: 'script-src-elem',
+        sourceFile: 'https://portal.empirica.mx/assets/main.js',
+      }),
+    );
+    const errores = diagnostics(sync, '#/').errores as { message: string; where?: string }[];
+    expect(errores.at(-1)).toMatchObject({
+      message: 'CSP script-src-elem: https://otro.example',
+      where: 'https://portal.empirica.mx/assets/main.js',
+    });
   });
 });

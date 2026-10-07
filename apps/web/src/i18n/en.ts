@@ -288,6 +288,11 @@ export const en: Messages = {
     CLIENTE_COLABORADOR: 'Collaborator',
     CLIENTE_LECTURA: 'Read only',
   },
+  framed: {
+    title: 'Open the portal in its own window',
+    body: 'For security, the portal does not work inside another page.',
+    open: 'Open the portal',
+  },
   session: {
     starting: 'Opening the portal…',
     needsNetworkTitle: 'You need a connection',
