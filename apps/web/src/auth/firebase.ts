@@ -16,6 +16,7 @@ import {
   createUserWithEmailAndPassword,
   indexedDBLocalPersistence,
   initializeAuth,
+  linkWithCredential,
   onIdTokenChanged,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
@@ -48,6 +49,9 @@ const CODES: Record<string, AuthErrorCode> = {
   'auth/cancelled-popup-request': 'popup-closed',
   'auth/network-request-failed': 'network',
   'auth/operation-not-allowed': 'not-allowed',
+  'auth/requires-recent-login': 'recent-login',
+  'auth/provider-already-linked': 'has-password',
+  'auth/credential-already-in-use': 'email-in-use',
 };
 
 function translate(error: unknown): AuthError {
@@ -128,6 +132,12 @@ export function createFirebaseAuth(): AuthClient {
     },
     resetPassword: (email) =>
       run(() => sendPasswordResetEmail(auth, email.trim(), { url: continueUrl() })),
+    addPassword: (password) =>
+      run(async () => {
+        const user = auth.currentUser;
+        if (!user?.email) throw new AuthError('unknown');
+        await linkWithCredential(user, EmailAuthProvider.credential(user.email, password));
+      }),
     reauthenticate: (password) =>
       run(async () => {
         const user = auth.currentUser;

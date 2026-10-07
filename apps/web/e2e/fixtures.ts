@@ -20,17 +20,32 @@ export const USERS = {
 } as const;
 export type DemoUser = keyof typeof USERS;
 
+/**
+ * What the browser refused under the portal's security policy (the built
+ * pages carry it, src/security/csp.ts): no test may cause one.
+ */
+const policyViolations: string[] = [];
+
 /** A device: its own storage, the tour and the install reminder already dismissed. */
 export async function device(
   browser: Browser,
-  options: { tour?: boolean; mobile?: boolean } = {},
+  options: { tour?: boolean; mobile?: boolean; width?: number } = {},
 ): Promise<BrowserContext> {
   const context = await browser.newContext({
     locale: 'es-MX',
     timezoneId: 'America/Cancun',
     ...(options.mobile
-      ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
+      ? {
+          viewport: { width: options.width ?? 390, height: 844 },
+          isMobile: true,
+          hasTouch: true,
+        }
       : {}),
+  });
+  context.on('console', (message) => {
+    if (message.type() === 'error' && /Content Security Policy/i.test(message.text())) {
+      policyViolations.push(message.text());
+    }
   });
   if (!options.tour) {
     const ids = Object.values(USERS).map((u) => u.id);
@@ -61,12 +76,14 @@ export async function syncNow(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: /Al día/ })).toBeVisible({ timeout: 20_000 });
 }
 
-/** A fresh data set before each test: the mock backend starts over. */
+/** A fresh data set before each test (the mock backend starts over), and no policy violations in it. */
 export const test = base.extend<{ fresh: undefined }>({
   fresh: [
     async ({ request }, use) => {
       await request.post('mock-api/reset');
+      policyViolations.length = 0;
       await use(undefined);
+      expect(policyViolations, 'the security policy refused something').toEqual([]);
     },
     { auto: true },
   ],

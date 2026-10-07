@@ -1,40 +1,54 @@
+import { Suspense, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Route, Switch } from 'wouter';
 import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
-import { AgendaPage } from '../pages/Agenda.tsx';
-import { ClientHome } from '../pages/ClientHome.tsx';
-import { ClientsPage } from '../pages/Clients.tsx';
-import { CompliancePage } from '../pages/Compliance.tsx';
-import { CatalogPage } from '../pages/compliance/Catalog.tsx';
-import { NonWorkingDaysPage } from '../pages/compliance/NonWorkingDays.tsx';
-import { ConflictsPage } from '../pages/Conflicts.tsx';
-import { ContractDetailPage } from '../pages/ContractDetail.tsx';
-import { ContractsPage } from '../pages/Contracts.tsx';
-import { ControlCenter } from '../pages/ControlCenter.tsx';
-import { DocumentsPage } from '../pages/Documents.tsx';
-import { FeedbackPage } from '../pages/Feedback.tsx';
-import { FilingDetailPage } from '../pages/FilingDetail.tsx';
-import { FilingsPage } from '../pages/Filings.tsx';
-import { TemplatesPage } from '../pages/filings/Templates.tsx';
-import { HelpPage } from '../pages/Help.tsx';
-import { MatterDetailPage } from '../pages/MatterDetail.tsx';
-import { MattersPage } from '../pages/Matters.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
-import { NoticesPage } from '../pages/Notices.tsx';
-import { ObligationDetailPage } from '../pages/ObligationDetail.tsx';
-import { PendingPage } from '../pages/Pending.tsx';
-import { ReportDetailPage } from '../pages/ReportDetail.tsx';
-import { ReportsPage } from '../pages/Reports.tsx';
-import { PeoplePage } from '../pages/People.tsx';
-import { RequestDetailPage } from '../pages/RequestDetail.tsx';
-import { RequestsPage } from '../pages/Requests.tsx';
-import { TaskDetailPage } from '../pages/TaskDetail.tsx';
-import { TasksPage } from '../pages/Tasks.tsx';
-import { TeamPage } from '../pages/Team.tsx';
 import { usePortal } from '../session/context.ts';
+import { Spinner } from '../ui/Card.tsx';
+import { lazyPage, preloadPages } from './lazy-page.ts';
 import { ScopeProvider } from './ScopeProvider.tsx';
 import { useScope } from './scope.ts';
 import { Shell } from './Shell.tsx';
 import { TourProvider } from './Tour.tsx';
+
+const AgendaPage = lazyPage(() => import('../pages/Agenda.tsx'), 'AgendaPage');
+const ClientHome = lazyPage(() => import('../pages/ClientHome.tsx'), 'ClientHome');
+const ClientsPage = lazyPage(() => import('../pages/Clients.tsx'), 'ClientsPage');
+const CompliancePage = lazyPage(() => import('../pages/Compliance.tsx'), 'CompliancePage');
+const CatalogPage = lazyPage(() => import('../pages/compliance/Catalog.tsx'), 'CatalogPage');
+const NonWorkingDaysPage = lazyPage(
+  () => import('../pages/compliance/NonWorkingDays.tsx'),
+  'NonWorkingDaysPage',
+);
+const ConflictsPage = lazyPage(() => import('../pages/Conflicts.tsx'), 'ConflictsPage');
+const ContractDetailPage = lazyPage(
+  () => import('../pages/ContractDetail.tsx'),
+  'ContractDetailPage',
+);
+const ContractsPage = lazyPage(() => import('../pages/Contracts.tsx'), 'ContractsPage');
+const ControlCenter = lazyPage(() => import('../pages/ControlCenter.tsx'), 'ControlCenter');
+const DocumentsPage = lazyPage(() => import('../pages/Documents.tsx'), 'DocumentsPage');
+const FeedbackPage = lazyPage(() => import('../pages/Feedback.tsx'), 'FeedbackPage');
+const FilingDetailPage = lazyPage(() => import('../pages/FilingDetail.tsx'), 'FilingDetailPage');
+const FilingsPage = lazyPage(() => import('../pages/Filings.tsx'), 'FilingsPage');
+const TemplatesPage = lazyPage(() => import('../pages/filings/Templates.tsx'), 'TemplatesPage');
+const HelpPage = lazyPage(() => import('../pages/Help.tsx'), 'HelpPage');
+const MatterDetailPage = lazyPage(() => import('../pages/MatterDetail.tsx'), 'MatterDetailPage');
+const MattersPage = lazyPage(() => import('../pages/Matters.tsx'), 'MattersPage');
+const NoticesPage = lazyPage(() => import('../pages/Notices.tsx'), 'NoticesPage');
+const ObligationDetailPage = lazyPage(
+  () => import('../pages/ObligationDetail.tsx'),
+  'ObligationDetailPage',
+);
+const PendingPage = lazyPage(() => import('../pages/Pending.tsx'), 'PendingPage');
+const ReportDetailPage = lazyPage(() => import('../pages/ReportDetail.tsx'), 'ReportDetailPage');
+const ReportsPage = lazyPage(() => import('../pages/Reports.tsx'), 'ReportsPage');
+const PeoplePage = lazyPage(() => import('../pages/People.tsx'), 'PeoplePage');
+const RequestDetailPage = lazyPage(() => import('../pages/RequestDetail.tsx'), 'RequestDetailPage');
+const RequestsPage = lazyPage(() => import('../pages/Requests.tsx'), 'RequestsPage');
+const TaskDetailPage = lazyPage(() => import('../pages/TaskDetail.tsx'), 'TaskDetailPage');
+const TasksPage = lazyPage(() => import('../pages/Tasks.tsx'), 'TasksPage');
+const TeamPage = lazyPage(() => import('../pages/Team.tsx'), 'TeamPage');
 
 function Routes() {
   const { me } = usePortal();
@@ -157,14 +171,27 @@ function Routes() {
   );
 }
 
+/** The screen for the address, once its code is here (the first time it opens). */
+function Screens() {
+  const { t } = useTranslation();
+  return (
+    <Suspense fallback={<Spinner label={t('common.loading')} />}>
+      <Routes />
+    </Suspense>
+  );
+}
+
 /** The signed-in portal: the chosen client and unit, the tour, the frame and the screens. */
 export function Portal() {
+  useEffect(() => {
+    void preloadPages();
+  }, []);
   return (
     <ScopeProvider>
       <FeedbackProvider>
         <TourProvider>
           <Shell>
-            <Routes />
+            <Screens />
           </Shell>
         </TourProvider>
       </FeedbackProvider>

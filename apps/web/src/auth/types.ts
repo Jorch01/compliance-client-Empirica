@@ -21,6 +21,10 @@ export const AUTH_ERROR_CODES = [
   'popup-closed',
   'network',
   'not-allowed',
+  /** Adding a password asks for a recent sign-in. */
+  'recent-login',
+  /** The account already has a password. */
+  'has-password',
   'unknown',
 ] as const;
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
@@ -48,6 +52,8 @@ export interface AuthClient {
   /** Reads the user again (after they confirm their email in another tab). */
   reload(): Promise<AuthUser | null>;
   resetPassword(email: string): Promise<void>;
+  /** Adds a password to an account that signs in with Google (so the email works too). */
+  addPassword(password: string): Promise<void>;
   /** Proves again who is at the keyboard (unlocking after inactivity). */
   reauthenticate(password?: string): Promise<void>;
   signOut(): Promise<void>;

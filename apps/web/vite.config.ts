@@ -3,9 +3,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { mockApi } from './mock/plugin.ts';
+import { portalPolicy, privacyPolicy } from './src/security/csp.ts';
 
 // The brand color comes from the generated tokens, never typed twice.
 const tokens = JSON.parse(
@@ -23,6 +24,26 @@ function brandHtml(): Plugin {
   };
 }
 
+/**
+ * Every built page carries its security policy (src/security/csp.ts) before
+ * anything it governs. Not in the dev server, whose inline scripts it would stop.
+ */
+function securityPolicy(apiUrl: string | undefined): Plugin {
+  const charset = '<meta charset="UTF-8" />';
+  return {
+    name: 'empirica-security-policy',
+    apply: 'build',
+    transformIndexHtml: (html, ctx) => {
+      if (!html.includes(charset)) throw new Error(`${ctx.path}: falta ${charset}`);
+      const policy = ctx.path.includes('privacidad') ? privacyPolicy() : portalPolicy(apiUrl);
+      return html.replace(
+        charset,
+        `${charset}\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`,
+      );
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   // "/" for portal.empirica.mx; "/<repo>/" if served from <user>.github.io/<repo>/.
   base: process.env.VITE_BASE ?? '/',
@@ -34,6 +55,9 @@ export default defineConfig(({ mode }) => ({
     react(),
     tailwindcss(),
     brandHtml(),
+    securityPolicy(
+      loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_').VITE_API_URL,
+    ),
     // Installable and usable offline (PLAN.md § 5): our own service worker
     // (sw/sw.ts) keeps the app on the device; it registers in builds only.
     VitePWA({

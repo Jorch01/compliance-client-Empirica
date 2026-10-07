@@ -14,6 +14,8 @@
  *
  * - A document's file waits on the device until the server has the
  *   document's record, and then goes on its own (files.upload).
+ * - Old notices go by the rule the server follows each night
+ *   (isStaleNotice): nobody is told, each device drops its own.
  *
  * It runs when the app opens, when the window comes back, when the network
  * returns, every minute while visible, and shortly after each edit.
@@ -25,6 +27,7 @@ import {
   SyncClock,
   TABLES,
   clientIdOf,
+  isStaleNotice,
   text,
   type Action,
   type FileUploadData,
@@ -246,6 +249,7 @@ export class SyncEngine {
       try {
         await this.#push();
         await this.#pull();
+        await this.#dropOldNotices();
         await this.#sendFiles();
         this.#failures = 0;
         const now = this.#now();
@@ -412,7 +416,9 @@ export class SyncEngine {
               ...(labelOf(local) ? { label: labelOf(local) } : {}),
               ...extra,
             });
-          if (result.status === 'rejected') {
+          // A notice the server no longer has (old ones go each night) just goes.
+          const gone = op.table === 'Notificaciones' && result.code === 'NOT_FOUND';
+          if (result.status === 'rejected' && !gone) {
             await notice('rejected', {
               ...(result.code ? { code: result.code } : {}),
               ...(result.reason ? { reason: result.reason } : {}),
@@ -437,6 +443,14 @@ export class SyncEngine {
     let local: Row | undefined = row;
     for (const op of ops) local = replay(local, op, this.userId);
     if (local) await rowsOf(this.db, table).put(local);
+  }
+
+  /** The server drops old notices each night without telling anyone; so does the device. */
+  async #dropOldNotices(): Promise<void> {
+    const now = this.#now();
+    await rowsOf(this.db, 'Notificaciones')
+      .filter((n) => isStaleNotice(n, now))
+      .delete();
   }
 
   /** The record is gone for this user: so are its queued edits that never left. */

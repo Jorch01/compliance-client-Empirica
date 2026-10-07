@@ -151,3 +151,19 @@ Radios amplios (controles 10 px, tarjetas 16 px, paneles 24 px), sombras suaves 
 1. Nuevos archivos de marca: `npm run brand:vector` (archivo maestro en `brand/private/`) y `npm run brand:palette`.
 2. Cambiar una regla: editar `scripts/brand/build-tokens.ts` y correr `npm run brand:tokens` (regenera `tokens.json`, `tokens.css` y la vista previa, e imprime contraste y validación de gráficas).
 3. `npm run check`: si el contraste o la paleta de gráficas dejan de cumplir, las pruebas fallan.
+
+## 11. Accesibilidad (WCAG 2.2 AA, Fase 7)
+
+Lo que se prueba en cada cambio:
+
+- **Contraste** de cada par de tokens, en claro y en oscuro (`packages/shared/src/brand/tokens.test.ts`).
+- **axe en todas las pantallas**, de los cuatro tipos de usuario, cada una en el tema claro y en el oscuro (`apps/web/e2e/a11y.spec.ts`), y con **los formularios y diálogos abiertos** (`a11y-dialogs.spec.ts`). Incluye el tamaño mínimo de 24 px de botones y enlaces (regla `target-size` de WCAG 2.2).
+- **Teclado** (`keyboard.spec.ts`): «Ir al contenido» salta el menú; al cambiar de pantalla el foco pasa al contenido, no se queda en el enlace del menú; un diálogo retiene el foco, se cierra con Esc y lo devuelve al botón que lo abrió; un cliente manda una solicitud solo con el teclado.
+- **320 px de ancho** sin desplazamiento horizontal en ninguna pantalla (WCAG 1.4.10): las tablas anchas se desplazan dentro de su caja.
+
+Reglas para una pantalla nueva:
+
+- Un solo título `h1`.
+- Una tabla ancha va dentro de un contenedor `relative overflow-x-auto`. Sin `relative`, los textos solo para lectores de pantalla (`sr-only`) escapan del recorte y ensanchan la página; una prueba de convenciones lo exige.
+- Los diálogos, con el componente `Dialog` (el `<dialog>` nativo); los menús, con `Popover`.
+- Su ruta se agrega a `a11y.spec.ts` y a la lista de 320 px de `keyboard.spec.ts`.

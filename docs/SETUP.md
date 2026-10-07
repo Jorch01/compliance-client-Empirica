@@ -18,6 +18,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                                  |
 | 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                                     |
 | 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | ✔ 5 oct: autorizados; `setup` creó "Empírica · Despacho" y lee la cuota de correo           |
+| 13  | Verificaciones de seguridad     | Paso 12, durante la Fase 7                           | Sí: qué quedó listo (nada secreto)                            | Pendiente                                                                                   |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -221,6 +222,33 @@ Si alguna vez quieres revisar o quitar estos permisos: <https://myaccount.google
 
 **La hora del resumen y los días de espera** están en la pestaña `Config` del libro: `horaResumen` (7), `diasEsperaCliente` (3) y `reservaCorreos` (10, los correos que se guardan para invitaciones). Se cambian ahí, en la columna `valor`.
 
+### Paso 12 · Verificaciones de seguridad (Fase 7)
+
+Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es un secreto: mándame solo si quedó lista o qué viste.
+
+1. **Verificación en dos pasos.** En <https://myaccount.google.com> → **Seguridad** → **Verificación en 2 pasos** → actívala en la cuenta propietaria y en la cuenta de Google de cada socio. En la propietaria, revisa también **Tus dispositivos** y **Apps de terceros con acceso a tu cuenta**: no debería haber nada que no reconozcas. Dime quién, además de ti, conoce la contraseña de la cuenta propietaria.
+2. **GitHub.** En el repositorio → **Settings**:
+   - **Advanced Security** (antes "Code security"): activa **Secret scanning** con **Push protection**, y **Dependabot alerts**.
+   - **Rules** → **Rulesets** → **New branch ruleset**: nombre `main`, **Enforcement status: Active**, en **Target branches** agrega la rama predeterminada; marca **Restrict deletions**, **Block force pushes** y **Require status checks to pass**, y agrega los checks **Pruebas**, **Pruebas en el navegador** y **Pruebas en Safari (WebKit)**. No marques que exija aprobaciones de otra persona: tú fusionas tus propios PR.
+3. **Key de Gemini.** En <https://console.cloud.google.com> con la cuenta propietaria → proyecto `empirica-portal` → **APIs y servicios** → **Credenciales** → abre la key que creaste en el paso 6 → **Restricciones de API** → **Restringir clave** → marca solo **Generative Language API** → **Guardar**. En **Restricciones de aplicaciones** deja **Ninguna**: la usa el servidor de Apps Script, que no tiene una dirección fija.
+4. **Firebase.** En <https://console.firebase.google.com> → proyecto → **Authentication** → **Configuración**:
+   - **Acciones del usuario**: confirma que **Protección contra la enumeración de correos** esté activada (en proyectos nuevos viene así).
+   - **Dominios autorizados**: deja `portal.empirica.mx` y los dos de Firebase (`…firebaseapp.com` y `…web.app`); quita `localhost`, que solo sirve para programar en una computadora.
+5. **Respaldos.** En Google Drive de la cuenta propietaria → **Empírica Portal** → **Respaldos** → abre la copia más reciente (su nombre lleva la fecha): debe abrir y tener los datos de la noche anterior, por ejemplo tus clientes en la pestaña `Clientes`. No la edites. `OPERACION.md` explica cómo restaurar una.
+6. **iPhone y Android** (unos 15 minutos, con la fase ya publicada). En el iPhone, con Safari:
+   1. Abre `https://portal.empirica.mx` y entra con tu cuenta.
+   2. **Compartir** → **Agregar a inicio** → **Agregar**, y abre el portal desde su ícono: se ve sin la barra de Safari.
+   3. La app instalada guarda su propia sesión, así que pide entrar otra vez: usa **Continuar con Google**. Si en 15 segundos Google no responde, el portal pasa solo a correo y contraseña. Si siempre entras con Google y no tienes contraseña: en Safari (no en la app), menú de tu cuenta (tu inicial, arriba a la derecha) → **Crear una contraseña**; después entra en la app con tu correo y esa contraseña. Dime si Google respondió dentro de la app.
+   4. Abre **Pendientes** y una tarea. Activa el **modo avión**, cierra la app (desliza hacia arriba) y ábrela otra vez: debe abrir con tus datos y el indicador decir **Sin conexión**.
+   5. Aún en modo avión, marca un punto de la lista de una tarea o escribe un comentario. Quita el modo avión: el indicador pasa a **Al día** y el cambio aparece en la computadora.
+   6. Con red, descarga un documento o un reporte: debe abrirse o guardarse.
+
+   En Android, lo mismo con Chrome, instalando desde el aviso del portal o el menú **⋮** → **Instalar app**. Mándame en qué paso algo falló y qué viste (una captura sirve).
+
+7. **Outlook** (si alguien lo usa). En Outlook → **Calendario** → **Agregar calendario** → **Suscribirse desde la web** → pega el enlace personal del portal (**Agenda** → **Tu calendario**). Dime si lo acepta y muestra las fechas.
+8. **Opcional: archivos grandes.** Sube a un documento un archivo de unos 30 MB (por ejemplo, un PDF escaneado o un ZIP) y dime si el portal lo acepta. Si pasa, se puede subir el tope de 10 MB (`Config.mbMaxArchivo`).
+9. **Entrar de verdad, después de publicar.** Desde esta fase cada página lleva una política que solo deja cargar lo del portal y lo del inicio de sesión de Google (`SEGURIDAD.md` § 3). Aquí no puedo probar el inicio de sesión real de Google, así que, cuando la fusión se publique, abre `https://portal.empirica.mx` en una ventana de incógnito y entra con **Continuar con Google**; en otra, con correo y contraseña. Si algo no abre o se queda en blanco, dime qué viste o manda un error desde **Sugerencias o errores**: el reporte dice qué bloqueó la política.
+
 ### Actualizar el aviso de privacidad
 
 El portal publica el aviso en `https://portal.empirica.mx/privacidad/` (la portada lo enlaza) con el texto exacto de `apps/web/src/legal/aviso-de-privacidad.txt`; una prueba compara la página con ese archivo palabra por palabra. Para cambiarlo, reemplaza el archivo con el texto nuevo, respetando su formato:
@@ -242,9 +270,10 @@ npm run dev          # portal en http://localhost:5173 (contra el backend public
 npm run dev:mock     # portal con datos ficticios y el backend real en tu computadora, sin cuentas
 npm run check        # formato, lint, tipos y pruebas (lo mismo que el CI)
 npm run test:e2e     # pruebas en el navegador (Chromium) sobre el modo de demostración
+npm run test:e2e:webkit # las mismas en WebKit, el motor de Safari
 npm run build        # compila el portal y el Apps Script
 npm run brand:tokens # regenera tokens y vista previa tras cambiar una regla de color
 npm run brand:icons  # regenera los íconos de la app desde los tokens y el símbolo
 ```
 
-`npm run test:e2e` usa el Chromium de Playwright (`npx playwright install chromium` la primera vez). Si ya tienes otro Chromium, indícalo con `CHROMIUM_PATH=/ruta/al/chrome`.
+`npm run test:e2e` usa el Chromium de Playwright (`npx playwright install chromium` la primera vez; para WebKit, `npx playwright install webkit`). Si ya tienes otro Chromium, indícalo con `CHROMIUM_PATH=/ruta/al/chrome`.

@@ -138,7 +138,7 @@ function FirmReports() {
         {!shown.length ? (
           <EmptyState icon="building" title={t('reports.noClients')} />
         ) : (
-          <div className="-mx-5 overflow-x-auto">
+          <div className="relative -mx-5 overflow-x-auto">
             <table className="w-full min-w-[36rem] text-left text-sm">
               <thead className="text-muted-foreground">
                 <tr className="border-b border-border">

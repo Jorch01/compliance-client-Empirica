@@ -5,6 +5,7 @@
  */
 import { ID } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
+import { runNightly } from '../../api/src/maintenance.ts';
 import { createWorld } from '../../api/src/testing/harness.ts';
 import { META } from '../src/sync/engine.ts';
 import { TestBrowser } from './device.ts';
@@ -225,6 +226,33 @@ describe('what the server refuses or keeps', () => {
     expect((await partner.get('Tareas', ID.tNorte1))?.fechaLimite).toBe('2026-10-20');
     expect(await partner.notices()).toMatchObject([{ kind: 'conflict', fields: ['fechaLimite'] }]);
     expect(w.rows('Conflictos').some((c) => c.entidadId === ID.tNorte1)).toBe(true);
+  });
+});
+
+describe('old notices (F7)', () => {
+  // The demo notices were created on 2026-09-01; read ones go after 60 days.
+  it('go from every device by the server’s rule, quietly even where still unread', async () => {
+    const w = createWorld();
+    const phone = new TestBrowser(w, ID.cColab);
+    const laptop = new TestBrowser(w, ID.cColab);
+    await phone.sync();
+    await laptop.sync();
+    laptop.online = false;
+    await phone.engine.mutate('Notificaciones', 'update', ID.notifColab, { leida: true });
+    await phone.sync();
+    w.clock.set('2026-11-02T03:00:00.000-05:00');
+    expect(runNightly(w.env).purgedNotices).toBe(1);
+
+    await phone.sync();
+    expect(await phone.get('Notificaciones', ID.notifColab)).toBeUndefined();
+    // The laptop was away and still has it unread: marking it read is no error.
+    expect((await laptop.get('Notificaciones', ID.notifColab))?.leida).toBe(false);
+    await laptop.engine.mutate('Notificaciones', 'update', ID.notifColab, { leida: true });
+    laptop.online = true;
+    await laptop.sync();
+    expect(await laptop.get('Notificaciones', ID.notifColab)).toBeUndefined();
+    expect(await laptop.notices()).toEqual([]);
+    expect(await laptop.outbox()).toEqual([]);
   });
 });
 

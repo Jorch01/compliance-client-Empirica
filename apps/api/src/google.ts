@@ -24,6 +24,7 @@ export interface GSheet {
   getMaxColumns(): number;
   getRange(row: number, column: number, numRows?: number, numColumns?: number): GRange;
   insertRowsAfter(afterPosition: number, howMany: number): unknown;
+  deleteRows(rowPosition: number, howMany: number): unknown;
   insertColumnsAfter(afterPosition: number, howMany: number): unknown;
   setFrozenRows(rows: number): unknown;
   protect(): GProtection;

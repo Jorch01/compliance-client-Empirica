@@ -107,6 +107,8 @@ export function createMockAuth(): AuthClient {
     sendVerification: () => Promise.resolve(),
     reload: () => Promise.resolve(current?.user ?? null),
     resetPassword: () => Promise.resolve(),
+    // Demo users already sign in with a password.
+    addPassword: () => Promise.reject(new AuthError('has-password')),
     reauthenticate: () => Promise.resolve(),
     signOut: () => {
       save(null);

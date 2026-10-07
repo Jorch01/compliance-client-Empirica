@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 import { Logo } from '../components/Logo.tsx';
@@ -277,9 +277,22 @@ export function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // A new screen starts at the top, with the focus on its content.
+  // A new screen starts at the top, with the focus on its content (not on
+  // the menu link that led there, nor lost with the screen that went), so
+  // the keyboard and a screen reader start from the new screen. Not on the
+  // first one, which just opened, nor when the focus is still on the screen
+  // (an item chosen in a list that shows its detail beside it).
+  const firstScreen = useRef(true);
   useEffect(() => {
     window.scrollTo({ top: 0 });
+    if (firstScreen.current) {
+      firstScreen.current = false;
+      return;
+    }
+    const content = document.getElementById('contenido');
+    const focused = document.activeElement;
+    const stays = focused && focused !== document.body && content?.contains(focused);
+    if (!stays) content?.focus({ preventScroll: true });
   }, [location]);
 
   return (

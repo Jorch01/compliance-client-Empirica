@@ -92,6 +92,8 @@ export const en: Messages = {
     google: 'Continue with Google',
     googleIosHint:
       'In the app installed on an iPhone or iPad, if the Google window does not respond, sign in with your email and password.',
+    googleIosStuck:
+      'Google did not answer inside the installed app. Sign in with your email and password. If you always sign in with Google, open the portal in Safari, sign in with Google and create a password from your account menu.',
     or: 'or',
     privacy: 'Privacy notice',
     invitationOnly: 'Access is by invitation from the firm.',
@@ -115,6 +117,10 @@ export const en: Messages = {
         'The Google window was closed before finishing. Try again, or sign in with your email and password.',
       network: 'No connection. Check your network and try again.',
       'not-allowed': 'This sign-in method is not enabled.',
+      'recent-login':
+        'For security, Google asks that you signed in recently. Sign out, sign in again with Google and create the password right away.',
+      'has-password':
+        'Your account already has a password. If you do not remember it, use "I forgot my password" when signing in.',
       unknown: 'Could not sign in. Please try again.',
     },
     mock: {
@@ -167,6 +173,15 @@ export const en: Messages = {
     reauthTitle: 'Sign in again',
     reauthBody:
       'This device has not connected for {{days}} days. For security, sign in again to see your data.',
+  },
+  account: {
+    googleOnly: 'You sign in with Google.',
+    createPassword: 'Create a password',
+    passwordIntro:
+      'With a password you can also sign in with {{email}}, for example in the app installed on an iPhone, where the Google window sometimes does not respond. You can still sign in with Google.',
+    passwordSave: 'Create password',
+    passwordSaving: 'Creating…',
+    passwordDone: 'Done: from now on you can also sign in with {{email}} and this password.',
   },
   logout: {
     sending: 'Sending changes…',
@@ -287,6 +302,11 @@ export const en: Messages = {
     CLIENTE_ADMIN: 'Administrator',
     CLIENTE_COLABORADOR: 'Collaborator',
     CLIENTE_LECTURA: 'Read only',
+  },
+  framed: {
+    title: 'Open the portal in its own window',
+    body: 'For security, the portal does not work inside another page.',
+    open: 'Open the portal',
   },
   session: {
     starting: 'Opening the portal…',
@@ -871,6 +891,10 @@ export const en: Messages = {
     report: 'Report the error',
     retry: 'Try again',
     home: 'Go home',
+    chunkTitle: 'This screen could not open',
+    chunkBody:
+      'Its code did not arrive: the connection may have failed, or there is a new version of the portal. Reload the page; nothing you saved is lost.',
+    reload: 'Reload',
   },
   visibility: {
     label: 'Who sees it',

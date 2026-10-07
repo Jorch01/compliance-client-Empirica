@@ -18,7 +18,8 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F3 aprobada** (2026-10-04): asuntos, tareas, comentarios, documentos (archivos en Drive) y conflictos; resumen en `docs/PLAN.md` § 17.
 - **F4 aprobada** (2026-10-04): trámites (tablero y etapas), compliance (matriz, periodos, evidencia y validación), contratos y solicitudes (clasificar y convertir); resumen en `docs/PLAN.md` § 18.
 - **F5 aprobada** (2026-10-05): agenda, enlace personal (ICS), calendarios de Google (el del despacho para los socios y uno por cliente), campana, resumen diario e invitaciones por correo; resumen en `docs/PLAN.md` § 19. La cuenta propietaria autorizó Calendar y correo ese día (`docs/SETUP.md`, paso 11).
-- **F6 entregada** (2026-10-07): reportes mensuales (PDF hecho en el navegador), índice de salud e IA seudonimizada; resumen en `docs/PLAN.md` § 20. **Espera la aprobación del socio.**
+- **F6 aprobada** (2026-10-07): reportes mensuales (PDF hecho en el navegador), índice de salud e IA seudonimizada; resumen en `docs/PLAN.md` § 20.
+- **F7 entregada, en revisión** (2026-10-07): rendimiento, sin conexión e iOS (WebKit en el CI), accesibilidad, seguridad, operación y documentación; plan en `docs/PLAN.md` § 21 y resumen en § 22. Se aprueba con el checklist de `docs/SEGURIDAD.md` § 6 (los puntos del socio están en `docs/SETUP.md`, paso 12).
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
 - **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): el portal desde la fusión de F2 (2026-10-04) y el aviso de privacidad en `/privacidad/`. Cada fusión a `main` publica el portal y el backend.
 
@@ -29,8 +30,10 @@ npm install            # todo el monorepo (npm workspaces)
 npm run dev            # portal en http://localhost:5173
 npm run dev:mock       # portal con datos ficticios: el backend real (apps/api) dentro de Vite, sin cuentas
 npm run check          # formato + lint + tipos + pruebas (igual que el CI)
-npm run test:e2e       # Playwright sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
+npm run test:e2e       # Playwright (Chromium) sobre el build de demostración (CHROMIUM_PATH=/opt/pw-browsers/chromium aquí)
+npm run test:e2e:webkit # las mismas en WebKit (Safari); aquí no hay WebKit: corren en el CI
 npm run build          # web (apps/web/dist) y Apps Script (apps/api/build/Code.js)
+npm run size           # peso de la primera carga del portal y su tope (tras build; lo corre el CI)
 npm test               # solo pruebas (Vitest, todos los paquetes)
 npm run brand:vector   # Pantone y logos desde brand/private/EMPIRICA_FIRMAS.ai (requiere pdftocairo)
 npm run brand:palette  # extrae colores de /brand -> brand/palette.json (requiere pdfimages/poppler)
@@ -59,7 +62,8 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - **TypeScript estricto** (`tsconfig.base.json`): `noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `erasableSyntaxOnly` (nada de `enum` ni `namespace`: usar objetos `as const` y uniones), imports relativos **con extensión `.ts`**.
 - `packages/shared/src` y `apps/api/src` también corren en Apps Script: **sin APIs de Node** fuera de las pruebas (lo vigila ESLint).
 - **Colores**: solo tokens. Tailwind no tiene paleta por defecto. Ningún hex se escribe a mano: se cambia la regla en `scripts/brand/build-tokens.ts` y se regenera. Los archivos generados (`palette.json`, `tokens.json`, `tokens.css`, y `apps/web/public/favicon.svg` e `icons/`, de `npm run brand:icons`) no se formatean con Prettier ni se editan a mano.
-- **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI.
+- **Política de contenido (CSP)**: cada build lleva la de `apps/web/src/security/csp.ts` (no el servidor de desarrollo). Un dominio nuevo (script, conexión, marco) se agrega ahí con su prueba; las pruebas en el navegador fallan si la política rechaza algo. Nada de scripts en línea ni `eval`.
+- **Accesibilidad**: WCAG 2.2 AA. El semáforo siempre lleva icono y texto. Las pruebas de contraste y de paleta de gráficas son parte del CI. Una pantalla nueva: un `h1`, tablas anchas en `relative overflow-x-auto`, y su ruta en `e2e/a11y.spec.ts` y `e2e/keyboard.spec.ts` (`docs/DISENO.md` § 11).
 - **Datos de prueba 100 % ficticios** ("Cliente Demo, S.A. de C.V."). Nunca nombres de clientes reales: los dos pilotos son empresas reales y **sus nombres no se escriben en el repositorio** (es público). Tampoco correos de personas reales ni el de la cuenta propietaria: los socios iniciales van en Script Properties (`ADMIN_EMAILS`).
 - Excepción: el aviso de privacidad (`apps/web/src/legal/aviso-de-privacidad.txt`) publica tal cual el contacto que el despacho ya publica en empirica.mx. Es texto jurídico: solo cambia con el texto que mande el socio, y una prueba compara la página con el archivo palabra por palabra.
 - `brand/private/` (ignorado por git) guarda el archivo maestro de la marca: tiene datos de contacto personales. Solo se publican sus derivados (`spot-colors.json`, `brand/logo/*.svg`).
@@ -122,10 +126,19 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-07 | IA solo en el servidor, `METADATA_ONLY` con marcadores; modelo autodetectado; aviso al 80 % de `limiteDiarioIA` (D60, D61)                      | Términos de la capa gratuita de Gemini                                                  |
 | 2026-10-07 | Sin extracción ni clasificación con IA hasta que el socio decida (D62)                                                                          | Requieren documentos completos o texto libre                                            |
 | 2026-10-07 | App y `MIN_APP_VERSION` 0.6.0; los ajustes nuevos de `Config` se crean solos (D63)                                                              | Una app vieja no tiene dónde guardar los reportes                                       |
+| 2026-10-07 | Bitácora: se agrega al final sin leerla (`AppendLog`, D64)                                                                                      | Leerla en cada guardado hacía cada uno más lento                                        |
+| 2026-10-07 | Avisos leídos, 60 días; sin leer, un año; cada dispositivo los borra con la misma regla (D65)                                                   | La campana y la sincronización leen menos, sin avisar a nadie                           |
+| 2026-10-07 | Bitácora del año anterior a un libro propio en `Respaldos` cada 1 de enero (D66)                                                                | El tope de celdas del libro                                                             |
+| 2026-10-07 | Cada pantalla, su propio archivo, precargadas en segundo plano; tope de 260 KB a la primera carga en el CI (D67)                                | 312 → 240 KB; que no vuelva a crecer sin darnos cuenta                                  |
+| 2026-10-07 | CSP en una `<meta>` de cada página y el portal no arranca dentro de un marco ajeno (D68)                                                        | GitHub Pages no admite cabeceras propias                                                |
+| 2026-10-07 | `npm audit` de producción en el CI, falla con alta o crítica (D69)                                                                              | Lo de desarrollo no se publica                                                          |
+| 2026-10-07 | En el iPhone instalado, sin respuesta de Google en 15 s, a correo y contraseña; crear contraseña desde el menú de la cuenta (D70)               | La ventana de Google puede no volver dentro de la app instalada                         |
+| 2026-10-07 | Pruebas en el navegador también en WebKit, trabajo propio del CI que bloquea la publicación (D71)                                               | iPhone y Mac usan el motor de Safari                                                    |
+| 2026-10-07 | axe en todas las pantallas (dos temas) y con formularios abiertos; teclado; 320 px; tablas en `relative overflow-x-auto` (D72)                  | WCAG 2.2 AA en todo el portal                                                           |
 
 ## Gotchas del entorno
 
-- Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`.
+- Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`. Aquí no hay WebKit: sus pruebas corren en el CI. El WebKit de Playwright no puede recargar una página sin red (`setOffline` + `reload` → "internal error"), ni servida por el Service Worker: esa prueba se salta en WebKit y en el iPhone se prueba a mano (`docs/SETUP.md`, paso 12.6).
 - La red del entorno de desarrollo bloquea Drive y los dominios de Google Docs; los archivos de marca se trajeron con el conector de Drive.
 - También bloquea `script.google.com`, `developers.google.com`, `firebase.google.com` y `docs.cloud.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
 - **No se edita ni se guarda nada en el editor de Apps Script**: el código lo sube el CI, y guardar desde una pestaña abierta antes lo revierte (pasó al publicar F5). Para Calendar y correo, `setup` en incógnito y «Seleccionar todo» (`docs/SETUP.md`, paso 11).

@@ -157,3 +157,69 @@ export class SheetTable {
     }
   }
 }
+
+/**
+ * A tab that is only ever appended to (the audit log): rows go at the end
+ * without reading the tab, only its header. Reading a growing log on every
+ * write would make each one slower than the last (PLAN.md § 21).
+ */
+export class AppendLog {
+  readonly def: TableDef;
+  readonly #sheet: GSheet;
+  readonly #columns: ColumnDef[];
+  readonly #index = new Map<string, number>();
+  readonly #width: number;
+  readonly #pending: unknown[][] = [];
+
+  constructor(sheet: GSheet, def: TableDef) {
+    this.def = def;
+    this.#sheet = sheet;
+    this.#columns = allColumns(def);
+    const lastColumn = sheet.getLastColumn();
+    if (lastColumn < 1) {
+      throw new ApiError(
+        'INTERNAL',
+        `La pestaña ${def.name} no tiene encabezados: ejecuta setup().`,
+      );
+    }
+    const header = (sheet.getRange(1, 1, 1, lastColumn).getValues()[0] ?? []).map((h) =>
+      String(h).trim(),
+    );
+    header.forEach((name, i) => {
+      if (name && !this.#index.has(name)) this.#index.set(name, i);
+    });
+    const missing = this.#columns.filter((c) => !this.#index.has(c.name)).map((c) => c.name);
+    if (missing.length) {
+      throw new ApiError(
+        'INTERNAL',
+        `Faltan columnas en la pestaña ${def.name} (${missing.join(', ')}): ejecuta setup().`,
+      );
+    }
+    this.#width = header.length;
+  }
+
+  /** Queues a row; nothing is written until flush(). */
+  append(row: Row): void {
+    const cells = new Array<unknown>(this.#width).fill('');
+    for (const column of this.#columns) {
+      const at = this.#index.get(column.name);
+      if (at !== undefined) cells[at] = encodeCell(column, row[column.name]);
+    }
+    this.#pending.push(cells);
+  }
+
+  get pendingWrites(): number {
+    return this.#pending.length;
+  }
+
+  /** Writes the queued rows after the last one (the caller holds the script lock). */
+  flush(): void {
+    if (!this.#pending.length) return;
+    const firstRow = this.#sheet.getLastRow() + 1;
+    const lastRow = firstRow + this.#pending.length - 1;
+    const maxRows = this.#sheet.getMaxRows();
+    if (lastRow > maxRows) this.#sheet.insertRowsAfter(maxRows, lastRow - maxRows);
+    this.#sheet.getRange(firstRow, 1, this.#pending.length, this.#width).setValues(this.#pending);
+    this.#pending.length = 0;
+  }
+}

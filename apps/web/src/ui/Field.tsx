@@ -2,6 +2,7 @@ import {
   useId,
   type InputHTMLAttributes,
   type ReactNode,
+  type Ref,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
@@ -58,7 +59,7 @@ export function TextField({
   error,
   optional,
   ...input
-}: FieldFrame & InputHTMLAttributes<HTMLInputElement>) {
+}: FieldFrame & InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) {
   const id = useId();
   return (
     <Frame id={id} label={label} hint={hint} error={error} optional={optional}>

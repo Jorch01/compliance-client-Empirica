@@ -51,6 +51,7 @@ export class FakeRange implements GRange {
 
   getValues(): unknown[][] {
     this.#sheet.reads++;
+    this.#sheet.cellsRead += this.rows * this.columns;
     const out: unknown[][] = [];
     for (let r = 0; r < this.rows; r++) {
       const line: unknown[] = [];
@@ -118,6 +119,8 @@ export class FakeSheet implements GSheet {
   readonly formats = new Map<number, string>();
   readonly validations = new Map<number, unknown>();
   reads = 0;
+  /** Cells read so far: what makes a read slow as a tab grows. */
+  cellsRead = 0;
   writes = 0;
 
   constructor(name: string, google: FakeGoogle) {
@@ -190,6 +193,19 @@ export class FakeSheet implements GSheet {
   insertRowsAfter(afterPosition: number, howMany: number): this {
     if (afterPosition > this.maxRows) throw new Error(OUT_OF_BOUNDS);
     this.maxRows += howMany;
+    return this;
+  }
+
+  /** Rows go and the ones below move up; a tab keeps at least one row besides the frozen ones. */
+  deleteRows(rowPosition: number, howMany: number): this {
+    if (rowPosition < 1 || howMany < 1 || rowPosition + howMany - 1 > this.maxRows) {
+      throw new Error('Those rows are out of bounds.');
+    }
+    if (howMany >= this.maxRows - this.frozenRows) {
+      throw new Error('Sorry, it is not possible to delete all non-frozen rows.');
+    }
+    this.grid.splice(rowPosition - 1, howMany);
+    this.maxRows -= howMany;
     return this;
   }
 

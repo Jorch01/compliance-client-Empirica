@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type SubmitEvent } from 'react';
+import { lazy, Suspense, useRef, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
 import { AuthError } from '../auth/types.ts';
@@ -13,6 +13,9 @@ import { TextField } from '../ui/Field.tsx';
 const MockSignIn = lazy(() => import('./MockSignIn.tsx').then((m) => ({ default: m.MockSignIn })));
 
 type Mode = 'signIn' | 'signUp' | 'reset';
+
+/** How long the installed app on iPhone waits for Google before offering the email instead. */
+const GOOGLE_PATIENCE_MS = 15_000;
 
 /**
  * Signing in with email and password, or Google; creating an account (for
@@ -39,8 +42,11 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleStuck, setGoogleStuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
 
   const fail = (e: unknown): void => {
     const code = e instanceof AuthError ? e.code : 'unknown';
@@ -70,15 +76,26 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
     }
   };
 
+  /** Google did not answer in the installed app on iPhone: straight to email and password. */
+  const toEmail = (): void => {
+    setGoogleStuck(true);
+    emailInput.current?.focus();
+  };
+
+  // Waiting for Google never blocks the email form: its window may never come back.
   const google = async (): Promise<void> => {
     setError(null);
-    setBusy(true);
+    setGoogleStuck(false);
+    setGoogleBusy(true);
+    const patience = onInstalledIos ? setTimeout(toEmail, GOOGLE_PATIENCE_MS) : undefined;
     try {
       await client.signInWithGoogle();
     } catch (e) {
-      fail(e);
+      if (onInstalledIos) toEmail();
+      else fail(e);
     } finally {
-      setBusy(false);
+      clearTimeout(patience);
+      setGoogleBusy(false);
     }
   };
 
@@ -101,12 +118,20 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
             variant="secondary"
             className="mt-5 w-full"
             onClick={() => void google()}
-            disabled={busy}
+            disabled={busy || googleBusy}
+            aria-busy={googleBusy || undefined}
           >
             <GoogleMark />
             {t('auth.google')}
           </Button>
-          {onInstalledIos ? (
+          {googleStuck ? (
+            <p
+              role="alert"
+              className="mt-2 rounded-control border border-warning-border bg-warning-subtle px-3 py-2 text-sm text-warning-subtle-foreground"
+            >
+              {t('auth.googleIosStuck')}
+            </p>
+          ) : onInstalledIos ? (
             <p className="mt-2 text-sm text-muted-foreground">{t('auth.googleIosHint')}</p>
           ) : null}
           <div className="my-5 flex items-center gap-3 text-sm text-muted-foreground">
@@ -128,6 +153,7 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
           />
         ) : null}
         <TextField
+          ref={emailInput}
           label={t('auth.email')}
           type="email"
           autoComplete="email"

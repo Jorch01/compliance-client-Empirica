@@ -8,6 +8,7 @@ import { CheckboxField } from '../ui/Field.tsx';
 import { Dialog } from '../ui/Dialog.tsx';
 import { Icon } from '../ui/Icon.tsx';
 import { Popover } from '../ui/Popover.tsx';
+import { PasswordDialog } from './PasswordDialog.tsx';
 import { PreferencesInline } from './Preferences.tsx';
 import { useFeedback } from '../feedback/context.ts';
 import { useSyncStatus } from './sync-status.ts';
@@ -86,9 +87,15 @@ function LogoutDialog({ open, onClose }: { open: boolean; onClose: () => void })
 export function UserMenu() {
   const { t } = useTranslation();
   const { me, call } = usePortal();
+  const { state } = useSession();
   const { start } = useTour();
   const feedback = useFeedback();
   const [logout, setLogout] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordAdded, setPasswordAdded] = useState(false);
+  // Someone who only signs in with Google can add a password (for the installed app on iPhone).
+  const googleOnly =
+    state.status === 'ready' && !state.authUser.providers.includes('password') && !passwordAdded;
   return (
     <>
       <Popover
@@ -110,6 +117,23 @@ export function UserMenu() {
               <p className="font-semibold">{me.name}</p>
               <p className="text-sm break-all text-muted-foreground">{me.email}</p>
               <p className="mt-1 label-caps text-muted-foreground">{t(`roles.${me.rolBase}`)}</p>
+              {googleOnly ? (
+                <div className="mt-2 text-sm">
+                  <p className="text-muted-foreground">{t('account.googleOnly')}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon="lock"
+                    className="-ml-3"
+                    onClick={() => {
+                      close();
+                      setPasswordOpen(true);
+                    }}
+                  >
+                    {t('account.createPassword')}
+                  </Button>
+                </div>
+              ) : null}
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">{t('shell.preferences')}</p>
@@ -170,6 +194,16 @@ export function UserMenu() {
         open={logout}
         onClose={() => {
           setLogout(false);
+        }}
+      />
+      <PasswordDialog
+        open={passwordOpen}
+        email={me.email}
+        onClose={() => {
+          setPasswordOpen(false);
+        }}
+        onDone={() => {
+          setPasswordAdded(true);
         }}
       />
     </>
