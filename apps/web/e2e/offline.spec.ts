@@ -73,7 +73,14 @@ test('two devices converge after one worked offline', async ({ browser }) => {
   await desk.close();
 });
 
-test('the portal opens without network, from what the device keeps', async ({ browser }) => {
+test('the portal opens without network, from what the device keeps', async ({
+  browser,
+  browserName,
+}) => {
+  // Playwright's WebKit cannot reload any page without network, not even one its service
+  // worker serves ("WebKit encountered an internal error"); Safari can. On WebKit this is
+  // checked on a real iPhone instead (SETUP.md, step 12.6).
+  test.skip(browserName === 'webkit', 'Playwright WebKit cannot reload a page offline');
   const context = await device(browser);
   const page = await context.newPage();
   await signIn(page, 'socia');

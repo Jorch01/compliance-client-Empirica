@@ -138,7 +138,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 
 ## Gotchas del entorno
 
-- Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`.
+- Playwright: usar el Chromium preinstalado (`executablePath: '/opt/pw-browsers/chromium'`) si la versión del paquete no coincide; no correr `playwright install`. Aquí no hay WebKit: sus pruebas corren en el CI. El WebKit de Playwright no puede recargar una página sin red (`setOffline` + `reload` → "internal error"), ni servida por el Service Worker: esa prueba se salta en WebKit y en el iPhone se prueba a mano (`docs/SETUP.md`, paso 12.6).
 - La red del entorno de desarrollo bloquea Drive y los dominios de Google Docs; los archivos de marca se trajeron con el conector de Drive.
 - También bloquea `script.google.com`, `developers.google.com`, `firebase.google.com` y `docs.cloud.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
 - **No se edita ni se guarda nada en el editor de Apps Script**: el código lo sube el CI, y guardar desde una pestaña abierta antes lo revierte (pasó al publicar F5). Para Calendar y correo, `setup` en incógnito y «Seleccionar todo» (`docs/SETUP.md`, paso 11).
