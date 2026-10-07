@@ -34,7 +34,7 @@ import {
   type TableName,
 } from '@empirica/shared';
 import * as z from 'zod/mini';
-import { generate, geminiKey, usageToday } from '../ai/gemini.ts';
+import { dailyLimit, generate, geminiKey, usageToday } from '../ai/gemini.ts';
 import { Masker } from '../ai/mask.ts';
 import {
   askPrompt,
@@ -90,12 +90,11 @@ function answerOf<T>(schema: z.ZodMiniType<T>, raw: unknown): T {
 export function aiStatus(env: Env): AiStatusData {
   const db = new Database(env);
   const usage = usageToday(env);
-  const limit = Number(configValue(db, 'limiteDiarioIA'));
   return {
     modo: aiModeOf(configValue(db, 'modoIA'), null),
     configurada: Boolean(geminiKey(env)),
     usadasHoy: usage.usadas,
-    limiteDiario: Number.isInteger(limit) && limit > 0 ? limit : null,
+    limiteDiario: dailyLimit(db),
     agotada: usage.agotada,
   };
 }

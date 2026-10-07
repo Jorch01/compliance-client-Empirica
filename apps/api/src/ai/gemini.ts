@@ -9,9 +9,10 @@
  *   the partners (IA_MODELO).
  * - Answers follow a JSON schema (responseSchema); the caller checks them.
  * - The day's requests are counted by California's day, as Google counts
- *   them. When Google says the day's quota ran out, the helpers wait for the
- *   next day and the partners hear it once (IA_CUOTA); a per-minute limit is
- *   tried again once after a pause.
+ *   them. At 80 % of Config.limiteDiarioIA the partners hear it, once a day
+ *   (IA_CUOTA_ALTA). When Google says the day's quota ran out, the helpers
+ *   wait for the next day and the partners hear it once (IA_CUOTA); a
+ *   per-minute limit is tried again once after a pause.
  */
 import { text, type NotificationKind } from '@empirica/shared';
 import { changed, underLock } from '../actions/locked.ts';
@@ -51,7 +52,12 @@ export interface Usage {
   dia: string;
   usadas: number;
   agotada: boolean;
+  /** The partners already heard today that most of the limit is used. */
+  avisada: boolean;
 }
+
+/** Share of Config.limiteDiarioIA at which the partners hear the AI is running out. */
+export const WARN_SHARE = 0.8;
 
 export const californiaDay = (env: Env): string =>
   env.g.Utilities.formatDate(new Date(env.now()), 'America/Los_Angeles', 'yyyy-MM-dd');
@@ -61,12 +67,17 @@ export function usageToday(env: Env): Usage {
   try {
     const saved = JSON.parse(env.prop(PROP.aiUsage) ?? 'null') as Partial<Usage> | null;
     if (saved?.dia === dia) {
-      return { dia, usadas: Number(saved.usadas) || 0, agotada: saved.agotada === true };
+      return {
+        dia,
+        usadas: Number(saved.usadas) || 0,
+        agotada: saved.agotada === true,
+        avisada: saved.avisada === true,
+      };
     }
   } catch {
     // A broken value counts as a new day.
   }
-  return { dia, usadas: 0, agotada: false };
+  return { dia, usadas: 0, agotada: false, avisada: false };
 }
 
 const saveUsage = (env: Env, usage: Usage): void => {
@@ -155,6 +166,12 @@ function configValue(db: Database, clave: string): string | null {
   return row ? text(row, 'valor') : null;
 }
 
+/** The day's limit the partner read in AI Studio (Config.limiteDiarioIA); null if unknown. */
+export function dailyLimit(db: Database): number | null {
+  const n = Number(configValue(db, 'limiteDiarioIA'));
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 /** Writes Config.modeloIA (under the lock, with the bitácora) and tells the partners when it changed. */
 export function keepModel(env: Env, model: string, announce: boolean): void {
   underLock(env, AI_ACTOR, (r) => {
@@ -200,6 +217,19 @@ function notifyPartners(
   );
 }
 
+/** At WARN_SHARE of the day's limit the partners hear it, once a day. */
+function warnIfNearLimit(env: Env, db: Database, used: number): void {
+  const limit = dailyLimit(db);
+  if (!limit || used < Math.ceil(limit * WARN_SHARE)) return;
+  // Read again: another request may have warned first.
+  const latest = usageToday(env);
+  if (latest.avisada) return;
+  saveUsage(env, { ...latest, avisada: true });
+  underLock(env, AI_ACTOR, (r) => {
+    notifyPartners(r, 'IA_CUOTA_ALTA', `${String(used)}/${String(limit)}`);
+  });
+}
+
 function isPerDay(body: unknown): boolean {
   const details = (body as { error?: { details?: unknown[] } } | null)?.error?.details ?? [];
   return JSON.stringify(details).toLowerCase().includes('perday');
@@ -230,7 +260,8 @@ export function generate(env: Env, req: GenerateRequest): unknown {
   const usage = usageToday(env);
   if (usage.agotada) throw quotaError();
 
-  let model = configValue(new Database(env), 'modeloIA') ?? '';
+  const db = new Database(env);
+  let model = configValue(db, 'modeloIA') ?? '';
   if (!model) {
     model = discoverModel(env, key) ?? '';
     if (!model) {
@@ -258,6 +289,7 @@ export function generate(env: Env, req: GenerateRequest): unknown {
     if (res.status === 200) {
       usage.usadas++;
       saveUsage(env, usage);
+      warnIfNearLimit(env, db, usage.usadas);
       const parts =
         (res.body as { candidates?: { content?: { parts?: { text?: string }[] } }[] } | null)
           ?.candidates?.[0]?.content?.parts ?? [];

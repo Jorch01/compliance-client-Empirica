@@ -31,6 +31,8 @@ export const NOTIFICATION_KINDS = [
   'REPORTE_ENVIADO',
   /** F6: Google said the day's AI quota ran out (to the partners). */
   'IA_CUOTA',
+  /** F6: 80 % of the day's AI limit (Config.limiteDiarioIA) is used, once a day (to the partners). */
+  'IA_CUOTA_ALTA',
   /** F6: the AI model in Config no longer exists; the portal chose another (to the partners). */
   'IA_MODELO',
 ] as const;

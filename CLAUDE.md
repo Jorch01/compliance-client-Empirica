@@ -18,6 +18,7 @@ Portal de seguimiento para clientes corporativos de Empírica Legal Lab (Fractio
 - **F3 aprobada** (2026-10-04): asuntos, tareas, comentarios, documentos (archivos en Drive) y conflictos; resumen en `docs/PLAN.md` § 17.
 - **F4 aprobada** (2026-10-04): trámites (tablero y etapas), compliance (matriz, periodos, evidencia y validación), contratos y solicitudes (clasificar y convertir); resumen en `docs/PLAN.md` § 18.
 - **F5 aprobada** (2026-10-05): agenda, enlace personal (ICS), calendarios de Google (el del despacho para los socios y uno por cliente), campana, resumen diario e invitaciones por correo; resumen en `docs/PLAN.md` § 19. La cuenta propietaria autorizó Calendar y correo ese día (`docs/SETUP.md`, paso 11).
+- **F6 entregada** (2026-10-07): reportes mensuales (PDF hecho en el navegador), índice de salud e IA seudonimizada; resumen en `docs/PLAN.md` § 20. **Espera la aprobación del socio.**
 - **Backend publicado** (2026-10-03): Web App en la implementación fija de la variable de GitHub `APPS_SCRIPT_DEPLOYMENT_ID`; el CI lo actualiza y lo comprueba (`apps/api/deploy.ts`).
 - **Sitio** en `portal.empirica.mx` (GitHub Pages, HTTPS): el portal desde la fusión de F2 (2026-10-04) y el aviso de privacidad en `/privacidad/`. Cada fusión a `main` publica el portal y el backend.
 
@@ -68,7 +69,7 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - **Toda escritura a la hoja** pasa por `SheetTable`/`Writer` (`apps/api/src/db`): el texto lleva `'` delante (sin fórmulas), cada cambio se numera con la secuencia (reserva y publicación), guarda su historial de alcance y deja rastro en `Bitacora`. Nunca `setValues` directo desde una acción.
 - **Permisos en un solo lugar**: `packages/shared/src/permissions`. Una regla nueva va ahí, con su prueba en `permissions.test.ts`; si afecta lo que viaja, también en `apps/api/src/sync.test.ts`.
 - Las pruebas del backend usan `createWorld()` (`apps/api/src/testing/harness.ts`): servicios de Google simulados, `setup()` ya corrido y el conjunto ficticio de `@empirica/shared/testing`. Un `Device` simula el navegador que sincroniza.
-- Se usa `zod/mini`, no `zod`: el `Code.js` debe seguir pequeño. Nada de APIs que Apps Script no tiene (`TextEncoder`, `URL`, `crypto.randomUUID`, `structuredClone`): el sandbox de pruebas no las trae, así que fallan las pruebas antes que producción.
+- Se usa `zod/mini`, no `zod`, siempre como `import * as z from 'zod/mini'`: el `z` con nombre mete todos los idiomas de zod al `Code.js` (pasó de 390 KB a 1 MB; lo vigila ESLint). El `Code.js` debe seguir pequeño. Nada de APIs que Apps Script no tiene (`TextEncoder`, `URL`, `crypto.randomUUID`, `structuredClone`): el sandbox de pruebas no las trae, así que fallan las pruebas antes que producción.
 
 ## Decisiones tomadas (registro)
 
@@ -115,6 +116,12 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 | 2026-10-05 | Enlace personal: secreto que se muestra una vez; el servidor guarda su hash (D50)                                                               | Revocable y sin nada que delatar en la hoja                                             |
 | 2026-10-05 | Resumen por trigger horario; 10 correos de reserva; aviso a los socios con menos de 20 (D51)                                                    | 100 destinatarios al día en cuenta gratuita                                             |
 | 2026-10-05 | Permisos de Calendar y correo: sin ellos el portal sigue y calendarios y correos esperan; `setup` los vuelve a pedir (`requireAllScopes`) (D54) | La ventana de Google deja conceder solo algunos permisos                                |
+| 2026-10-07 | PDF del reporte hecho en el navegador con pdfmake, no plantilla de Docs (D55)                                                                   | Vista previa y PDF salen del mismo documento; sin permisos nuevos; funciona sin red     |
+| 2026-10-07 | Reporte = lo que ve un usuario de toda la empresa; uno por cliente y mes; enviado, congelado (D56–D58)                                          | Nada interno; el cliente recibe lo que el abogado revisó                                |
+| 2026-10-07 | Índice de salud con `Config.pesosSalud`, igual en Centro de control, inicio del cliente y reporte (D59)                                         | Un número que significa lo mismo para todos                                             |
+| 2026-10-07 | IA solo en el servidor, `METADATA_ONLY` con marcadores; modelo autodetectado; aviso al 80 % de `limiteDiarioIA` (D60, D61)                      | Términos de la capa gratuita de Gemini                                                  |
+| 2026-10-07 | Sin extracción ni clasificación con IA hasta que el socio decida (D62)                                                                          | Requieren documentos completos o texto libre                                            |
+| 2026-10-07 | App y `MIN_APP_VERSION` 0.6.0; los ajustes nuevos de `Config` se crean solos (D63)                                                              | Una app vieja no tiene dónde guardar los reportes                                       |
 
 ## Gotchas del entorno
 
@@ -123,4 +130,5 @@ Node 22.18 o posterior (corre TypeScript nativo: los scripts `.ts` se ejecutan c
 - También bloquea `script.google.com`, `developers.google.com`, `firebase.google.com` y `docs.cloud.google.com`: el Web App se comprueba desde el CI (paso "Publicar en la misma dirección") y la documentación de Google, con búsqueda web.
 - **No se edita ni se guarda nada en el editor de Apps Script**: el código lo sube el CI, y guardar desde una pestaña abierta antes lo revierte (pasó al publicar F5). Para Calendar y correo, `setup` en incógnito y «Seleccionar todo» (`docs/SETUP.md`, paso 11).
 - Prettier se corre **desde la raíz** del repo: desde `apps/web` no lee `.prettierignore` y reformatea `tokens.css` (generado).
+- pdfmake 0.3 (PDF del reporte): en jsdom no acepta las fuentes (otro reino de `Uint8Array`), así que la prueba que renderiza el PDF corre en el entorno `node` (`apps/web/integration/report-pdf.test.ts`); lee WOFF, no WOFF2; `pageBreakBefore` recibe un objeto con consultas, y una fila movida por `dontBreakRows` sigue reportando su página original.
 - Reglas nuevas de `eslint-plugin-react-hooks` 7: nada de `setState` síncrono dentro de un efecto (derivar en el render o medir con refs) y nada de `Date.now()` en el render; los archivos de componentes solo exportan componentes (hooks y utilidades van en `.ts`).
