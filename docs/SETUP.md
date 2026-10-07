@@ -18,6 +18,7 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                                  |
 | 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                                     |
 | 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | ✔ 5 oct: autorizados; `setup` creó "Empírica · Despacho" y lee la cuota de correo           |
+| 13  | Verificaciones de seguridad     | Paso 12, durante la Fase 7                           | Sí: qué quedó listo (nada secreto)                            | Pendiente                                                                                   |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -220,6 +221,23 @@ La Fase 5 necesita dos permisos nuevos de la cuenta del paso 1: **sus calendario
 Si alguna vez quieres revisar o quitar estos permisos: <https://myaccount.google.com/permissions> con la cuenta del paso 1 → **Empírica Portal API**.
 
 **La hora del resumen y los días de espera** están en la pestaña `Config` del libro: `horaResumen` (7), `diasEsperaCliente` (3) y `reservaCorreos` (10, los correos que se guardan para invitaciones). Se cambian ahí, en la columna `valor`.
+
+### Paso 12 · Verificaciones de seguridad (Fase 7)
+
+Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es un secreto: mándame solo si quedó lista o qué viste.
+
+1. **Verificación en dos pasos.** En <https://myaccount.google.com> → **Seguridad** → **Verificación en 2 pasos** → actívala en la cuenta propietaria y en la cuenta de Google de cada socio. En la propietaria, revisa también **Tus dispositivos** y **Apps de terceros con acceso a tu cuenta**: no debería haber nada que no reconozcas. Dime quién, además de ti, conoce la contraseña de la cuenta propietaria.
+2. **GitHub.** En el repositorio → **Settings**:
+   - **Advanced Security** (antes "Code security"): activa **Secret scanning** con **Push protection**, y **Dependabot alerts**.
+   - **Rules** → **Rulesets** → **New branch ruleset**: nombre `main`, **Enforcement status: Active**, en **Target branches** agrega la rama predeterminada; marca **Restrict deletions**, **Block force pushes** y **Require status checks to pass**, y agrega los checks **Pruebas** y **Pruebas en el navegador**. No marques que exija aprobaciones de otra persona: tú fusionas tus propios PR.
+3. **Key de Gemini.** En <https://console.cloud.google.com> con la cuenta propietaria → proyecto `empirica-portal` → **APIs y servicios** → **Credenciales** → abre la key que creaste en el paso 6 → **Restricciones de API** → **Restringir clave** → marca solo **Generative Language API** → **Guardar**. En **Restricciones de aplicaciones** deja **Ninguna**: la usa el servidor de Apps Script, que no tiene una dirección fija.
+4. **Firebase.** En <https://console.firebase.google.com> → proyecto → **Authentication** → **Configuración**:
+   - **Acciones del usuario**: confirma que **Protección contra la enumeración de correos** esté activada (en proyectos nuevos viene así).
+   - **Dominios autorizados**: deja `portal.empirica.mx` y los dos de Firebase (`…firebaseapp.com` y `…web.app`); quita `localhost`, que solo sirve para programar en una computadora.
+5. **Respaldos.** En Google Drive de la cuenta propietaria → **Empírica Portal** → **Respaldos** → abre la copia más reciente (su nombre lleva la fecha): debe abrir y tener los datos de la noche anterior, por ejemplo tus clientes en la pestaña `Clientes`. No la edites. `OPERACION.md` explica cómo restaurar una.
+6. **iPhone y Android.** Al cerrar la fase te dejo una lista corta: instalar el portal, usarlo en modo avión y entrar con Google desde la app instalada.
+7. **Outlook** (si alguien lo usa). En Outlook → **Calendario** → **Agregar calendario** → **Suscribirse desde la web** → pega el enlace personal del portal (**Agenda** → **Tu calendario**). Dime si lo acepta y muestra las fechas.
+8. **Opcional: archivos grandes.** Sube a un documento un archivo de unos 30 MB (por ejemplo, un PDF escaneado o un ZIP) y dime si el portal lo acepta. Si pasa, se puede subir el tope de 10 MB (`Config.mbMaxArchivo`).
 
 ### Actualizar el aviso de privacidad
 
