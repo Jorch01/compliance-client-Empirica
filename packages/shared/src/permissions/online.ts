@@ -158,15 +158,19 @@ export function authorizeReportSend(
   return { ok: true, clienteId };
 }
 
-export type AiHelper = 'summary' | 'reminder' | 'ask';
+export type AiHelper = 'summary' | 'reminder' | 'ask' | 'draft';
 
 /**
  * Who uses each AI helper for a client (IA.md): drafting the report's
  * summary or a reminder is the firm's; asking "what is pending" is for
- * anyone with access, about what they see.
+ * anyone with access, about what they see. Creating records with the AI
+ * (F8, D73) is for the client's lawyers only: the SOCIO_ADMIN and its
+ * ABOGADO, not assistants and nobody of the client.
  */
 export function mayUseAi(ctx: UserContext, helper: AiHelper, clienteId: string): boolean {
   const access = ctx.clients.get(clienteId);
   if (!access) return false;
-  return helper === 'ask' || isFirmRole(access.rol);
+  if (helper === 'ask') return true;
+  if (helper === 'draft') return access.rol === 'SOCIO_ADMIN' || access.rol === 'ABOGADO';
+  return isFirmRole(access.rol);
 }

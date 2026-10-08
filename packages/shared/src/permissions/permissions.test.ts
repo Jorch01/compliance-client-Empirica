@@ -14,6 +14,7 @@ import {
   authorizeUpload,
   clientCalendarRole,
   firmCalendarRole,
+  mayUseAi,
 } from './online.ts';
 import { canRead, projectRow } from './read.ts';
 import { buildSnapshot } from './snapshot.ts';
@@ -1132,5 +1133,32 @@ describe('monthly reports (F6)', () => {
         w.write(ID.socio, 'Reportes', op, ID.repEnviado, op === 'update' ? { resumen: 'x' } : {}),
       ).toMatchObject({ ok: false, reason: 'FROZEN' });
     }
+  });
+});
+
+describe('the AI helpers, and creating records with the AI (F8, D73)', () => {
+  const w = world();
+  const B = ID.clienteB;
+
+  it('only the client’s lawyers create with the AI: the SOCIO_ADMIN and its ABOGADO', () => {
+    expect(mayUseAi(w.ctx(ID.socio), 'draft', A)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.socio), 'draft', B)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.abogado), 'draft', A)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.abogadoB), 'draft', B)).toBe(true);
+    // A lawyer of another client, an assistant, anyone of the client: no.
+    expect(mayUseAi(w.ctx(ID.abogadoB), 'draft', A)).toBe(false);
+    expect(mayUseAi(w.ctx(ID.asistente), 'draft', A)).toBe(false);
+    for (const client of [...CLIENT_USERS_OF_A, ID.cB]) {
+      expect(mayUseAi(w.ctx(client), 'draft', A)).toBe(false);
+      expect(mayUseAi(w.ctx(client), 'draft', B)).toBe(false);
+    }
+  });
+
+  it('the other helpers keep their rules: the firm drafts, anyone with access asks', () => {
+    expect(mayUseAi(w.ctx(ID.asistente), 'summary', A)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.asistente), 'reminder', A)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.cAdmin), 'summary', A)).toBe(false);
+    expect(mayUseAi(w.ctx(ID.cAdmin), 'ask', A)).toBe(true);
+    expect(mayUseAi(w.ctx(ID.cAdmin), 'ask', B)).toBe(false);
   });
 });

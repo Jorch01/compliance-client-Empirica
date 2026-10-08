@@ -12,6 +12,7 @@ import {
   type Lado,
   type Rol,
 } from '../domain/enums.ts';
+import { MAX_DRAFT_REQUEST, type DraftItem } from '../domain/draft.ts';
 import { PUSHABLE_TABLES, type TableName } from '../domain/tables.ts';
 import type { FieldIssue } from '../domain/validate.ts';
 import type { Row } from '../domain/values.ts';
@@ -48,6 +49,8 @@ export const ACTIONS = [
   'ai.summary',
   'ai.ask',
   'ai.reminder',
+  // F8: 'Crear con IA', the lawyers only (D73).
+  'ai.draft',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -140,6 +143,8 @@ export const OpSchema = z.object({
   /** Values the device started from, for the sensitive fields it changes. */
   base: z.optional(z.record(shortText(64), z.unknown())),
   baseVersion: z.optional(nonNegativeInt),
+  /** Created from a proposal of the AI (F8, D75): the Bitacora records it as CREAR_IA. */
+  via: z.optional(z.literal('IA')),
 });
 export type Op = z.infer<typeof OpSchema>;
 
@@ -358,6 +363,26 @@ export interface AiAnswerData {
 }
 
 export const AiReminderSchema = z.object({ tareaId: id });
+
+/**
+ * "Crear con IA" (F8, PLAN.md § 24): what a lawyer asks for, in their own
+ * words, for a client; optionally within one of its units and for one of
+ * its matters (whose tasks the AI then suggests). The AI only proposes:
+ * nothing is written until the lawyer creates it from the preview.
+ */
+export const AiDraftSchema = z.object({
+  clienteId: id,
+  peticion: z.string().check(z.trim(), z.minLength(3), z.maxLength(MAX_DRAFT_REQUEST)),
+  entidadId: z.optional(id),
+  asuntoId: z.optional(id),
+});
+
+export interface AiDraftData {
+  /** What the AI proposes, in a sentence or two. */
+  explicacion: string;
+  /** The records, ready to correct and create; none when it found nothing to propose. */
+  items: DraftItem[];
+}
 
 export type EstadoInvitacion = (typeof ESTADOS_INVITACION)[number];
 

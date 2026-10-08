@@ -262,7 +262,9 @@ class PushRun {
       stored = this.#writer.save(op.table, current, this.#withClosingDate(op.table, outcome.row));
       const action =
         type === 'create'
-          ? 'CREAR'
+          ? op.via === 'IA'
+            ? 'CREAR_IA'
+            : 'CREAR'
           : outcome.deleted
             ? 'BORRAR'
             : outcome.restored

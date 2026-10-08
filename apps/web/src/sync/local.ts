@@ -98,7 +98,15 @@ export function enqueue(
   table: TableName,
   current: Row | undefined,
   pending: readonly OutboxEntry[],
-  edit: { opId: string; type: OpType; id: string; fields: Record<string, Value>; at: string },
+  edit: {
+    opId: string;
+    type: OpType;
+    id: string;
+    fields: Record<string, Value>;
+    at: string;
+    /** A record created from a proposal of the AI (F8): the server's Bitacora says so. */
+    via?: 'IA';
+  },
   tailSeq?: number,
 ): Enqueue {
   const last = pending[pending.length - 1];
@@ -121,6 +129,7 @@ export function enqueue(
       at: edit.at,
       sending: 0,
       ...(edit.type === 'create' || edit.type === 'update' ? { fields: edit.fields } : {}),
+      ...(edit.type === 'create' && edit.via ? { via: edit.via } : {}),
       ...(base ? { base } : {}),
       ...(edit.type === 'update' && version > 0 ? { baseVersion: version } : {}),
     };

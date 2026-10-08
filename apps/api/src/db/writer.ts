@@ -27,6 +27,8 @@ export interface WriteMeta {
 
 export type AuditAction =
   | 'CREAR'
+  /** Created from a proposal of the AI that the lawyer reviewed (F8, D75). */
+  | 'CREAR_IA'
   | 'EDITAR'
   | 'BORRAR'
   | 'RESTAURAR'

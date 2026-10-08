@@ -7,6 +7,7 @@
 import {
   ACTIONS,
   AiAskSchema,
+  AiDraftSchema,
   AiReminderSchema,
   AiSummarySchema,
   CalendarShareSchema,
@@ -35,6 +36,7 @@ import {
 import type * as z from 'zod/mini';
 import { saveMembership, updateProfile, updateUser } from './actions/admin.ts';
 import { aiAsk, aiReminder, aiStatus, aiSummary } from './actions/ai.ts';
+import { aiDraft } from './actions/draft.ts';
 import { bootstrap } from './actions/bootstrap.ts';
 import { shareCalendar, subscribeCalendar } from './actions/calendar.ts';
 import { resolveConflict } from './actions/conflicts.ts';
@@ -191,6 +193,9 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
         break;
       case 'ai.reminder':
         data = aiReminder(env, session, parse(AiReminderSchema, payload));
+        break;
+      case 'ai.draft':
+        data = aiDraft(env, session, parse(AiDraftSchema, payload));
         break;
     }
     return { ok: true, data, serverNow, ...(requestId ? { requestId } : {}) };
