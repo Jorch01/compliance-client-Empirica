@@ -72,6 +72,8 @@ export class FakeGemini {
   listCalls = 0;
   /** What the next generateContent answers instead: the day's or the minute's quota. */
   failNext: ('day' | 'minute')[] = [];
+  /** Refuses every responseSchema as Google does one too complex to serve: 400 or 500. */
+  rejectSchemas: 400 | 500 | null = null;
   /** What the model writes, from what it was sent. */
   reply: (call: GeminiCall) => unknown = (call) => defaultReply(call);
 
@@ -117,11 +119,31 @@ export class FakeGemini {
       contents?: { parts?: { text?: string }[] }[];
       generationConfig?: { responseSchema?: { properties?: Record<string, unknown> } };
     };
+    const schema = body.generationConfig?.responseSchema;
+    if (schema && this.rejectSchemas) {
+      return {
+        status: this.rejectSchemas,
+        body: {
+          error: {
+            code: this.rejectSchemas,
+            status: this.rejectSchemas === 400 ? 'INVALID_ARGUMENT' : 'INTERNAL',
+            message:
+              'The specified schema produces a constraint that has too many states for serving.',
+          },
+        },
+      };
+    }
+    const system = body.systemInstruction?.parts?.map((p) => p.text ?? '').join('') ?? '';
+    // Without responseSchema, the schema comes written at the end of the instructions.
+    const written = /schema \(OpenAPI subset\): (\{.*\})$/s.exec(system)?.[1];
+    const properties =
+      schema?.properties ??
+      (written ? (JSON.parse(written) as { properties?: Record<string, unknown> }).properties : {});
     const call: GeminiCall = {
       model,
-      system: body.systemInstruction?.parts?.map((p) => p.text ?? '').join('') ?? '',
+      system,
       prompt: body.contents?.[0]?.parts?.map((p) => p.text ?? '').join('') ?? '',
-      schemaKeys: Object.keys(body.generationConfig?.responseSchema?.properties ?? {}),
+      schemaKeys: Object.keys(properties ?? {}),
     };
     this.calls.push(call);
     return {

@@ -8,6 +8,9 @@
  *   model no longer exists, the portal picks another, keeps it and tells
  *   the partners (IA_MODELO).
  * - Answers follow a JSON schema (responseSchema); the caller checks them.
+ *   If Google refuses the request (400, or a 500 that a schema too large
+ *   to serve also causes), it goes once more with the schema written in
+ *   the instructions instead.
  * - The day's requests are counted by California's day, as Google counts
  *   them. At 80 % of Config.limiteDiarioIA the partners hear it, once a day
  *   (IA_CUOTA_ALTA). When Google says the day's quota ran out, the helpers
@@ -230,6 +233,34 @@ function warnIfNearLimit(env: Env, db: Database, used: number): void {
   });
 }
 
+/** What Google said when it refused a request, short (it never echoes the prompt). */
+export function geminiMessage(body: unknown): string {
+  const message = (body as { error?: { message?: unknown } } | null)?.error?.message;
+  return typeof message === 'string' ? message.slice(0, 300) : '';
+}
+
+/** The request without responseSchema: the schema goes in the instructions. */
+export function withoutSchema<
+  T extends {
+    systemInstruction: { parts: { text: string }[] };
+    generationConfig: Record<string, unknown>;
+  },
+>(body: T, schema: Record<string, unknown>): T {
+  const { responseSchema: _schema, ...config } = body.generationConfig;
+  const system = body.systemInstruction.parts.map((p) => p.text).join('\n');
+  return {
+    ...body,
+    systemInstruction: {
+      parts: [
+        {
+          text: `${system}\n\nAnswer only with JSON that follows this schema (OpenAPI subset): ${JSON.stringify(schema)}`,
+        },
+      ],
+    },
+    generationConfig: config,
+  };
+}
+
 function isPerDay(body: unknown): boolean {
   const details = (body as { error?: { details?: unknown[] } } | null)?.error?.details ?? [];
   return JSON.stringify(details).toLowerCase().includes('perday');
@@ -272,7 +303,7 @@ export function generate(env: Env, req: GenerateRequest): unknown {
     keepModel(env, model, false);
   }
 
-  const body = {
+  let body = {
     systemInstruction: { parts: [{ text: req.system }] },
     contents: [{ role: 'user', parts: [{ text: req.prompt }] }],
     generationConfig: {
@@ -284,7 +315,8 @@ export function generate(env: Env, req: GenerateRequest): unknown {
   };
   let rediscovered = false;
   let retried = false;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  let schemaless = false;
+  for (let attempt = 0; attempt < 4; attempt++) {
     const res = call(env, key, 'post', `${API}/models/${model}:generateContent`, body);
     if (res.status === 200) {
       usage.usadas++;
@@ -335,7 +367,21 @@ export function generate(env: Env, req: GenerateRequest): unknown {
       );
     }
     if (refusedKey(res)) throw badKeyError();
-    env.log('IA: Gemini respondió con error', { status: res.status, model });
+    if ((res.status === 400 || res.status >= 500) && !schemaless) {
+      schemaless = true;
+      env.log('IA: Gemini no aceptó la petición; se repite con el esquema en las instrucciones', {
+        status: res.status,
+        model,
+        message: geminiMessage(res.body),
+      });
+      body = withoutSchema(body, req.schema);
+      continue;
+    }
+    env.log('IA: Gemini respondió con error', {
+      status: res.status,
+      model,
+      message: geminiMessage(res.body),
+    });
     throw new ApiError('INTERNAL', 'La IA no está disponible en este momento. Intenta más tarde.');
   }
   throw new ApiError('INTERNAL', 'La IA no está disponible en este momento. Intenta más tarde.');

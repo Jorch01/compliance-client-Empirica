@@ -14,9 +14,10 @@ import {
   type TableName,
 } from '@empirica/shared';
 import { ID, uid } from '@empirica/shared/testing';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { withoutCompanyType } from './actions/ai.ts';
 import { DRAFT_PREFIX } from './actions/draft.ts';
+import { DRAFT_SCHEMA } from './ai/prompts.ts';
 import { Masker, scrub } from './ai/mask.ts';
 import { Device, op } from './testing/device.ts';
 import { createWorld, type World } from './testing/harness.ts';
@@ -479,6 +480,48 @@ describe('the proposal (D75, D76)', () => {
         .map((b) => b.accion);
     expect(log(viaAi)).toEqual(['CREAR_IA']);
     expect(log(byHand)).toEqual(['CREAR']);
+  });
+});
+
+describe('when Google refuses the schema (8 de octubre de 2026)', () => {
+  it('the schema stays light: one closed list (the kind), no maximum of items', () => {
+    const text = JSON.stringify(DRAFT_SCHEMA);
+    expect(text.match(/"enum"/g)).toHaveLength(1);
+    expect(text).not.toContain('maxItems');
+  });
+
+  it.each([400, 500] as const)(
+    'refused with %i, the proposal still comes, with the schema in the instructions; the log says what Google answered',
+    (status) => {
+      const w = createWorld();
+      w.google.gemini.rejectSchemas = status;
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      try {
+        const { items } = proposal(w, ID.abogado, 'Abre un asunto con dos tareas y una reunión');
+        expect(items.map((i) => i.table)).toEqual(['Asuntos', 'Tareas', 'Tareas', 'Eventos']);
+        expect(w.google.gemini.calls.at(-1)?.system).toContain('"elementos"');
+        expect(log.mock.calls.flat().join(' ')).toContain('too many states for serving');
+      } finally {
+        log.mockRestore();
+      }
+    },
+  );
+
+  it('without the schema enforced, a number or a yes/no written as text, or the list on its own, still count', () => {
+    const w = createWorld();
+    w.google.gemini.reply = () => [
+      {
+        tipo: 'OBLIGACION',
+        clave: 'E1',
+        titulo: 'Reporte mensual',
+        repetir: 'MENSUAL',
+        diaDelMes: '17',
+      },
+      { tipo: 'CONTRATO', clave: 'E2', titulo: 'Arrendamiento', renovacionAutomatica: 'true' },
+    ];
+    const { items } = proposal(w, ID.abogado, 'Registra lo de compliance');
+    expect(nth(items, 0).fields).toMatchObject({ recurrencia: 'FREQ=MONTHLY;BYMONTHDAY=17' });
+    expect(items.map((i) => i.table)).toEqual(['Obligaciones', 'Contratos']);
   });
 });
 
