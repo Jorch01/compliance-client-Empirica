@@ -138,7 +138,7 @@ describe('asking Firebase’s domain', () => {
 
 describe('the copy', () => {
   it('every file Firebase lists, pages saved as .html for GitHub Pages', async () => {
-    const copy = await collect(firebase(), noWait, 'key');
+    const copy = await collect(firebase(), noWait);
     expect(copy.problems).toEqual([]);
     expect(copy.files.map((f) => f.saveAs)).toEqual([
       '__/auth/handler.html',
@@ -157,26 +157,19 @@ describe('the copy', () => {
     expect(copy.lines.join('\n')).not.toContain('key');
   });
 
-  it('without init.json on Firebase’s domain, it is written with the portal’s configuration', async () => {
+  it('without init.json on Firebase’s domain (no Hosting site, as today), it goes on without it', async () => {
     const copy = await collect(
       firebase({ '__/firebase/init.json': answer('Not found', 'text/html', 404) }),
       noWait,
-      'browser-key',
     );
     expect(copy.problems).toEqual([]);
-    const init = copy.files.find((f) => f.saveAs === '__/firebase/init.json');
-    expect(JSON.parse(new TextDecoder().decode(init?.bytes))).toEqual({
-      apiKey: 'browser-key',
-      authDomain: FIREBASE_DOMAIN,
-      ...FIREBASE_PROJECT,
-    });
+    expect(copy.files.map((f) => f.saveAs)).not.toContain('__/firebase/init.json');
   });
 
   it('the pages of email links are not needed to sign in with Google: without them it goes on', async () => {
     const copy = await collect(
       firebase({ '__/auth/links': answer('Not found', 'text/html', 404) }),
       noWait,
-      'key',
     );
     expect(copy.problems).toEqual([]);
     expect(copy.files.map((f) => f.saveAs)).not.toContain('__/auth/links.html');
@@ -190,15 +183,12 @@ describe('the copy', () => {
       firebase({
         '__/auth/iframe': new Error('getaddrinfo ENOTFOUND'),
         '__/auth/handler': page('/__/auth/handler.js', '/__/auth/new.js'),
-        '__/firebase/init.json': answer('Not found', 'text/html', 404),
       }),
       noWait,
-      '',
     );
     expect(copy.problems).toEqual([
       '__/auth/handler carga __/auth/new.js, que no está en la copia (agrégalo a HELPER_FILES)',
       `https://${FIREBASE_DOMAIN}/__/auth/iframe getaddrinfo ENOTFOUND`,
-      `https://${FIREBASE_DOMAIN}/__/firebase/init.json respondió 404`,
     ]);
   });
 });

@@ -170,7 +170,6 @@ jobs:
         run: node scripts/firebase-auth-helper.ts apps/web/dist
         env:
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
-          FIREBASE_WEB_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
           PAGES_HOST: ${{ steps.pages.outputs.host }}
 
       - name: Subir el sitio

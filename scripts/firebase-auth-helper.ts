@@ -37,7 +37,11 @@ export interface HelperFile {
   kind: 'html' | 'js' | 'json';
   /** Fewer bytes than this is not the file (an empty answer, an error). */
   minBytes: number;
-  /** Not used to sign in with Google (email links): without it the copy goes on. */
+  /**
+   * Without it the copy goes on: the email-link pages are not used to sign
+   * in with Google, and Firebase serves init.json only to projects with a
+   * Hosting site (this one has none, and its own helper works without it).
+   */
   optional?: boolean;
 }
 
@@ -56,7 +60,13 @@ export const HELPER_FILES: readonly HelperFile[] = [
     optional: true,
   },
   { path: '__/auth/links.js', saveAs: '__/auth/links.js', kind: 'js', minBytes: 0, optional: true },
-  { path: '__/firebase/init.json', saveAs: '__/firebase/init.json', kind: 'json', minBytes: 2 },
+  {
+    path: '__/firebase/init.json',
+    saveAs: '__/firebase/init.json',
+    kind: 'json',
+    minBytes: 2,
+    optional: true,
+  },
 ];
 
 export interface Fetched {
@@ -134,14 +144,6 @@ export async function fetchChecked(
   return { ok: false, problem };
 }
 
-/**
- * The project's configuration as Firebase serves it at /__/firebase/init.json,
- * for when its domain does not (a project without a Hosting site).
- */
-export function initJson(apiKey: string): string {
-  return JSON.stringify({ apiKey, authDomain: FIREBASE_DOMAIN, ...FIREBASE_PROJECT });
-}
-
 export interface Copy {
   files: { saveAs: string; bytes: Uint8Array }[];
   /** What the log shows: size, fingerprint and what each page loads. */
@@ -150,7 +152,7 @@ export interface Copy {
 }
 
 /** Every helper file from Firebase's domain, checked, without writing anything yet. */
-export async function collect(get: Get, wait: Wait, apiKey: string): Promise<Copy> {
+export async function collect(get: Get, wait: Wait): Promise<Copy> {
   const copy: Copy = { files: [], lines: [], problems: [] };
   for (const file of HELPER_FILES) {
     const url = `https://${FIREBASE_DOMAIN}/${file.path}`;
@@ -158,11 +160,6 @@ export async function collect(get: Get, wait: Wait, apiKey: string): Promise<Cop
     let bytes: Uint8Array;
     if (result.ok) {
       bytes = result.got.bytes;
-    } else if (file.kind === 'json' && apiKey) {
-      bytes = new TextEncoder().encode(initJson(apiKey));
-      copy.lines.push(
-        `${file.path}: ${result.problem}; se escribe con la configuración del portal`,
-      );
     } else if (file.optional) {
       copy.lines.push(`${file.path}: ${result.problem}; no hace falta para entrar con Google`);
       continue;
@@ -228,7 +225,7 @@ async function copyInto(dist: string, plan: ReturnType<typeof copyPlan>): Promis
   if (!existsSync(join(dist, 'index.html'))) {
     throw new Error(`No está ${join(dist, 'index.html')}: corre antes npm run build.`);
   }
-  const copy = await collect(get, wait, (process.env.FIREBASE_WEB_API_KEY ?? '').trim());
+  const copy = await collect(get, wait);
   for (const line of copy.lines) console.log(line);
   if (copy.problems.length > 0) {
     throw new Error(
