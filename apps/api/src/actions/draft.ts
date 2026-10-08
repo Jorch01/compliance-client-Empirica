@@ -118,6 +118,27 @@ const AnswerSchema = z.object({
   elementos: z.array(z.unknown()),
 });
 
+const NUMBER_FIELDS = ['cadaCuanto', 'diaDelMes', 'mes', 'diasAviso'] as const;
+const BOOLEAN_FIELDS = ['fatal', 'renovacionAutomatica'] as const;
+
+/**
+ * An item as the schema asks for it, when Google answered without the
+ * schema enforced (gemini.ts): a number or a yes/no written as text.
+ */
+function normalized(item: unknown): unknown {
+  if (typeof item !== 'object' || item === null || Array.isArray(item)) return item;
+  const out: Record<string, unknown> = { ...(item as Record<string, unknown>) };
+  for (const field of NUMBER_FIELDS) {
+    const value = out[field];
+    if (typeof value === 'string' && /^\d+$/.test(value.trim())) out[field] = Number(value);
+  }
+  for (const field of BOOLEAN_FIELDS) {
+    const value = out[field];
+    if (value === 'true' || value === 'false') out[field] = value === 'true';
+  }
+  return out;
+}
+
 /** Markers the AI may use, and what each one stands for in this client. */
 interface Known {
   units: Map<string, string>;
@@ -424,7 +445,7 @@ export function draftItems(
 ): DraftItem[] {
   const raws = elementos
     .flatMap((e) => {
-      const parsed = RawItemSchema.safeParse(e);
+      const parsed = RawItemSchema.safeParse(normalized(e));
       return parsed.success && tableOfKind(parsed.data.tipo) ? [parsed.data] : [];
     })
     .slice(0, MAX_DRAFT_ITEMS);
@@ -613,7 +634,8 @@ export function aiDraft(
   };
 
   const raw = generate(env, draftPrompt(context, m.maskText(scrub(input.peticion)), lang));
-  const answer = answerOf(AnswerSchema, raw);
+  // Without the schema enforced, the list may come on its own.
+  const answer = answerOf(AnswerSchema, Array.isArray(raw) ? { elementos: raw } : raw);
   return {
     explicacion: textOf(answer.explicacion, m, MAX_EXPLANATION),
     items: draftItems(answer.elementos, {

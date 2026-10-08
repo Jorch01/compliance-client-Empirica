@@ -10,7 +10,6 @@ import {
   CATEGORIAS_OBLIGACION,
   ESTADOS_TRAMITE,
   LADOS_RESPONSABLE,
-  MAX_DRAFT_ITEMS,
   PRIORIDADES,
   RIESGOS,
   type AgendaItem,
@@ -226,6 +225,14 @@ const enumOf = (values: readonly string[], description?: string) => ({
   ...(description ? { description } : {}),
 });
 const described = (description: string) => ({ type: 'STRING', description });
+/**
+ * A closed list told in the description, not as an enum: every enum and an
+ * array's maxItems multiply what Google must hold to serve the schema, and
+ * a schema this wide got refused as too complex. The conversion
+ * (actions/draft.ts) keeps only the listed values.
+ */
+const listed = (values: readonly string[], description: string) =>
+  described(`${description}. Uno de: ${values.join(', ')}`);
 const INTEGER = { type: 'INTEGER' };
 const BOOLEAN = { type: 'BOOLEAN' };
 
@@ -239,14 +246,17 @@ export const DRAFT_KINDS = [
   'CITA',
 ] as const;
 
-/** Gemini's responseSchema for "Crear con IA": one flat item per record. */
+/**
+ * Gemini's responseSchema for "Crear con IA": one flat item per record.
+ * Kept light for Google (one enum, no maxItems): the rules say 15 at most
+ * and the conversion keeps the first 15.
+ */
 export const DRAFT_SCHEMA = {
   type: 'OBJECT',
   properties: {
     explicacion: STRING,
     elementos: {
       type: 'ARRAY',
-      maxItems: MAX_DRAFT_ITEMS,
       items: {
         type: 'OBJECT',
         properties: {
@@ -261,9 +271,9 @@ export const DRAFT_SCHEMA = {
           dependeDe: described('TAREA: clave de otra TAREA de esta propuesta que va antes'),
           unidad: described('Marcador [UNIDAD_n], si la petición lo dice'),
           responsable: described('Marcador [PERSONA_n], si la petición lo dice'),
-          area: enumOf(AREAS, 'ASUNTO'),
-          prioridad: enumOf(PRIORIDADES, 'ASUNTO, TAREA'),
-          deQuien: enumOf(LADOS_RESPONSABLE, 'TAREA, OBLIGACION: de quién es el trabajo'),
+          area: listed(AREAS, 'ASUNTO'),
+          prioridad: listed(PRIORIDADES, 'ASUNTO, TAREA'),
+          deQuien: listed(LADOS_RESPONSABLE, 'TAREA, OBLIGACION: de quién es el trabajo'),
           fecha: described(
             'AAAA-MM-DD. TAREA: fecha límite; ASUNTO: fecha objetivo; TRAMITE: fecha límite; OBLIGACION: próximo vencimiento; CONTRATO: fin de la vigencia; CITA: el día',
           ),
@@ -276,18 +286,18 @@ export const DRAFT_SCHEMA = {
           puntos: { type: 'ARRAY', items: STRING, description: 'TAREA: su lista de pasos' },
           plantilla: described('TRAMITE: marcador [PLANTILLA_n]'),
           catalogo: described('OBLIGACION: marcador [CATALOGO_n]'),
-          categoria: enumOf(CATEGORIAS_OBLIGACION, 'OBLIGACION'),
-          riesgo: enumOf(RIESGOS, 'OBLIGACION'),
+          categoria: listed(CATEGORIAS_OBLIGACION, 'OBLIGACION'),
+          riesgo: listed(RIESGOS, 'OBLIGACION'),
           autoridad: described('TRAMITE, OBLIGACION: solo si la petición la dice'),
-          repetir: enumOf(['MENSUAL', 'ANUAL'], 'OBLIGACION'),
+          repetir: listed(['MENSUAL', 'ANUAL'], 'OBLIGACION'),
           cadaCuanto: INTEGER,
           diaDelMes: INTEGER,
           mes: INTEGER,
           tipoContrato: described('CONTRATO: tipo, por ejemplo arrendamiento'),
           renovacionAutomatica: BOOLEAN,
           diasAviso: INTEGER,
-          tipoCita: enumOf(['CITA', 'REUNION', 'AUDIENCIA'], 'CITA'),
-          estadoTramite: enumOf(ESTADOS_TRAMITE, 'TRAMITE'),
+          tipoCita: listed(['CITA', 'REUNION', 'AUDIENCIA'], 'CITA'),
+          estadoTramite: listed(ESTADOS_TRAMITE, 'TRAMITE'),
         },
         required: ['tipo', 'clave', 'titulo'],
       },
