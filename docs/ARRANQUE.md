@@ -44,6 +44,8 @@ Empieza por lo que el cliente necesita ver la primera semana:
 
 No hace falta cargar todo el primer día: el cliente ve lo que ya está y lo demás aparece en cuanto se agrega.
 
+**Más rápido, con IA** (solo socios y abogados del cliente): **Crear con IA**, en el Centro de control, Asuntos, Trámites o Compliance, o **Sugerir tareas con IA** dentro de un asunto. Describe lo que necesitas sin nombres ni datos confidenciales (el cliente, la unidad y el asunto se eligen en la ventana), revisa la propuesta, corrige o quita lo que sobre, escribe ahí los nombres reales y elige **Crear**. Todo nace interno: marca **Visible para el cliente** en lo que quieras compartir. Detalle en `IA.md`.
+
 ## 4. La primera semana con el cliente
 
 - Mándales el enlace del portal y pídeles que lo **instalen** en el teléfono: el recorrido del primer ingreso lo propone, y **Ayuda** tiene los pasos de cada sistema.

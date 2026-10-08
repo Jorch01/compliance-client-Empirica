@@ -29,6 +29,7 @@ import {
   useMatterTasks,
 } from './matters/matters.ts';
 import { TaskForm } from './tasks/TaskForm.tsx';
+import { AiDraftButton } from './common/AiDraft.tsx';
 
 /** One fact of the matter: a term and its value, when it has one. */
 function Fact({ term, children }: { term: string; children: ReactNode }) {
@@ -174,17 +175,20 @@ export function MatterDetailPage() {
           <Card
             title={t('matters.tasksTitle')}
             actions={
-              mayAddTask ? (
-                <Button
-                  size="sm"
-                  icon="plus"
-                  onClick={() => {
-                    setAdding(true);
-                  }}
-                >
-                  {t('tasks.new')}
-                </Button>
-              ) : undefined
+              <div className="flex flex-wrap gap-2">
+                <AiDraftButton matter={matter} />
+                {mayAddTask ? (
+                  <Button
+                    size="sm"
+                    icon="plus"
+                    onClick={() => {
+                      setAdding(true);
+                    }}
+                  >
+                    {t('tasks.new')}
+                  </Button>
+                ) : null}
+              </div>
             }
           >
             <TaskList

@@ -14,6 +14,10 @@ import {
 export const USERS = {
   socia: { id: '00000000-0000-4000-8000-000000000301', email: 'socia@despacho.example' },
   abogado: { id: '00000000-0000-4000-8000-000000000302', email: 'abogado@despacho.example' },
+  asistente: {
+    id: '00000000-0000-4000-8000-000000000303',
+    email: 'asistente@despacho.example',
+  },
   adminA: { id: '00000000-0000-4000-8000-000000000311', email: 'admin@cliente-a.example' },
   norte: { id: '00000000-0000-4000-8000-000000000312', email: 'norte@cliente-a.example' },
   adminSur: { id: '00000000-0000-4000-8000-000000000314', email: 'sur@cliente-a.example' },

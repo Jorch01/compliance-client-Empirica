@@ -153,12 +153,14 @@ export class SyncEngine {
   /**
    * Applies an edit locally and queues it. `fields` for 'create' and
    * 'update'; the record's client and scope columns are the caller's.
+   * `via: 'IA'` marks a record created from a proposal of the AI (F8).
    */
   async mutate(
     table: TableName,
     type: OpType,
     id: string,
     fields: Record<string, Value> = {},
+    options: { via?: 'IA' } = {},
   ): Promise<Row | undefined> {
     const at = this.clock.stamp();
     const opId = this.#uuid();
@@ -169,7 +171,13 @@ export class SyncEngine {
       const ops = await this.db.outbox.where('[table+id]').equals([table, id]).sortBy('seq');
       const pending = ops.filter((o) => !o.sending);
       const tail = await this.db.outbox.orderBy('seq').last();
-      const plan = enqueue(table, current, pending, { opId, type, id, fields, at }, tail?.seq);
+      const plan = enqueue(
+        table,
+        current,
+        pending,
+        { opId, type, id, fields, at, ...(options.via ? { via: options.via } : {}) },
+        tail?.seq,
+      );
       if (plan.remove.length) await this.db.outbox.bulkDelete(plan.remove);
       if (plan.put) await this.db.outbox.put(plan.put);
       const cancelledCreation =

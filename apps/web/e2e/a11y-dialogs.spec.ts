@@ -39,6 +39,8 @@ const OPENED: { user: DemoUser; mobile?: boolean; items: Opened[] }[] = [
       { path: `#/tareas/${id(0x501)}`, open: 'Subir documento' },
       { path: '#/agenda', open: 'Nueva cita' },
       { path: '#/', open: 'Sugerencias o errores' },
+      { path: '#/asuntos', open: 'Crear con IA' },
+      { path: `#/asuntos/${id(0x402)}`, open: 'Sugerir tareas con IA' },
     ],
   },
   {

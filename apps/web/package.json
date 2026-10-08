@@ -1,6 +1,6 @@
 {
   "name": "@empirica/web",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "Frontend del portal: React + Vite, local-first (IndexedDB) y PWA.",
   "type": "module",

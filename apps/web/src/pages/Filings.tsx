@@ -35,6 +35,7 @@ import {
   useTemplates,
   type Template,
 } from './filings/filings.ts';
+import { AiDraftButton } from './common/AiDraft.tsx';
 
 type Filter = 'open' | 'closed' | 'deleted';
 
@@ -238,6 +239,7 @@ export function FilingsPage() {
                 {t('filings.templates')}
               </Link>
             ) : null}
+            <AiDraftButton />
             {canCreate ? (
               <Button
                 icon="plus"

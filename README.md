@@ -4,7 +4,7 @@ Portal de clientes de **Empírica Legal Lab** · _Fractional Legal Team: an exte
 
 Un solo lugar, en tiempo casi real, para que el cliente y el despacho vean asuntos y tareas conjuntas, trámites, el calendario de cumplimiento, documentos, contratos, solicitudes, la agenda y los reportes mensuales. Funciona sin internet (local-first), se instala en el teléfono y sincroniza con Google Sheets. En `https://portal.empirica.mx`.
 
-> **Estado: Fase 7 (producción) en curso; fases 0 a 6 aprobadas.** Empieza por [`docs/PLAN.md`](docs/PLAN.md): el plan de la Fase 7 está en la § 21 y cada fase cerrada tiene su resumen.
+> **Estado: fases 0 a 7 aprobadas (7 de octubre de 2026); la Fase 8, «Crear con IA», en revisión; sigue la entrada en producción con los pilotos.** Empieza por [`docs/PLAN.md`](docs/PLAN.md): cada fase cerrada tiene su resumen (la 8, en la § 25) y lo que sigue está en la § 23.
 
 |                                                         |                                                                                                                             |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |

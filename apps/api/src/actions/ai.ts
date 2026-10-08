@@ -35,7 +35,7 @@ import {
 } from '@empirica/shared';
 import * as z from 'zod/mini';
 import { dailyLimit, generate, geminiKey, usageToday } from '../ai/gemini.ts';
-import { Masker } from '../ai/mask.ts';
+import { Masker, scrub } from '../ai/mask.ts';
 import {
   askPrompt,
   reminderPrompt,
@@ -55,7 +55,7 @@ const MAX_TEXT = 2_000;
 const MAX_ASK_ITEMS = 120;
 
 const clip = (value: string): string => value.trim().slice(0, MAX_TEXT);
-const langOf = (value: unknown): Lang => (value === 'en' ? 'en' : 'es');
+export const langOf = (value: unknown): Lang => (value === 'en' ? 'en' : 'es');
 
 function configValue(db: Database, clave: string): string | null {
   const row = db.rows('Config').find((r) => !r.deleted && r.clave === clave);
@@ -66,7 +66,7 @@ export function modeOf(db: Database, clienteId: string): ModoIA {
   return aiModeOf(configValue(db, 'modoIA'), db.table('Clientes').get(clienteId)?.modoIA);
 }
 
-function requireOn(db: Database, clienteId: string): void {
+export function requireOn(db: Database, clienteId: string): void {
   if (modeOf(db, clienteId) === 'OFF') {
     throw new ApiError('FORBIDDEN', 'La IA está apagada para este cliente.', { reason: 'AI_OFF' });
   }
@@ -77,7 +77,32 @@ const clientName = (db: Database, clienteId: string): string => {
   return (c ? (text(c, 'nombreComercial') ?? text(c, 'razonSocial')) : null) ?? '';
 };
 
-function answerOf<T>(schema: z.ZodMiniType<T>, raw: unknown): T {
+/**
+ * Every name a client goes by, the one the portal shows first: any of them
+ * in a typed text becomes the client's marker (Masker.maskAll).
+ */
+export function clientNames(db: Database, clienteId: string): string[] {
+  const c = db.table('Clientes').get(clienteId);
+  if (!c) return [];
+  const legal = text(c, 'razonSocial');
+  return [
+    text(c, 'nombreComercial'),
+    legal,
+    legal ? withoutCompanyType(legal) : null,
+    text(c, 'rfc'),
+  ].filter((n): n is string => Boolean(n));
+}
+
+/** Mexican company types at the end of a legal name: "S.A. de C.V.", "S. de R.L.", "S.C.", "A.C.", "S.A.P.I.". */
+const COMPANY_TYPE =
+  /[,\s]+(?:s\.?\s*a\.?\s*p\.?\s*i\.?|s\.?\s*a\.?\s*b\.?|s\.?\s*a\.?\s*s\.?|s\.?\s*a\.?|s\.?\s*de\s*r\.?\s*l\.?|s\.?\s*c\.?|a\.?\s*c\.?)(?:\s*de\s*c\.?\s*v\.?)?\.?\s*$/i;
+
+/** A legal name as people say it: "Cliente Demo, S.A. de C.V." → "Cliente Demo". */
+export function withoutCompanyType(name: string): string {
+  return name.replace(COMPANY_TYPE, '').trim();
+}
+
+export function answerOf<T>(schema: z.ZodMiniType<T>, raw: unknown): T {
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     throw new ApiError('INTERNAL', 'La IA no pudo responder esta vez. Intenta de nuevo.', {
@@ -187,8 +212,8 @@ export function aiAsk(
       : {}),
     unidad: masker.mask('UNIDAD', units.get(text(row, 'entidadId') ?? '') ?? null),
   });
-  // Every client's name is known to the masker, so a question naming one is masked.
-  for (const id of clients) masker.mask('CLIENTE', clientName(db, id));
+  // Every client's names are known to the masker, so a question naming one is masked.
+  for (const id of clients) masker.maskAll('CLIENTE', clientNames(db, id));
 
   const items: { fecha: string | null; item: Record<string, unknown> }[] = [];
   for (const t of visible('Tareas')) {
@@ -277,12 +302,20 @@ export function aiAsk(
           : a.fecha.localeCompare(b.fecha),
   );
 
+  // Any other name the portal knows (a person, another client) is masked in the
+  // question too, and never written back: it may not be this person's to see.
+  for (const u of db.rows('Usuarios')) masker.hide('PERSONA', text(u, 'nombre'));
+  for (const c of db.rows('Clientes')) {
+    if (ctx.clients.has(c.id)) continue;
+    for (const name of clientNames(db, c.id)) masker.hide('CLIENTE', name);
+  }
+
   const lang = langOf(session.user.idioma);
   const raw = generate(
     env,
     askPrompt(
       items.slice(0, MAX_ASK_ITEMS).map((i) => i.item),
-      masker.maskText(input.pregunta),
+      masker.maskText(scrub(input.pregunta)),
       lang,
       today,
     ),

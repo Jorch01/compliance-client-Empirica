@@ -5,7 +5,17 @@
  * documents never go. The instructions forbid inventing facts, dates,
  * deadlines or legal grounds, and talking about hours.
  */
-import type { AgendaItem, ReportModel } from '@empirica/shared';
+import {
+  AREAS,
+  CATEGORIAS_OBLIGACION,
+  ESTADOS_TRAMITE,
+  LADOS_RESPONSABLE,
+  MAX_DRAFT_ITEMS,
+  PRIORIDADES,
+  RIESGOS,
+  type AgendaItem,
+  type ReportModel,
+} from '@empirica/shared';
 import type { Masker } from './mask.ts';
 
 export type Lang = 'es' | 'en';
@@ -182,5 +192,120 @@ export function reminderPrompt(input: unknown, lang: Lang) {
     prompt: JSON.stringify(input),
     schema: { type: 'OBJECT', properties: { texto: STRING }, required: ['texto'] },
     maxTokens: 400,
+  };
+}
+
+const draftRules = {
+  es: [
+    'Eres asistente de Empírica Legal Lab, un despacho de abogados en México, dentro de su portal de seguimiento de clientes.',
+    'Un abogado del despacho te pide registros para un cliente: asuntos, tareas, trámites, obligaciones de compliance, contratos y citas. Propónlos en el esquema: él revisará la propuesta y la corregirá antes de crear nada.',
+    ...RULES.es,
+    'Propón lo que pide la petición y lo que hace falta para cumplirla, por ejemplo las tareas de trabajo de un asunto: pasos concretos, en el orden en que se hacen. Máximo 15 elementos.',
+    'Fechas (AAAA-MM-DD): solo las que dice la petición, con fecha o en relativo ("el viernes", "en dos semanas"), calculadas desde hoy. Si la petición no da una fecha, deja el campo vacío. Nunca pongas un plazo legal que la petición no diga.',
+    'Marca "fatal" solo si la petición dice que el plazo es fatal. No escribas fundamentos legales. La autoridad y la repetición de una obligación, solo si la petición las dice.',
+    'Usa una plantilla de trámite o una obligación del catálogo solo si su marcador aparece en la petición. Personas y unidades: sus marcadores, solo si aparecen en la petición.',
+    'Cada elemento lleva una clave única (E1, E2…). Una tarea de un asunto nuevo pone en "asunto" la clave de ese asunto; de un asunto que ya existe, su marcador. Si una tarea espera a otra, pon la clave de esa otra en "dependeDe".',
+    'Títulos breves, en el idioma de la petición y sin nombres de personas. En "explicacion", una o dos frases en español que digan qué propones.',
+  ],
+  en: [
+    'You assist Empírica Legal Lab, a law firm in Mexico, inside its client portal.',
+    'A lawyer of the firm asks you for records for a client: matters, tasks, filings, compliance obligations, contracts and appointments. Propose them in the schema: the lawyer will review and correct the proposal before anything is created.',
+    ...RULES.en,
+    'Propose what the request asks for and what it takes to get it done, for example the working tasks of a matter: concrete steps, in the order they are done. 15 items at most.',
+    'Dates (YYYY-MM-DD): only those the request gives, as a date or relative ("on Friday", "in two weeks"), counted from today. If the request gives no date, leave the field empty. Never set a legal deadline the request does not state.',
+    'Set "fatal" only if the request says the deadline is fatal. Do not write legal grounds. The authority and the repetition of an obligation, only if the request states them.',
+    'Use a filing template or a catalog obligation only if its marker appears in the request. People and units: their markers, only if they appear in the request.',
+    'Every item has a unique key (E1, E2…). A task of a new matter puts that matter’s key in "asunto"; of an existing matter, its marker. If a task waits for another one, put the other’s key in "dependeDe".',
+    'Short titles, in the language of the request and without names of people. In "explicacion", one or two sentences in English saying what you propose.',
+  ],
+} as const;
+
+const enumOf = (values: readonly string[], description?: string) => ({
+  type: 'STRING',
+  enum: [...values],
+  ...(description ? { description } : {}),
+});
+const described = (description: string) => ({ type: 'STRING', description });
+const INTEGER = { type: 'INTEGER' };
+const BOOLEAN = { type: 'BOOLEAN' };
+
+/** The kinds of record a proposal brings, as the AI names them. */
+export const DRAFT_KINDS = [
+  'ASUNTO',
+  'TAREA',
+  'TRAMITE',
+  'OBLIGACION',
+  'CONTRATO',
+  'CITA',
+] as const;
+
+/** Gemini's responseSchema for "Crear con IA": one flat item per record. */
+export const DRAFT_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    explicacion: STRING,
+    elementos: {
+      type: 'ARRAY',
+      maxItems: MAX_DRAFT_ITEMS,
+      items: {
+        type: 'OBJECT',
+        properties: {
+          tipo: enumOf(DRAFT_KINDS),
+          clave: described('E1, E2…'),
+          titulo: described(
+            'ASUNTO, TAREA, TRAMITE, CITA: título; OBLIGACION: nombre; CONTRATO: la contraparte',
+          ),
+          asunto: described(
+            'TAREA, TRAMITE, CITA: clave de un ASUNTO de esta propuesta o marcador [ASUNTO_n]',
+          ),
+          dependeDe: described('TAREA: clave de otra TAREA de esta propuesta que va antes'),
+          unidad: described('Marcador [UNIDAD_n], si la petición lo dice'),
+          responsable: described('Marcador [PERSONA_n], si la petición lo dice'),
+          area: enumOf(AREAS, 'ASUNTO'),
+          prioridad: enumOf(PRIORIDADES, 'ASUNTO, TAREA'),
+          deQuien: enumOf(LADOS_RESPONSABLE, 'TAREA, OBLIGACION: de quién es el trabajo'),
+          fecha: described(
+            'AAAA-MM-DD. TAREA: fecha límite; ASUNTO: fecha objetivo; TRAMITE: fecha límite; OBLIGACION: próximo vencimiento; CONTRATO: fin de la vigencia; CITA: el día',
+          ),
+          fechaInicio: described(
+            'AAAA-MM-DD. ASUNTO: inicio; TRAMITE: presentación; CONTRATO: firma',
+          ),
+          hora: described('CITA: HH:MM de inicio'),
+          horaFin: described('CITA: HH:MM de fin'),
+          fatal: BOOLEAN,
+          puntos: { type: 'ARRAY', items: STRING, description: 'TAREA: su lista de pasos' },
+          plantilla: described('TRAMITE: marcador [PLANTILLA_n]'),
+          catalogo: described('OBLIGACION: marcador [CATALOGO_n]'),
+          categoria: enumOf(CATEGORIAS_OBLIGACION, 'OBLIGACION'),
+          riesgo: enumOf(RIESGOS, 'OBLIGACION'),
+          autoridad: described('TRAMITE, OBLIGACION: solo si la petición la dice'),
+          repetir: enumOf(['MENSUAL', 'ANUAL'], 'OBLIGACION'),
+          cadaCuanto: INTEGER,
+          diaDelMes: INTEGER,
+          mes: INTEGER,
+          tipoContrato: described('CONTRATO: tipo, por ejemplo arrendamiento'),
+          renovacionAutomatica: BOOLEAN,
+          diasAviso: INTEGER,
+          tipoCita: enumOf(['CITA', 'REUNION', 'AUDIENCIA'], 'CITA'),
+          estadoTramite: enumOf(ESTADOS_TRAMITE, 'TRAMITE'),
+        },
+        required: ['tipo', 'clave', 'titulo'],
+      },
+    },
+  },
+  required: ['explicacion', 'elementos'],
+} as const;
+
+/**
+ * "Crear con IA" (F8): the lawyer's request, masked, and the client's
+ * structure as markers. What comes back is checked and converted by
+ * actions/draft.ts; nothing is created until the lawyer says so.
+ */
+export function draftPrompt(input: unknown, request: string, lang: Lang) {
+  return {
+    system: draftRules[lang].join('\n'),
+    prompt: JSON.stringify({ ...(input as Record<string, unknown>), peticion: request }),
+    schema: DRAFT_SCHEMA as unknown as Record<string, unknown>,
+    maxTokens: 3_000,
   };
 }

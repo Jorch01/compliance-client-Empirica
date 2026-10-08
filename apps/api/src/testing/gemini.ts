@@ -8,6 +8,7 @@
  * Its answers are canned and say so ("demostración"): in the demo mode the
  * portal shows them as they come.
  */
+import { addDays } from '@empirica/shared';
 import type { ModelInfo } from '../ai/gemini.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
@@ -137,8 +138,113 @@ export class FakeGemini {
   }
 }
 
+/**
+ * 'Crear con IA' (F8): a canned proposal. Within a matter, three tasks for
+ * it; otherwise a matter with its tasks and a meeting. A template or a
+ * catalog model named in the request becomes a filing or an obligation.
+ */
+function draftReply(prompt: string): unknown {
+  const input = JSON.parse(prompt) as {
+    hoy?: string;
+    peticion?: string;
+    asuntoElegido?: { ref?: string | null } | null;
+  };
+  const today = input.hoy ?? '2026-10-08';
+  const asked = markers(input.peticion ?? '');
+  const extra = [
+    ...asked
+      .filter((m) => m.startsWith('[PLANTILLA_'))
+      .map((plantilla, i) => ({
+        tipo: 'TRAMITE',
+        clave: `P${String(i + 1)}`,
+        titulo: 'Trámite de demostración',
+        plantilla,
+      })),
+    ...asked
+      .filter((m) => m.startsWith('[CATALOGO_'))
+      .map((catalogo, i) => ({
+        tipo: 'OBLIGACION',
+        clave: `C${String(i + 1)}`,
+        titulo: 'Obligación del catálogo',
+        catalogo,
+      })),
+  ];
+  const matter = input.asuntoElegido?.ref;
+  if (matter) {
+    return {
+      explicacion:
+        'Propongo tres tareas para este asunto, en orden. (Propuesta de demostración: la real la redacta Gemini.)',
+      elementos: [
+        {
+          tipo: 'TAREA',
+          clave: 'E1',
+          titulo: 'Solicitar al cliente la documentación',
+          asunto: matter,
+          deQuien: 'CLIENTE',
+          fecha: addDays(today, 7),
+          puntos: ['Copia del documento vigente', 'Identificación del representante'],
+        },
+        {
+          tipo: 'TAREA',
+          clave: 'E2',
+          titulo: 'Revisar la documentación',
+          asunto: matter,
+          dependeDe: 'E1',
+        },
+        {
+          tipo: 'TAREA',
+          clave: 'E3',
+          titulo: 'Enviar observaciones al cliente',
+          asunto: matter,
+          dependeDe: 'E2',
+        },
+        ...extra,
+      ],
+    };
+  }
+  return {
+    explicacion:
+      'Propongo un asunto con dos tareas y una reunión. (Propuesta de demostración: la real la redacta Gemini.)',
+    elementos: [
+      {
+        tipo: 'ASUNTO',
+        clave: 'E1',
+        titulo: 'Revisión de contrato (demostración)',
+        area: 'CONTRATOS',
+      },
+      {
+        tipo: 'TAREA',
+        clave: 'E2',
+        titulo: 'Solicitar al cliente el contrato firmado',
+        asunto: 'E1',
+        deQuien: 'CLIENTE',
+        fecha: addDays(today, 3),
+      },
+      {
+        tipo: 'TAREA',
+        clave: 'E3',
+        titulo: 'Revisar el contrato y preparar observaciones',
+        asunto: 'E1',
+        dependeDe: 'E2',
+      },
+      {
+        tipo: 'CITA',
+        clave: 'E4',
+        titulo: 'Reunión para revisar observaciones',
+        asunto: 'E1',
+        tipoCita: 'REUNION',
+        fecha: addDays(today, 10),
+        hora: '10:00',
+        horaFin: '11:00',
+      },
+      ...extra,
+    ],
+  };
+}
+
 /** Canned answers that use the markers they were given, as the real model is told to. */
 function defaultReply(call: GeminiCall): unknown {
+  if (call.schemaKeys.includes('elementos')) return draftReply(call.prompt);
   const refs = markers(call.prompt);
   const english =
     call.system.includes('Write in English') || call.system.includes('Answer in English');

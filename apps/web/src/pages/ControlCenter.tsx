@@ -21,6 +21,7 @@ import { Upcoming } from './common/Upcoming.tsx';
 import { ComplianceSummary } from './compliance/ComplianceSummary.tsx';
 import { useHealthByClient } from './reports/data.ts';
 import { HealthBadge, HealthCard } from './reports/HealthBadge.tsx';
+import { AiDraftButton } from './common/AiDraft.tsx';
 
 type TileKey = 'overdue' | 'dueSoon' | 'inReview' | 'newRequests' | 'waitingClient';
 
@@ -174,6 +175,7 @@ export function ControlCenter() {
       <PageHeader
         eyebrow={selected ? clientName(selected) : t('dashboard.firmEyebrow')}
         title={t('dashboard.greeting', { name: me.name.split(' ')[0] ?? me.name })}
+        actions={<AiDraftButton />}
       />
       {pendingApprovals > 0 ? (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-card border border-info-border bg-info-subtle px-4 py-3 text-info-subtle-foreground">
