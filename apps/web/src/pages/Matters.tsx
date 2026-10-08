@@ -23,6 +23,7 @@ import {
   restoreMatter,
   useMatterTasks,
 } from './matters/matters.ts';
+import { AiDraftButton } from './common/AiDraft.tsx';
 
 type Filter = 'open' | 'closed' | 'deleted' | 'all';
 
@@ -155,16 +156,19 @@ export function MattersPage() {
       <PageHeader
         title={t('matters.title')}
         actions={
-          canCreate ? (
-            <Button
-              icon="plus"
-              onClick={() => {
-                setCreating(true);
-              }}
-            >
-              {t('matters.new')}
-            </Button>
-          ) : undefined
+          <>
+            <AiDraftButton />
+            {canCreate ? (
+              <Button
+                icon="plus"
+                onClick={() => {
+                  setCreating(true);
+                }}
+              >
+                {t('matters.new')}
+              </Button>
+            ) : null}
+          </>
         }
       >
         <p className="mt-2 max-w-2xl text-muted-foreground">

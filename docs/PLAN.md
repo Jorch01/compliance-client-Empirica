@@ -405,7 +405,7 @@ Por fase se agregan: modo mock con MSW y datos 100 % ficticios ("Cliente Demo, S
 | F5   | Calendarios (bidireccional, ACL, ICS) y correos                                                                                                                                                                                                                                                                                                                      | Un vencimiento del portal aparece en Calendar y en el ICS; las citas movidas en Calendar regresan                | **Aprobada** (2026-10-05) |
 | F6   | IA y reportes mensuales                                                                                                                                                                                                                                                                                                                                              | Reporte PDF de prueba con formato institucional                                                                  | **Aprobada** (2026-10-07) |
 | F7   | Rendimiento, auditoría sin conexión (incluido iOS), accesibilidad, seguridad, despliegue en `portal.empirica.mx`, documentación                                                                                                                                                                                                                                      | Checklist de seguridad aprobado y producción                                                                     | **Aprobada** (2026-10-07) |
-| F8   | Crear con IA: el abogado describe lo que necesita y la IA le propone asuntos, tareas, trámites, obligaciones, contratos y citas, listos para crear (§ 24)                                                                                                                                                                                                            | Un abogado pide, revisa la propuesta y la crea con un clic; nadie más ve la herramienta y nada confidencial sale | En curso (§ 24)           |
+| F8   | Crear con IA: el abogado describe lo que necesita y la IA le propone asuntos, tareas, trámites, obligaciones, contratos y citas, listos para crear (§ 24)                                                                                                                                                                                                            | Un abogado pide, revisa la propuesta y la crea con un clic; nadie más ve la herramienta y nada confidencial sale | En revisión (§ 25)        |
 | F9   | Estabilización con los pilotos (§ 23)                                                                                                                                                                                                                                                                                                                                | Lo que reporten, resuelto o decidido                                                                             | Propuesta (§ 23)          |
 
 ## 12. Riesgos
@@ -889,3 +889,52 @@ Lo pediste el 7 de octubre: que la IA ayude solo a los abogados del despacho a c
 - Las mismas protecciones del texto (marcadores también para la razón social y el RFC; nada de correos, teléfonos ni montos) se aplican a «Pregúntale al portal».
 
 **Lo que te toca**: nada nuevo durante la fase (la key de Gemini ya está). Al cerrarla, probarla en el modo de demostración o en el portal.
+
+## 25. Fase 8: qué quedó y cómo probarla
+
+**Qué cambió**
+
+| Área                  | Qué quedó                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quién                 | Solo el `SOCIO_ADMIN` y los `ABOGADO` de un cliente con la IA encendida. El servidor se niega a cualquier otro; asistentes y usuarios del cliente no ven el botón (D73)                                                                                                                                                                                                                   |
+| Dónde                 | **Crear con IA** en el Centro de control, Asuntos, Trámites y Compliance; **Sugerir tareas con IA** dentro de cada asunto                                                                                                                                                                                                                                                                 |
+| Privacidad (opción A) | La petición pierde correos, números largos, RFC, CURP y montos antes de salir; los nombres que el portal conoce van como marcadores, también la razón social y el RFC del cliente; la estructura del cliente, en marcadores. Una prueba manda todo el conjunto ficticio y comprueba que ningún nombre llega a Gemini (D74). Las mismas protecciones valen ya para «Pregúntale al portal»  |
+| La vista previa       | Cada registro con sus campos principales, para corregir, quitar (un asunto se lleva sus tareas) o compartir. Todo nace interno; lo que la IA leyó como fecha, plazo fatal, repetición o autoridad dice «confírmala»; no deja crear con un dato obligatorio vacío. **Crear** guarda en el dispositivo, en orden y enlazado, como si se capturara a mano; la bitácora dice `CREAR_IA` (D75) |
+| Lo jurídico           | Fechas solo de la petición; plazo fatal solo si lo dice; ningún fundamento; una obligación que no sale del catálogo nace «BORRADOR: validar · …»; el catálogo y las plantillas, con sus datos tal cual; las tareas nacen «Por hacer» (D76). No borra, no edita, no valida, no invita ni envía nada al cliente (D77)                                                                       |
+| Versión               | La app pasa a 0.7.0. `MIN_APP_VERSION` sigue en 0.6.0: una app anterior funciona igual, solo sin el botón                                                                                                                                                                                                                                                                                 |
+
+**Código**
+
+| Dónde                                                                 | Qué                                                                                                                                                                      |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/shared/src/domain/draft.ts`                                 | El modelo de la propuesta: el orden de creación, los enlaces por clave, quitar un asunto con sus tareas, lo que falta para crear                                         |
+| `packages/shared/src/permissions/online.ts`                           | `mayUseAi(…, 'draft', …)`: solo el `SOCIO_ADMIN` y los `ABOGADO`, con su prueba en `permissions.test.ts`                                                                 |
+| `apps/api/src/actions/draft.ts`, `ai/prompts.ts`, `ai/mask.ts`        | `ai.draft`: el contexto con marcadores, la limpieza del texto, las instrucciones y el esquema, la revisión y la conversión de la respuesta. Pruebas en `draft.test.ts`   |
+| `apps/api/src/actions/push.ts`                                        | Un registro que viene de una propuesta queda como `CREAR_IA`                                                                                                             |
+| `apps/web/src/pages/common/AiDraft.tsx`, `draft.ts`                   | La ventana: pedir, la vista previa y crear                                                                                                                               |
+| `apps/web/integration/draft.test.ts`, `apps/web/e2e/ai-draft.spec.ts` | De punta a punta: con el backend real (orden, enlaces, interno, `CREAR_IA`, lo que ve el cliente) y en el navegador (axe en los dos temas; quién ve el botón y quién no) |
+
+**Cómo probarla en modo de demostración** (`npm run dev:mock`; el Gemini de demostración responde una propuesta fija)
+
+1. Entra como **abogado@despacho.example** y abre el asunto «Licencia de funcionamiento» → **Sugerir tareas con IA** → escribe qué necesitas → **Proponer**. Llegan tres tareas internas: la primera con su fecha marcada «confírmala» y la segunda «Después de…» la primera.
+2. Quita una, cambia un título y marca **Visible para el cliente** en la primera → **Crear 2 registros** → **Listo**. Las tareas ya están en el asunto.
+3. En otra ventana, como **admin@cliente-a.example**: ve la tarea compartida, no la interna, y no tiene el botón.
+4. Como **socia@despacho.example**, en **Asuntos** → **Crear con IA** → Cliente Demo: un asunto, dos tareas y una reunión. Borra el área del asunto: no deja crear hasta completarla.
+5. Como **asistente@despacho.example**: no hay botón.
+6. Pruebas automáticas: `npm run check` (formato, lint, tipos y 935 pruebas) y `npm run test:e2e` (59 en Chromium); el CI corre además WebKit, la revisión de dependencias y el peso de la primera carga (244 KB de 260).
+
+**Con las cuentas reales**, al fusionar: nada que autorizar ni ajustes nuevos (la key de Gemini ya está). La prueba de «hecho cuando»: en un asunto real de un piloto, **Sugerir tareas con IA** con una petición sin nombres; revisa que la propuesta tenga sentido, corrígela, créala y confirma que el cliente no vio nada hasta que lo compartiste. El modelo real responde distinto que el de demostración: dime qué tan útiles fueron sus propuestas y, si hace falta, ajusto las instrucciones.
+
+**Lo que decidí por defecto** (dime si prefieres otra cosa):
+
+- Las protecciones del texto valen también para «Pregúntale al portal». Antes solo se cambiaban los nombres, y la razón social no se reconocía si el cliente tenía nombre comercial; ahora se reconoce también sin «S.A. de C.V.», y los nombres de personas o clientes que quien escribe no ve se tapan y nunca vuelven en la respuesta.
+- Hasta 15 registros por propuesta, y hasta 60 elementos de cada lista del cliente en lo que lee la IA.
+- Dentro de un asunto, lo que la IA propone sin asunto va a ese asunto.
+- Dos registros con el mismo nombre comparten marcador y la IA no puede distinguirlos (en el catálogo de demostración, las dos obligaciones se llaman igual).
+- Una obligación mensual «el día 30» llega sin regla: el portal solo escribe días 1 a 28 o «último día» (D38), y el abogado decide.
+
+**Quedó fuera** (no bloquea F8):
+
+- Editar o cerrar con IA lo que ya existe (D77).
+- Que la IA lea descripciones o documentos: sigue D62 (key de pago y autorización de cada cliente).
+- Ver las propuestas del modelo real: la red de este entorno no llega a Gemini, así que las pruebas usan el doble; la primera propuesta real será la tuya.

@@ -84,9 +84,22 @@ const clientName = (db: Database, clienteId: string): string => {
 export function clientNames(db: Database, clienteId: string): string[] {
   const c = db.table('Clientes').get(clienteId);
   if (!c) return [];
-  return [text(c, 'nombreComercial'), text(c, 'razonSocial'), text(c, 'rfc')].filter(
-    (n): n is string => Boolean(n),
-  );
+  const legal = text(c, 'razonSocial');
+  return [
+    text(c, 'nombreComercial'),
+    legal,
+    legal ? withoutCompanyType(legal) : null,
+    text(c, 'rfc'),
+  ].filter((n): n is string => Boolean(n));
+}
+
+/** Mexican company types at the end of a legal name: "S.A. de C.V.", "S. de R.L.", "S.C.", "A.C.", "S.A.P.I.". */
+const COMPANY_TYPE =
+  /[,\s]+(?:s\.?\s*a\.?\s*p\.?\s*i\.?|s\.?\s*a\.?\s*b\.?|s\.?\s*a\.?\s*s\.?|s\.?\s*a\.?|s\.?\s*de\s*r\.?\s*l\.?|s\.?\s*c\.?|a\.?\s*c\.?)(?:\s*de\s*c\.?\s*v\.?)?\.?\s*$/i;
+
+/** A legal name as people say it: "Cliente Demo, S.A. de C.V." → "Cliente Demo". */
+export function withoutCompanyType(name: string): string {
+  return name.replace(COMPANY_TYPE, '').trim();
 }
 
 export function answerOf<T>(schema: z.ZodMiniType<T>, raw: unknown): T {
@@ -288,6 +301,14 @@ export function aiAsk(
           ? -1
           : a.fecha.localeCompare(b.fecha),
   );
+
+  // Any other name the portal knows (a person, another client) is masked in the
+  // question too, and never written back: it may not be this person's to see.
+  for (const u of db.rows('Usuarios')) masker.hide('PERSONA', text(u, 'nombre'));
+  for (const c of db.rows('Clientes')) {
+    if (ctx.clients.has(c.id)) continue;
+    for (const name of clientNames(db, c.id)) masker.hide('CLIENTE', name);
+  }
 
   const lang = langOf(session.user.idioma);
   const raw = generate(

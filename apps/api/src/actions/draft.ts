@@ -500,14 +500,26 @@ export function aiDraft(
     const token = m.maskAll('UNIDAD', [text(u, 'nombre'), text(u, 'rfc')]);
     if (token) keep(known.units, token, u.id);
   }
-  const usuarios = db.rows('Usuarios');
+  const usuarios = db.rows('Usuarios').filter((u) => !u.deleted);
   const membresias = db.rows('Membresias');
-  for (const u of usuarios) {
-    if (u.deleted) continue;
+  // The firm and the people of this lawyer's clients: their names may come back.
+  const ofMyClients = new Set(
+    membresias
+      .filter((m) => !m.deleted && ctx.clients.has(text(m, 'clienteId') ?? ''))
+      .map((m) => text(m, 'usuarioId')),
+  );
+  const seen = (u: Row): boolean => u.lado === 'EMPIRICA' || ofMyClients.has(u.id);
+  for (const u of usuarios.filter(seen)) {
     const token = m.mask('PERSONA', text(u, 'nombre'));
     if (!token || u.estado === 'INACTIVO') continue;
     if (!userHasClientAccess(usuarios, membresias, u.id, clienteId)) continue;
     keep(u.lado === 'CLIENTE' ? known.client : known.firm, token, u.id);
+  }
+  // Anyone else, and the clients this lawyer does not see: masked going out, never back.
+  for (const u of usuarios) if (!seen(u)) m.hide('PERSONA', text(u, 'nombre'));
+  for (const c of db.rows('Clientes')) {
+    if (c.deleted || ctx.clients.has(c.id)) continue;
+    for (const name of clientNames(db, c.id)) m.hide('CLIENTE', name);
   }
   for (const a of matters) {
     const token = m.mask('ASUNTO', text(a, 'titulo'));

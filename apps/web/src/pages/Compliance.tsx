@@ -34,6 +34,7 @@ import { InternalMark } from './common/VisibilityField.tsx';
 import { STATE_TONE, monthOfYear, useNonWorkingDays } from './compliance/compliance.ts';
 import { Heatmap } from './compliance/Heatmap.tsx';
 import { ObligationForm } from './compliance/ObligationForm.tsx';
+import { AiDraftButton } from './common/AiDraft.tsx';
 
 type Filter = 'attention' | 'all' | 'inactive' | 'deleted';
 
@@ -272,6 +273,7 @@ export function CompliancePage() {
                 </Link>
               </>
             ) : null}
+            <AiDraftButton />
             {canCreate ? (
               <Button
                 icon="plus"

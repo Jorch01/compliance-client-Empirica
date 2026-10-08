@@ -111,6 +111,25 @@ describe('what leaves for Google', () => {
     expectNoNames(w);
   });
 
+  it('a question loses contact data, and names of people or clients outside its reach (F8)', () => {
+    const w = createWorld();
+    echoMarkers(w);
+    const res = ask(
+      w,
+      ID.cAdmin,
+      '¿Qué pasa con Admin B y Cliente Prueba Dos? Escribe a admin@cliente-a.example o al 998 123 4567',
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    const prompt = w.google.gemini.calls[0]?.prompt ?? '';
+    for (const leaked of ['Admin B', 'Prueba Dos', 'admin@cliente-a.example', '998 123 4567']) {
+      expect(prompt).not.toContain(leaked);
+    }
+    expect(prompt).toContain('[CORREO]');
+    expect(prompt).toContain('[NUMERO]');
+    // Written back, the markers of what this person may not see are left out.
+    expect(res.data.respuesta).not.toMatch(/Admin B|Prueba Dos/);
+  });
+
   it('the answer is about what the person sees, with links to it', () => {
     const w = createWorld();
     echoMarkers(w);

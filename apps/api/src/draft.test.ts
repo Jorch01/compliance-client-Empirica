@@ -15,6 +15,7 @@ import {
 } from '@empirica/shared';
 import { ID, uid } from '@empirica/shared/testing';
 import { describe, expect, it } from 'vitest';
+import { withoutCompanyType } from './actions/ai.ts';
 import { DRAFT_PREFIX } from './actions/draft.ts';
 import { Masker, scrub } from './ai/mask.ts';
 import { Device, op } from './testing/device.ts';
@@ -139,6 +140,35 @@ describe('what leaves for Google (D74)', () => {
         'Que [PERSONA_2] revise con [PERSONA_5] ([CORREO], [NUMERO]); honorarios de [MONTO]; CURP [CURP].',
     );
     expectNoNames(w);
+  });
+
+  it('a person or a client this lawyer does not see: masked going out, never written back', () => {
+    const w = createWorld();
+    // The model writes back every marker it was given.
+    w.google.gemini.reply = (call) => {
+      const peticion = (JSON.parse(call.prompt) as { peticion: string }).peticion;
+      const refs = peticion.match(/\[[A-Z]+_\d+\]/g) ?? [];
+      return {
+        explicacion: refs.join(' | '),
+        elementos: [{ tipo: 'TAREA', clave: 'E1', titulo: refs.join(' | ') }],
+      };
+    };
+    const { items, explicacion } = proposal(
+      w,
+      ID.abogado,
+      'Llama a Admin B, de Cliente Prueba Dos, S.A. de C.V., y luego a Admin A',
+    );
+    const peticion = String(sent(w).peticion);
+    for (const name of ['Admin B', 'Cliente Prueba Dos', 'Admin A']) {
+      expect(peticion).not.toContain(name);
+    }
+    // Admin A is of this lawyer's client and comes back; the user and the client of B do not.
+    const titulo = nth(items, 0).fields.titulo;
+    for (const text of [explicacion, typeof titulo === 'string' ? titulo : '']) {
+      expect(text).toContain('Admin A');
+      expect(text).not.toContain('Admin B');
+      expect(text).not.toContain('Prueba Dos');
+    }
   });
 
   it('the client’s structure goes as markers: units, people who can be assigned, open matters, templates, catalog', () => {
@@ -465,6 +495,15 @@ describe('what a person types (D74)', () => {
     expect(scrub('Honorarios de $150,000.00 MXN o 20 mil pesos; 3 tareas el 15/10/2026')).toBe(
       'Honorarios de [MONTO] o [MONTO]; 3 tareas el 15/10/2026',
     );
+  });
+
+  it('a legal name as people say it, without its company type', () => {
+    expect(withoutCompanyType('Cliente Demo, S.A. de C.V.')).toBe('Cliente Demo');
+    expect(withoutCompanyType('Servicios Norte S. de R.L. de C.V.')).toBe('Servicios Norte');
+    expect(withoutCompanyType('Fundación Ejemplo, A.C.')).toBe('Fundación Ejemplo');
+    expect(withoutCompanyType('Inversiones Uno, S.A.P.I. de C.V.')).toBe('Inversiones Uno');
+    expect(withoutCompanyType('Despacho Socios, S.C.')).toBe('Despacho Socios');
+    expect(withoutCompanyType('Sin tipo')).toBe('Sin tipo');
   });
 
   it('knows a client by every name; a short name only as a word of its own', () => {

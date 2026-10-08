@@ -21,6 +21,8 @@ export class Masker {
   readonly #value = new Map<string, string>();
   /** Other names of an already masked record: [marker, name]. */
   readonly #aliases: [string, string][] = [];
+  /** Markers of names this person may not see: masked going out, never written back. */
+  readonly #hidden = new Set<string>();
   readonly #count = new Map<string, number>();
 
   /** The marker of a name (the same name, the same marker); null for nothing. */
@@ -57,6 +59,18 @@ export class Masker {
     return token;
   }
 
+  /**
+   * A name to keep out of what is sent that this person may not see (a
+   * user of another client): in a text it becomes a marker, which never
+   * comes back as the name. A name already known as visible stays visible.
+   */
+  hide(kind: string, value: string | null | undefined): void {
+    const name = (value ?? '').trim();
+    if (!name || this.#token.has(`${kind}:${name.toLowerCase()}`)) return;
+    const token = this.mask(kind, name);
+    if (token) this.#hidden.add(token);
+  }
+
   /** Every known name in free text replaced by its marker, longest names first. */
   maskText(text: string): string {
     const names = [...this.#value.entries(), ...this.#aliases]
@@ -74,14 +88,16 @@ export class Masker {
     return out;
   }
 
-  /** The names back in place of their markers; an unknown marker is left out. */
+  /** The names back in place of their markers; an unknown or hidden marker is left out. */
   unmask(text: string): string {
-    return text.replace(MASK_PATTERN, (token) => this.#value.get(token) ?? '');
+    return text.replace(MASK_PATTERN, (token) =>
+      this.#hidden.has(token) ? '' : (this.#value.get(token) ?? ''),
+    );
   }
 
-  /** The name behind a marker, if this masker gave it. */
+  /** The name behind a marker, if this masker gave it and it may be seen. */
   valueOf(token: string): string | null {
-    return this.#value.get(token) ?? null;
+    return this.#hidden.has(token) ? null : (this.#value.get(token) ?? null);
   }
 }
 
