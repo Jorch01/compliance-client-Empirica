@@ -9,13 +9,18 @@
  * (framed.ts).
  */
 
-/** Firebase's sign-in helper (src/config/firebase.ts, authDomain); a test keeps both equal. */
-export const FIREBASE_AUTH_DOMAIN = 'empirica-portal-d86b4.firebaseapp.com';
+import { FIREBASE_DOMAIN } from '../config/firebase-project.ts';
+
+const SELF = "'self'";
 
 /** The Apps Script Web App answers at script.google.com through a redirect to googleusercontent. */
 const APPS_SCRIPT = ['https://script.google.com', 'https://script.googleusercontent.com'];
 
-/** Firebase Auth: its APIs, Google's sign-in helper and, if the project ever asks, reCAPTCHA. */
+/**
+ * Firebase Auth: its APIs, Google's sign-in helper and, if the project ever
+ * asks, reCAPTCHA. The helper is framed from Firebase's domain, or from the
+ * portal itself once it serves its own copy (D78, src/config/firebase.ts).
+ */
 const SIGN_IN = {
   script: ['https://apis.google.com', 'https://www.gstatic.com', 'https://www.google.com'],
   connect: [
@@ -23,10 +28,8 @@ const SIGN_IN = {
     'https://securetoken.googleapis.com',
     'https://www.googleapis.com',
   ],
-  frame: [`https://${FIREBASE_AUTH_DOMAIN}`, 'https://apis.google.com', 'https://www.google.com'],
+  frame: [SELF, `https://${FIREBASE_DOMAIN}`, 'https://apis.google.com', 'https://www.google.com'],
 };
-
-const SELF = "'self'";
 
 const serialize = (directives: Record<string, readonly string[]>): string =>
   Object.entries(directives)

@@ -23,9 +23,10 @@ cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 // Every address of the app is the same page (the route lives after the #).
+// Not Firebase's sign-in helper (/__/auth/, D78): those pages must load as they are.
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('index.html'), {
-    denylist: [/\/privacidad\//, /\/mock-api\//],
+    denylist: [/\/privacidad\//, /\/mock-api\//, /\/__\//],
   }),
 );
 

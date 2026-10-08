@@ -104,6 +104,7 @@ export function createMockAuth(): AuthClient {
     signInWithPassword: (email) => signIn(email),
     signUpWithPassword: (email, _password, name) => signIn(email, name),
     signInWithGoogle: () => Promise.reject(new AuthError('not-allowed')),
+    finishGoogleRedirect: () => Promise.resolve(false),
     sendVerification: () => Promise.resolve(),
     reload: () => Promise.resolve(current?.user ?? null),
     resetPassword: () => Promise.resolve(),

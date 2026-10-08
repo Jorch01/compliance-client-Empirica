@@ -157,8 +157,19 @@ Verificación del token en el servidor: `POST https://identitytoolkit.googleapis
 Fuente: [Best practices for using signInWithRedirect on browsers that block third-party storage access](https://firebase.google.com/docs/auth/web/redirect-best-practices).
 
 - `signInWithRedirect()` usa un `iframe` del dominio `*.firebaseapp.com`; **no funciona en navegadores que bloquean el almacenamiento de terceros** (Safari, también en iPhone; Firefox; y Chrome conforme avanza su bloqueo) cuando la app no está en Firebase Hosting. El portal está en GitHub Pages. ✅
-- Opciones de Google para apps fuera de Firebase Hosting: usar `signInWithPopup()` (la que se adoptó, D29), un proxy inverso hacia `firebaseapp.com` (GitHub Pages no lo permite), **servir los archivos del asistente de inicio de sesión desde el propio dominio** (se propone para F7) o implementar el inicio de sesión de Google por separado. ✅
-- La ventana emergente puede no responder en una app instalada en la pantalla de inicio de iPhone o iPad: ahí se recomienda correo y contraseña hasta F7. ⚠ Depende de la versión de iOS; se confirmará con un iPhone real.
+- Opciones de Google para apps fuera de Firebase Hosting: usar `signInWithPopup()` (la que se adoptó, D29), un proxy inverso hacia `firebaseapp.com` (GitHub Pages no lo permite), **servir los archivos del asistente de inicio de sesión desde el propio dominio** (la que se adoptó para la app instalada en iPhone, D78) o implementar el inicio de sesión de Google por separado. ✅
+- La ventana emergente no responde en la app instalada en la pantalla de inicio de iPhone: Firebase muestra «The requested action is invalid» (lo vio el socio el 8 de octubre de 2026). ✅
+
+### El asistente en el dominio del portal (anotado el 8 de octubre de 2026)
+
+Fuente: la misma guía de Firebase, opción de alojar el código del asistente (consultada por búsqueda web: la red de este entorno no abre `firebase.google.com` ni `docs.cloud.google.com`), y la página de credenciales de Google Cloud.
+
+- Archivos que se copian del dominio `firebaseapp.com` del proyecto: `__/auth/handler`, `handler.js`, `experiments.js`, `iframe`, `iframe.js`, `links`, `links.js` y `__/firebase/init.json`. El dominio propio debe responder en `/__/auth/<archivo>` y en `/__/firebase/init.json`. Google recomienda volver a copiarlos de vez en cuando: aquí se copian en cada publicación. ✅
+- En el CI (8 de octubre de 2026) la copia trajo los siete archivos de `/__/auth/` (`handler.js` 274 KB, `iframe.js` 283 KB, `links.js` 84 KB), y sus páginas no cargan nada más del dominio de Firebase. `init.json` responde 404: Firebase lo sirve solo a proyectos con un sitio de Hosting, y este no tiene, y su propio asistente funciona sin él. Por eso se copia solo si aparece. ✅
+- Hay que autorizar `https://<dominio>/__/auth/handler` como URI de redireccionamiento del cliente OAuth web, y poner ese dominio como `authDomain`. Los cambios del cliente OAuth tardan de 5 minutos a unas horas en aplicarse; una dirección que no coincide exactamente responde `redirect_uri_mismatch`. ✅
+- Con el asistente propio no funcionan Apple ni SAML (el portal no los usa). ✅
+- GitHub Pages responde `/__/auth/handler` con `handler.html`; la comprobación tras publicar lo confirma en cada publicación (`scripts/firebase-auth-helper.ts`). ⚠ Se confirmará en la primera publicación con el cambio.
+- Que en la app instalada en iPhone la ida y vuelta a Google regrese con la sesión no se pudo probar aquí (no hay iPhone ni acceso a Firebase): ⚠ lo confirma el socio (`SETUP.md`, paso 13).
 
 ### Correos de Firebase y la clave del navegador (verificado el 4 de octubre de 2026)
 

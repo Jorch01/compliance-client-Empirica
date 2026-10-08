@@ -9,12 +9,18 @@
  * The key stays out of the repository only so that secret scanners do not
  * flag a public repo: it comes from the environment (VITE_FIREBASE_API_KEY
  * locally; the variable FIREBASE_WEB_API_KEY in GitHub Actions).
+ *
+ * `authDomain` is where Google's sign-in finishes: Firebase's own domain,
+ * unless the GitHub variable FIREBASE_AUTH_DOMAIN names the portal's (D78).
+ * Then the build carries Firebase's helper pages under /__/auth/
+ * (scripts/firebase-auth-helper.ts) and the sign-in never leaves the
+ * portal, which the app installed on an iPhone needs (docs/SETUP.md, step 13).
  */
+import { FIREBASE_PROJECT, authDomainFrom } from './firebase-project.ts';
+
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
-  authDomain: 'empirica-portal-d86b4.firebaseapp.com',
-  projectId: 'empirica-portal-d86b4',
-  storageBucket: 'empirica-portal-d86b4.firebasestorage.app',
-  messagingSenderId: '89313263530',
-  appId: '1:89313263530:web:c999dbc329272a9f5df5d3',
+  // An unset GitHub variable arrives as an empty string: Firebase's own domain.
+  authDomain: authDomainFrom(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  ...FIREBASE_PROJECT,
 } as const;

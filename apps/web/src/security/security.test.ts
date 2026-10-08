@@ -4,7 +4,7 @@
  * policy, and the browser tests run under it (e2e/fixtures.ts).
  */
 import { describe, expect, it } from 'vitest';
-import { firebaseConfig } from '../config/firebase.ts';
+import { FIREBASE_DOMAIN } from '../config/firebase-project.ts';
 import { portalPolicy, privacyPolicy } from './csp.ts';
 import { isFramed } from './framed.ts';
 
@@ -32,8 +32,9 @@ describe('the security policy of the portal', () => {
     expect(portal.get('base-uri')).toEqual(["'self'"]);
   });
 
-  it('lets in the sign-in helper of the portal’s own Firebase project', () => {
-    expect(portal.get('frame-src')).toContain(`https://${firebaseConfig.authDomain}`);
+  it('lets in the sign-in helper of the portal’s own Firebase project, or its copy on the portal (D78)', () => {
+    expect(portal.get('frame-src')).toContain(`https://${FIREBASE_DOMAIN}`);
+    expect(portal.get('frame-src')).toContain("'self'");
     expect(portal.get('connect-src')).toEqual(
       expect.arrayContaining([
         'https://identitytoolkit.googleapis.com',

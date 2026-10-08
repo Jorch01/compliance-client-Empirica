@@ -4,6 +4,8 @@
 interface ImportMetaEnv {
   /** Firebase browser API key: public by design, kept out of the repository. */
   readonly VITE_FIREBASE_API_KEY?: string;
+  /** Where Google's sign-in finishes; empty: Firebase's own domain (D78). */
+  readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
   /** "mock": demo users against the local mock API (npm run dev:mock). */
   readonly VITE_AUTH?: string;
   /** Overrides the backend address (the mock API, or a test deployment). */

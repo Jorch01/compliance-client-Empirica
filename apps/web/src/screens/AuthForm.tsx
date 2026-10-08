@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState, type SubmitEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
 import { AuthError } from '../auth/types.ts';
@@ -52,6 +52,23 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
     const code = e instanceof AuthError ? e.code : 'unknown';
     setError(t(`auth.errors.${code}`));
   };
+
+  // Back from Google on the installed iPhone app (D78): what went wrong, and the email.
+  useEffect(() => {
+    let current = true;
+    client.finishGoogleRedirect('signIn').catch((e: unknown) => {
+      if (!current) return;
+      const code = e instanceof AuthError ? e.code : 'unknown';
+      setError(t(`auth.errors.${code}`));
+      if (onInstalledIos) {
+        setGoogleStuck(true);
+        emailInput.current?.focus();
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, [client, t, onInstalledIos]);
 
   const submit = async (event: SubmitEvent): Promise<void> => {
     event.preventDefault();

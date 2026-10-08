@@ -1,12 +1,13 @@
 /**
  * Signing in (F7): waiting for Google never blocks the email form, and in
  * the app installed on an iPhone, where Google's window may never come back,
- * the portal turns to email and password on its own.
+ * the portal turns to email and password on its own. There, coming back
+ * from Google without the account says why and offers the email (D78).
  */
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../auth/AuthProvider.tsx';
-import { AuthError } from '../auth/types.ts';
+import { AuthError, type GooglePurpose } from '../auth/types.ts';
 import { fakeAuth } from '../test/fakeAuth.ts';
 import { AuthForm } from './AuthForm.tsx';
 
@@ -16,8 +17,11 @@ vi.mock('../portal/install.ts', () => ({
   detectPlatform: () => (platform.ios ? 'ios' : 'desktop'),
 }));
 
-function renderForm(signInWithGoogle: () => Promise<void>) {
-  const client = { ...fakeAuth(null), signInWithGoogle };
+function renderForm(
+  signInWithGoogle: () => Promise<void>,
+  finishGoogleRedirect: (purpose: GooglePurpose) => Promise<boolean> = () => Promise.resolve(false),
+) {
+  const client = { ...fakeAuth(null), signInWithGoogle, finishGoogleRedirect };
   render(
     <AuthProvider client={client}>
       <AuthForm />
@@ -54,7 +58,7 @@ describe('signing in while Google takes its time', () => {
     platform.installed = true;
     platform.ios = true;
     const form = renderForm(never);
-    expect(screen.getByText(/si la ventana de Google no responde/)).toBeInTheDocument();
+    expect(screen.getByText(/si Google no responde/)).toBeInTheDocument();
     fireEvent.click(form.google());
     act(() => {
       vi.advanceTimersByTime(14_000);
@@ -91,5 +95,31 @@ describe('signing in while Google takes its time', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'El navegador bloqueó la ventana de Google',
     );
+  });
+});
+
+describe('back from Google in the app installed on iPhone (D78)', () => {
+  afterEach(() => {
+    platform.installed = false;
+    platform.ios = false;
+  });
+
+  it('without the account: what happened, and straight to the email', async () => {
+    platform.installed = true;
+    platform.ios = true;
+    const form = renderForm(never, (purpose) =>
+      purpose === 'signIn' ? Promise.reject(new AuthError('popup-closed')) : Promise.resolve(false),
+    );
+    expect(await screen.findByText(/Se cerró la ventana de Google/)).toBeInTheDocument();
+    expect(screen.getByText(/Google no respondió dentro de la app instalada/)).toBeInTheDocument();
+    expect(form.email()).toHaveFocus();
+  });
+
+  it('any other page load: nothing to say', async () => {
+    renderForm(never);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
