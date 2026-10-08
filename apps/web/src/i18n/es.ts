@@ -90,7 +90,7 @@ export const es = {
       'Si ese correo ya tiene cuenta con contraseña, te llegará un enlace en unos minutos (revisa también spam). Si nunca la creaste, no llegará nada: entra con Google o crea tu cuenta.',
     google: 'Continuar con Google',
     googleIosHint:
-      'En la app instalada en iPhone o iPad, si la ventana de Google no responde, entra con tu correo y contraseña.',
+      'En la app instalada en iPhone o iPad, si Google no responde, entra con tu correo y contraseña.',
     googleIosStuck:
       'Google no respondió dentro de la app instalada. Entra con tu correo y contraseña. Si siempre entras con Google, abre el portal en Safari, entra con Google y crea una contraseña desde el menú de tu cuenta.',
     or: 'o',

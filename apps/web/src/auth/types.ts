@@ -39,6 +39,9 @@ export class AuthError extends Error {
   }
 }
 
+/** What the app installed on an iPhone goes to Google for (D78). */
+export type GooglePurpose = 'signIn' | 'unlock';
+
 export interface AuthClient {
   readonly kind: 'firebase' | 'mock';
   /** Calls back now (once known) and on every change of user. */
@@ -48,6 +51,13 @@ export interface AuthClient {
   signInWithPassword(email: string, password: string): Promise<void>;
   signUpWithPassword(email: string, password: string, name: string): Promise<void>;
   signInWithGoogle(): Promise<void>;
+  /**
+   * Back from Google in the app installed on an iPhone (D78): true if this
+   * page came back from doing `purpose` there, a failure saying what went
+   * wrong if it did not get done, and false on any other page load. The
+   * same answer however often it is asked.
+   */
+  finishGoogleRedirect(purpose: GooglePurpose): Promise<boolean>;
   sendVerification(): Promise<void>;
   /** Reads the user again (after they confirm their email in another tab). */
   reload(): Promise<AuthUser | null>;

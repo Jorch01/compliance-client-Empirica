@@ -18,6 +18,7 @@ import {
   type SessionState,
 } from './context.ts';
 import { useIdle } from './idle.ts';
+import { opensLocked } from './lock.ts';
 
 const BOOT = 'bootstrap';
 const DAY_MS = 86_400_000;
@@ -162,6 +163,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setOutcome({ key, failure: begun.failure });
         return;
       }
+      const lockedBefore = readFlag(lockKey(uid));
+      const startLocked = await opensLocked(lockedBefore, client);
+      if (lockedBefore && !startLocked) writeFlag(lockKey(uid), false);
+      if (aborted()) return;
       const engine = new SyncEngine({
         db,
         call,
@@ -172,7 +177,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         },
       });
       stop = engine.start();
-      setLocked(readFlag(lockKey(uid)));
+      setLocked(startLocked);
       setOutcome({
         key,
         running: { uid, db, engine, call, me: meFrom(begun.boot), stop },

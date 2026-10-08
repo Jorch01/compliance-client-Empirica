@@ -91,7 +91,7 @@ export const en: Messages = {
       'If this email already has an account with a password, a link will arrive in a few minutes (check your spam folder too). If you never created one, nothing will arrive: continue with Google or create your account.',
     google: 'Continue with Google',
     googleIosHint:
-      'In the app installed on an iPhone or iPad, if the Google window does not respond, sign in with your email and password.',
+      'In the app installed on an iPhone or iPad, if Google does not respond, sign in with your email and password.',
     googleIosStuck:
       'Google did not answer inside the installed app. Sign in with your email and password. If you always sign in with Google, open the portal in Safari, sign in with Google and create a password from your account menu.',
     or: 'or',

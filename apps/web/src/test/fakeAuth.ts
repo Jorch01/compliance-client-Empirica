@@ -28,6 +28,7 @@ export function fakeAuth(
     signInWithPassword: () => Promise.resolve(),
     signUpWithPassword: () => Promise.resolve(),
     signInWithGoogle: () => Promise.resolve(),
+    finishGoogleRedirect: () => Promise.resolve(false),
     sendVerification: () => Promise.resolve(),
     reload: () => Promise.resolve(current),
     resetPassword: () => Promise.resolve(),

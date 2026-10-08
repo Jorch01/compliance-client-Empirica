@@ -14,11 +14,12 @@ Guía para alguien que no programa. Todo es gratuito: nunca aceptes pasar Fireba
 | 6   | API key de Gemini               | Paso 6                                               | **No: es secreto**. Sí: la cuota diaria que muestra AI Studio | ✔ 5 oct: en Script Properties; 7 oct: cifras de cuota (~1,000 a 1,500 al día en Flash-Lite) |
 | 7   | URL del aviso de privacidad     | —                                                    | Sí                                                            | ✔ 3 oct: publicado en `https://portal.empirica.mx/privacidad/`                              |
 | 8   | DNS en GoDaddy                  | Paso 7, cuando publiquemos                           | —                                                             | ✔ 3 oct: `portal.empirica.mx` apunta a GitHub Pages, con **Enforce HTTPS**                  |
-| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ✔ 3 oct: el código ya sube solo a Apps Script                                               |
+| 9   | Despliegue automático           | Paso 8, una sola vez                                 | **No: es secreto**                                            | ⚠ 8 oct: Google ya no acepta la credencial (`invalid_grant`): repetir el paso 8             |
 | 10  | Primera publicación del backend | Paso 9, una sola vez, cuando yo te avise             | Sí: la URL del Web App (no es secreta)                        | ✔ 3 oct: Web App publicado                                                                  |
 | 11  | Antes de abrir el portal        | Paso 10, al aprobar la Fase 2                        | Sí: la línea `Revisado: Firebase…` de `setup`                 | ✔ 5 oct: `Revisado: Firebase…` recibido                                                     |
 | 12  | Autorizar Calendar y correo     | Paso 11, al fusionar la Fase 5                       | No                                                            | ✔ 5 oct: autorizados; `setup` creó "Empírica · Despacho" y lee la cuota de correo           |
 | 13  | Verificaciones de seguridad     | Paso 12, durante la Fase 7                           | Sí: qué quedó listo (nada secreto)                            | Pendiente                                                                                   |
+| 14  | Google en el iPhone instalado   | Paso 13, al fusionar el cambio del 8 de octubre      | Sí: qué pasó en el iPhone (nada secreto)                      | Pendiente                                                                                   |
 
 Los secretos (keys y credenciales) nunca van por chat, correo ni al repositorio. Si alguno se pega por error, se borra y se crea otro.
 
@@ -203,7 +204,7 @@ Hasta ahora `portal.empirica.mx` muestra una portada provisional. Cuando apruebe
 6. Fusiona la propuesta de cambios de la Fase 2 cuando te avise que está lista. En unos 3 minutos GitHub publica el portal y el backend (en **Actions** todo debe quedar en verde).
 7. **Prueba con tu cuenta**: abre `https://portal.empirica.mx` y entra con tu correo de socio (uno de `ADMIN_EMAILS`), con Google o creando una contraseña con ese mismo correo (te llegará un correo para confirmarlo). El portal empieza vacío: crea el primer cliente en **Clientes**, agrégale sus unidades e invita en **Usuarios** a una persona de prueba (por ejemplo, otro correo tuyo) para ver el recorrido completo.
 
-**En iPhone o iPad con el portal instalado** (agregado a la pantalla de inicio), la ventana de "Continuar con Google" puede no responder; ahí conviene entrar con correo y contraseña. La solución definitiva queda para la Fase 7 (`PLAN.md`, D29).
+**En iPhone o iPad con el portal instalado** (agregado a la pantalla de inicio), la ventana de "Continuar con Google" puede no responder; ahí conviene entrar con correo y contraseña. La solución es el paso 13 (`PLAN.md`, D78).
 
 ### Paso 11 · Calendarios y correos (al fusionar la Fase 5)
 
@@ -226,7 +227,7 @@ Si alguna vez quieres revisar o quitar estos permisos: <https://myaccount.google
 
 Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es un secreto: mándame solo si quedó lista o qué viste.
 
-1. **Verificación en dos pasos.** En <https://myaccount.google.com> → **Seguridad** → **Verificación en 2 pasos** → actívala en la cuenta propietaria y en la cuenta de Google de cada socio. En la propietaria, revisa también **Tus dispositivos** y **Apps de terceros con acceso a tu cuenta**: no debería haber nada que no reconozcas. Dime quién, además de ti, conoce la contraseña de la cuenta propietaria.
+1. **Verificación en dos pasos.** En <https://myaccount.google.com> → **Seguridad** → **Verificación en 2 pasos** → actívala en la cuenta propietaria y en la cuenta de Google de cada socio. En la propietaria, revisa también **Tus dispositivos** y **Apps de terceros con acceso a tu cuenta**: no debería haber nada que no reconozcas. Ahí deben quedar **clasp** (la publicación automática, paso 8) y **Empírica Portal API** (el backend, pasos 9 y 11): si se quitan, el CI deja de publicar el backend o el portal pierde calendarios y correos. Dime quién, además de ti, conoce la contraseña de la cuenta propietaria.
 2. **GitHub.** En el repositorio → **Settings**:
    - **Advanced Security** (antes "Code security"): activa **Secret scanning** con **Push protection**, y **Dependabot alerts**.
    - **Rules** → **Rulesets** → **New branch ruleset**: nombre `main`, **Enforcement status: Active**, en **Target branches** agrega la rama predeterminada; marca **Restrict deletions**, **Block force pushes** y **Require status checks to pass**, y agrega los checks **Pruebas**, **Pruebas en el navegador** y **Pruebas en Safari (WebKit)**. No marques que exija aprobaciones de otra persona: tú fusionas tus propios PR.
@@ -238,7 +239,7 @@ Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es 
 6. **iPhone y Android** (unos 15 minutos, con la fase ya publicada). En el iPhone, con Safari:
    1. Abre `https://portal.empirica.mx` y entra con tu cuenta.
    2. **Compartir** → **Agregar a inicio** → **Agregar**, y abre el portal desde su ícono: se ve sin la barra de Safari.
-   3. La app instalada guarda su propia sesión, así que pide entrar otra vez: usa **Continuar con Google**. Si en 15 segundos Google no responde, el portal pasa solo a correo y contraseña. Si siempre entras con Google y no tienes contraseña: en Safari (no en la app), menú de tu cuenta (tu inicial, arriba a la derecha) → **Crear una contraseña**; después entra en la app con tu correo y esa contraseña. Dime si Google respondió dentro de la app.
+   3. La app instalada guarda su propia sesión, así que pide entrar otra vez: usa **Continuar con Google**. Con el paso 13 hecho, la app va a Google y regresa sola; sin él, si en 15 segundos Google no responde, el portal pasa solo a correo y contraseña. Si siempre entras con Google y no tienes contraseña: en Safari (no en la app), menú de tu cuenta (tu inicial, arriba a la derecha) → **Crear una contraseña**; después entra en la app con tu correo y esa contraseña. Dime si Google respondió dentro de la app.
    4. Abre **Pendientes** y una tarea. Activa el **modo avión**, cierra la app (desliza hacia arriba) y ábrela otra vez: debe abrir con tus datos y el indicador decir **Sin conexión**.
    5. Aún en modo avión, marca un punto de la lista de una tarea o escribe un comentario. Quita el modo avión: el indicador pasa a **Al día** y el cambio aparece en la computadora.
    6. Con red, descarga un documento o un reporte: debe abrirse o guardarse.
@@ -248,6 +249,30 @@ Son las que el checklist de `SEGURIDAD.md` § 6 pide confirmar a ti. Ninguna es 
 7. **Outlook** (si alguien lo usa). En Outlook → **Calendario** → **Agregar calendario** → **Suscribirse desde la web** → pega el enlace personal del portal (**Agenda** → **Tu calendario**). Dime si lo acepta y muestra las fechas.
 8. **Opcional: archivos grandes.** Sube a un documento un archivo de unos 30 MB (por ejemplo, un PDF escaneado o un ZIP) y dime si el portal lo acepta. Si pasa, se puede subir el tope de 10 MB (`Config.mbMaxArchivo`).
 9. **Entrar de verdad, después de publicar.** Desde esta fase cada página lleva una política que solo deja cargar lo del portal y lo del inicio de sesión de Google (`SEGURIDAD.md` § 3). Aquí no puedo probar el inicio de sesión real de Google, así que, cuando la fusión se publique, abre `https://portal.empirica.mx` en una ventana de incógnito y entra con **Continuar con Google**; en otra, con correo y contraseña. Si algo no abre o se queda en blanco, dime qué viste o manda un error desde **Sugerencias o errores**: el reporte dice qué bloqueó la política.
+
+### Paso 13 · «Continuar con Google» en el iPhone instalado (D78)
+
+En la app instalada en el iPhone (agregada a la pantalla de inicio), Google se abre en una ventana aparte que no puede devolverle la sesión al portal: Firebase responde «The requested action is invalid». La solución: el portal sirve él mismo las páginas con que Google termina de iniciar sesión, y la app va a Google y regresa en su propia ventana (`PLAN.md` § 26). Unos 10 minutos con la cuenta del paso 1, más la espera de Google.
+
+**En este orden.** Si la variable del punto 3 se pone antes de que Google acepte la dirección del punto 2, nadie puede entrar con Google (tampoco en la computadora) hasta que la aceptes o quites la variable.
+
+1. **Fusiona** el cambio del 8 de octubre («Google sign-in in the app installed on iPhone») y espera a que **Actions** quede en verde. En esa ejecución, el trabajo **Publicar en GitHub Pages**, paso **Asistente de inicio de sesión de Google**, debe decir `Asistente copiado…`. Si dice `No se pudo copiar…`, mándame el texto: mientras la variable no exista, no afecta en nada.
+2. **Google Cloud.** Entra a <https://console.cloud.google.com/apis/credentials> (proyecto `empirica-portal-d86b4`). En **IDs de clientes de OAuth 2.0** abre **Web client (auto created by Google Service)**:
+   - **URIs de redireccionamiento autorizados** → **Agregar URI** → `https://portal.empirica.mx/__/auth/handler`. No borres la que ya está (la de `firebaseapp.com`).
+   - **Orígenes autorizados de JavaScript**: si no está, agrega `https://portal.empirica.mx`.
+   - **Guardar**. Google avisa que puede tardar de 5 minutos a unas horas en aplicarse: deja pasar al menos media hora antes del punto 3.
+3. **GitHub** → **Settings** → **Secrets and variables** → **Actions** → pestaña **Variables** → **New repository variable**: nombre `FIREBASE_AUTH_DOMAIN`, valor `portal.empirica.mx` (sin `https://`).
+4. **Publica otra vez**: **Actions** → **CI y publicación** → **Run workflow** → rama `main` → **Run workflow**. Al terminar en verde, el paso **Comprobar el inicio de sesión publicado** dice `El sitio publicado responde…`. Si la variable no coincide con el dominio del portal, la publicación se detiene antes de cambiar nada y lo dice.
+5. **Prueba**, y dime qué pasó en cada punto (una captura sirve):
+   1. En la computadora, en una ventana de incógnito: `https://portal.empirica.mx` → **Continuar con Google**. La ventana de Google ahora dice que continúas a `portal.empirica.mx`; debes entrar como siempre.
+   2. En el iPhone, abre la app desde su ícono. Si ya estabas dentro, cierra sesión (menú de tu cuenta → **Cerrar sesión**). **Continuar con Google**: la app pasa a la página de Google y, al elegir tu cuenta, regresa sola y entra. Ya no hay ventana que cerrar.
+   3. Deja la app sin usar más de 30 minutos (por ejemplo, cámbiate a otra app y vuelve después). Al volver dice «Sesión bloqueada»: **Desbloquear con Google** debe ir y volver igual, ya desbloqueada.
+
+**Si algo falla:**
+
+- La pantalla de Google dice `redirect_uri_mismatch` (o «Error 400»): Google aún no acepta la dirección del punto 2. Revisa que esté escrita igual, espera un rato y vuelve a intentar.
+- En el iPhone, Google no regresa o muestra un error: cierra la app, ábrela otra vez y entra con tu correo y contraseña. Mándame lo que viste (una captura sirve).
+- Para volver a como estaba: en GitHub, borra la variable `FIREBASE_AUTH_DOMAIN` y publica como en el punto 4. Todo vuelve a la ventana emergente de antes, y en la app instalada se entra con correo y contraseña (D70). La dirección del punto 2 puede quedarse.
 
 ### Actualizar el aviso de privacidad
 

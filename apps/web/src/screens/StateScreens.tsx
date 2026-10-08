@@ -3,7 +3,7 @@
  * in, confirming the email, no access, offline too long, outdated app,
  * locked for inactivity.
  */
-import { useState, type SubmitEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
 import { AuthError, type AuthUser } from '../auth/types.ts';
@@ -227,11 +227,24 @@ export function FailedScreen({ message }: { message: string }) {
 /** Locked after inactivity: the data stays, the person proves it is them again. */
 export function LockScreen({ user, minutes }: { user: AuthUser; minutes: number }) {
   const { t } = useTranslation();
+  const { client } = useAuth();
   const { unlock, signOut } = useSession();
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const usesPassword = user.providers.includes('password') || MOCK_MODE;
+
+  // Back from Google without unlocking, in the app installed on an iPhone (D78): why.
+  useEffect(() => {
+    let current = true;
+    client.finishGoogleRedirect('unlock').catch((e: unknown) => {
+      if (current) setError(t(`auth.errors.${e instanceof AuthError ? e.code : 'unknown'}`));
+    });
+    return () => {
+      current = false;
+    };
+  }, [client, t]);
+
   const submit = async (event?: SubmitEvent): Promise<void> => {
     event?.preventDefault();
     setBusy(true);
