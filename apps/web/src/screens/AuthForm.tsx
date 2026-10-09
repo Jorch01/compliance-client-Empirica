@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
-import { AuthError } from '../auth/types.ts';
+import { authErrorText } from '../auth/error-text.ts';
+
 import googleG from '../assets/google-g.svg';
 import { MOCK_MODE } from '../config/api.ts';
 import { detectPlatform, isInstalled } from '../portal/install.ts';
@@ -49,8 +50,7 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
   const emailInput = useRef<HTMLInputElement>(null);
 
   const fail = (e: unknown): void => {
-    const code = e instanceof AuthError ? e.code : 'unknown';
-    setError(t(`auth.errors.${code}`));
+    setError(authErrorText(t, e));
   };
 
   // Back from Google on the installed iPhone app (D78): what went wrong, and the email.
@@ -58,8 +58,7 @@ function FirebaseForm({ initialMode }: { initialMode: Mode }) {
     let current = true;
     client.finishGoogleRedirect('signIn').catch((e: unknown) => {
       if (!current) return;
-      const code = e instanceof AuthError ? e.code : 'unknown';
-      setError(t(`auth.errors.${code}`));
+      setError(authErrorText(t, e));
       if (onInstalledIos) {
         setGoogleStuck(true);
         emailInput.current?.focus();

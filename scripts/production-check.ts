@@ -23,10 +23,23 @@ interface Result {
   detail: string;
 }
 const results: Result[] = [];
+/** Google's answers name the key: never into a public log. */
+const masked = (text: string): string => text.replace(/AIza[\w-]{20,}/g, 'AIza…');
 const record = (check: string, ok: boolean, detail: string): void => {
-  results.push({ check, ok, detail });
-  console.log(`${ok ? 'OK   ' : 'FALLA'} ${check}: ${detail}`);
+  results.push({ check, ok, detail: masked(detail) });
+  console.log(`${ok ? 'OK   ' : 'FALLA'} ${check}: ${masked(detail)}`);
 };
+
+/** What to do when Firebase refuses the key itself. */
+function keyAdvice(code: string): string {
+  if (/suspended/i.test(code)) {
+    return ' → Google suspendió la llave del navegador: crea otra (docs/OPERACION.md, «La llave del navegador»).';
+  }
+  if (/API key not valid|API_KEY_INVALID|blocked|referer/i.test(code)) {
+    return ' → revisa las restricciones de la llave del navegador (docs/SETUP.md, paso 3).';
+  }
+  return '';
+}
 
 /** What Firebase answered to a sign-in call: its error code, or "ok". */
 async function firebaseAnswer(res: Response): Promise<string> {
@@ -90,7 +103,7 @@ async function emailAndPassword(page: Page): Promise<void> {
     expected,
     expected
       ? `Firebase responde (${code} para una cuenta que no existe)`
-      : `Firebase respondió ${code}`,
+      : `Firebase respondió ${code}${keyAdvice(code)}`,
   );
 }
 
@@ -118,10 +131,23 @@ async function google(page: Page): Promise<void> {
   // Google's page, or an error page, within the wait.
   const deadline = Date.now() + WAIT_MS;
   let url = popup.url();
-  while (Date.now() < deadline) {
+  while (Date.now() < deadline && !popup.isClosed()) {
     url = popup.url();
     if (url.startsWith('https://accounts.google.com/')) break;
-    await popup.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  if (popup.isClosed()) {
+    const alert = await page
+      .getByRole('alert')
+      .first()
+      .textContent({ timeout: 3_000 })
+      .catch(() => null);
+    record(
+      'Google',
+      false,
+      `la ventana de Google se cerró sola (aviso: ${alert ?? 'ninguno'}; última dirección: ${url.slice(0, 120)})`,
+    );
+    return;
   }
   await popup.waitForLoadState('load', { timeout: 10_000 }).catch(() => undefined);
   const text = (
@@ -209,17 +235,24 @@ async function main(): Promise<void> {
 
   if (problems.length > 0) {
     console.log('\nLo que el navegador reportó:');
-    for (const p of [...new Set(problems)].slice(0, 30)) console.log(`  ${p.slice(0, 300)}`);
+    for (const p of [...new Set(problems)].slice(0, 30))
+      console.log(`  ${masked(p).slice(0, 300)}`);
   }
   const failed = results.filter((r) => !r.ok);
   if (failed.length > 0) {
     console.log(
       `::error::El portal publicado falla en: ${failed.map((r) => `${r.check} (${r.detail})`).join('; ')}`,
     );
+    // Each check above already printed its own line; a crash never hides them.
     process.exitCode = 1;
   } else {
     console.log('\nTodo responde: la página, Firebase (correo y Google) y el servidor.');
   }
 }
 
-await main();
+try {
+  await main();
+} catch (error) {
+  console.log(`::error::La comprobación se detuvo: ${masked(String(error)).slice(0, 400)}`);
+  process.exitCode = 1;
+}
