@@ -1,0 +1,41 @@
+name: Portal publicado
+
+# The published portal, checked as a person uses it (scripts/production-check.ts):
+# the page, signing in with e-mail and with Google, and the server. Every day,
+# on demand, and when the check itself changes. It never publishes anything.
+on:
+  schedule:
+    - cron: '17 13 * * *' # 8:17 in Cancún
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/production-check.ts
+      - .github/workflows/produccion.yml
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    name: Entrar al portal publicado
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Instalar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Entrar como lo haría una persona
+        run: node scripts/production-check.ts https://portal.empirica.mx/
+        env:
+          APPS_SCRIPT_DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
