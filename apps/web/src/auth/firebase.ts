@@ -69,9 +69,11 @@ const CODES: Record<string, AuthErrorCode> = {
   'auth/credential-already-in-use': 'email-in-use',
 };
 
+/** Firebase's code stays as the message: an unknown failure shows it (AuthForm). */
 function translate(error: unknown): AuthError {
   const code = (error as { code?: unknown } | null)?.code;
-  return new AuthError(typeof code === 'string' ? (CODES[code] ?? 'unknown') : 'unknown');
+  if (typeof code !== 'string') return new AuthError('unknown');
+  return new AuthError(CODES[code] ?? 'unknown', code);
 }
 
 const toAuthUser = (user: User | null): AuthUser | null =>

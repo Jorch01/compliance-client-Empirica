@@ -98,6 +98,19 @@ describe('signing in while Google takes its time', () => {
   });
 });
 
+describe('an unexpected failure', () => {
+  it('says which one, to tell the firm (a suspended key, a service down)', async () => {
+    const form = renderForm(() => Promise.reject(new AuthError('unknown', 'auth/internal-error')));
+    await act(async () => {
+      fireEvent.click(form.google());
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No se pudo iniciar sesión. Intenta de nuevo. (auth/internal-error)',
+    );
+  });
+});
+
 describe('back from Google in the app installed on iPhone (D78)', () => {
   afterEach(() => {
     platform.installed = false;

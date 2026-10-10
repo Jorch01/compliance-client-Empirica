@@ -6,7 +6,8 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/context.ts';
-import { AuthError, type AuthUser } from '../auth/types.ts';
+import { authErrorText } from '../auth/error-text.ts';
+import type { AuthUser } from '../auth/types.ts';
 import { MOCK_MODE } from '../config/api.ts';
 import { reloadToNewVersion } from '../pwa/update.ts';
 import { useSession } from '../session/context.ts';
@@ -82,7 +83,7 @@ export function VerifyEmailScreen({ user }: { user: AuthUser }) {
                   setMessage(t('auth.verifySent'));
                 })
                 .catch((e: unknown) => {
-                  setMessage(t(`auth.errors.${e instanceof AuthError ? e.code : 'unknown'}`));
+                  setMessage(authErrorText(t, e));
                 })
                 .finally(() => {
                   setBusy(null);
@@ -238,7 +239,7 @@ export function LockScreen({ user, minutes }: { user: AuthUser; minutes: number 
   useEffect(() => {
     let current = true;
     client.finishGoogleRedirect('unlock').catch((e: unknown) => {
-      if (current) setError(t(`auth.errors.${e instanceof AuthError ? e.code : 'unknown'}`));
+      if (current) setError(authErrorText(t, e));
     });
     return () => {
       current = false;
@@ -252,7 +253,7 @@ export function LockScreen({ user, minutes }: { user: AuthUser; minutes: number 
     try {
       await unlock(usesPassword && !MOCK_MODE ? password : undefined);
     } catch (e) {
-      setError(t(`auth.errors.${e instanceof AuthError ? e.code : 'unknown'}`));
+      setError(authErrorText(t, e));
     } finally {
       setBusy(false);
     }

@@ -154,9 +154,10 @@ jobs:
       - name: Compilar el portal
         run: npm run build -w @empirica/web
         env:
-          # Public by design (it ships to the browser), but kept out of the
-          # repository so secret scanners do not flag it. docs/SETUP.md, step 8.
-          VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
+          # Public in the page by design, but kept out of the repository and
+          # of the public logs: a secret is masked there, a variable is not.
+          # Google blocks exposed keys (docs/OPERACION.md). Step 3 of SETUP.md.
+          VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY || vars.FIREBASE_WEB_API_KEY }}
           # The backend's address is built from it (src/config/api.ts).
           VITE_APPS_SCRIPT_DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
           # Where Google's sign-in finishes: unset, Firebase's domain; the

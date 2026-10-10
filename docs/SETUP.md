@@ -143,7 +143,7 @@ Así, cada cambio aprobado se sube solo a Apps Script, siempre a la misma direcc
    | `API_DEPLOY_ENABLED`   | `true` (en minúsculas)                                               |
    | `FIREBASE_WEB_API_KEY` | El `apiKey` del bloque `firebaseConfig` (el que empieza con `AIza…`) |
 
-   `FIREBASE_WEB_API_KEY` no es secreta (va en el navegador), pero no se guarda en el repositorio para que los detectores de secretos de GitHub no marquen el repositorio público.
+   `FIREBASE_WEB_API_KEY` no es secreta (va en el navegador), pero no se guarda en el repositorio para que los detectores de secretos de GitHub no marquen el repositorio público. **Desde el 9 de octubre de 2026 va como secreto** (pestaña **Secrets**), no como variable: como variable aparecía en los registros públicos del CI, y Google suspendió esa llave (`OPERACION.md` § 4, «La llave del navegador»).
 
 10. Cierra el Codespace (**Code → Codespaces → ⋯ → Delete**) para que la credencial no quede ahí.
 11. Avísame. Desde entonces, cada versión aprobada que llegue a `main` sube sola el código a Apps Script, solo si todas las pruebas pasaron.
