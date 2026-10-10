@@ -19,6 +19,7 @@ import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { todayInCancun } from '../../domain/deadlines.ts';
 import { unitTree } from '../../domain/scope.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { formatDate } from '../../i18n/index.ts';
 import { categoryLabel, riskLabel } from '../../i18n/labels.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
@@ -84,6 +85,7 @@ export function ObligationForm({
   onSaved?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const allUnits = useRows('Entidades');
@@ -244,6 +246,7 @@ export function ObligationForm({
         </div>
         <TextField
           label={t('fields.nombre')}
+          hint={hints.obligationName}
           required
           maxLength={300}
           value={form.nombre}
@@ -327,6 +330,7 @@ export function ObligationForm({
         />
         <TextArea
           label={t('fields.evidenciaRequerida')}
+          hint={hints.obligationEvidence}
           optional={t('common.optional')}
           rows={2}
           maxLength={2000}

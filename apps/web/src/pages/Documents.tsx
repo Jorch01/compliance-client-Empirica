@@ -4,6 +4,7 @@ import { Link } from 'wouter';
 import { AREAS, text } from '@empirica/shared';
 import { usePendingIds, useRows, useUploads } from '../data/hooks.ts';
 import { linkOf } from '../domain/work.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { areaLabel } from '../i18n/labels.ts';
 import { useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
@@ -64,6 +65,9 @@ export function DocumentsPage() {
         <p className="mt-2 max-w-2xl text-muted-foreground">
           {me.isFirm ? t('documents.intro') : t('documents.introClient')}
         </p>
+        <div className="mt-2">
+          <GuideButton section="documents" />
+        </div>
       </PageHeader>
       <Card>
         <div className="mb-4 grid gap-3 sm:grid-cols-2">

@@ -17,6 +17,7 @@ import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { unitTree } from '../../domain/scope.ts';
 import { assignable, checklistOf, type ChecklistItem, type Side } from '../../domain/work.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { priorityLabel, taskStateLabel } from '../../i18n/labels.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
@@ -117,6 +118,7 @@ export function TaskForm({
   onSaved?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const usuarios = useRows('Usuarios');
@@ -260,6 +262,7 @@ export function TaskForm({
         ) : null}
         <TextField
           label={t('fields.titulo')}
+          hint={hints.taskTitle}
           required
           maxLength={200}
           value={form.titulo}
@@ -317,6 +320,7 @@ export function TaskForm({
           ) : null}
           <SelectField
             label={t('tasks.side')}
+            hint={hints.taskSide}
             value={form.ladoResponsable}
             onChange={(e) => {
               const side = LADOS_RESPONSABLE.find((s) => s === e.target.value) ?? 'EMPIRICA';

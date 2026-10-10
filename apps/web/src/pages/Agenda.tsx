@@ -5,6 +5,7 @@ import { RECORD_PATH, agendaTitle, type AgendaItem } from '@empirica/shared';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
 import { relativeDay } from '../domain/dashboard.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { currentLanguage, formatDate, formatDayHeading, formatTimeRange } from '../i18n/index.ts';
 import { useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
@@ -121,6 +122,9 @@ export function AgendaPage() {
         }
       >
         <p className="mt-2 max-w-2xl text-muted-foreground">{t('agenda.intro')}</p>
+        <div className="mt-2">
+          <GuideButton section="agenda" />
+        </div>
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

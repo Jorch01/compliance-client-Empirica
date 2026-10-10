@@ -5,6 +5,7 @@ import { text, type Row } from '@empirica/shared';
 import { usePendingIds } from '../data/hooks.ts';
 import { can } from '../domain/access.ts';
 import { todayInCancun, urgencyOf } from '../domain/deadlines.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
@@ -77,6 +78,9 @@ export function TasksPage() {
         }
       >
         <p className="mt-2 max-w-2xl text-muted-foreground">{t('tasks.intro')}</p>
+        <div className="mt-2">
+          <GuideButton section="tasks" />
+        </div>
       </PageHeader>
       <Card>
         <div className="mb-3">

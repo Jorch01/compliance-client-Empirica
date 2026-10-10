@@ -13,6 +13,7 @@ import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { unitTree } from '../../domain/scope.ts';
 import { assignable, linkOf } from '../../domain/work.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
@@ -51,6 +52,7 @@ export function ContractForm({
   onSaved?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const usuarios = useRows('Usuarios');
@@ -174,6 +176,7 @@ export function ContractForm({
         ) : null}
         <TextField
           label={t('fields.contraparte')}
+          hint={hints.contractCounterpart}
           required
           maxLength={300}
           value={form.contraparte}

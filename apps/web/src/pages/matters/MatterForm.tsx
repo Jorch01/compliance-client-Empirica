@@ -16,6 +16,7 @@ import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { unitTree } from '../../domain/scope.ts';
 import { assignable } from '../../domain/work.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { areaLabel, priorityLabel } from '../../i18n/labels.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
@@ -63,6 +64,7 @@ export function MatterForm({
   onSaved?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const usuarios = useRows('Usuarios');
@@ -175,6 +177,7 @@ export function MatterForm({
         ) : null}
         <TextField
           label={t('fields.titulo')}
+          hint={hints.matterTitle}
           required
           maxLength={200}
           value={form.titulo}
@@ -256,6 +259,7 @@ export function MatterForm({
           <TextField
             type="date"
             label={t('fields.fechaObjetivo')}
+            hint={hints.matterTarget}
             optional={t('common.optional')}
             value={form.fechaObjetivo}
             onChange={(e) => {
