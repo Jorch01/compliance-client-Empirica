@@ -15,6 +15,7 @@ import { useNames } from '../../data/names.ts';
 import { can } from '../../domain/access.ts';
 import { todayInCancun } from '../../domain/deadlines.ts';
 import { unitTree } from '../../domain/scope.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { formatDate, formatDateTime } from '../../i18n/index.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
@@ -126,6 +127,7 @@ function AppointmentView({ row, onClose }: { row: Row; onClose: () => void }) {
  */
 export function AppointmentForm({ row, onClose }: { row: Row | null; onClose: () => void }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const allUnits = useRows('Entidades');
@@ -249,6 +251,7 @@ export function AppointmentForm({ row, onClose }: { row: Row | null; onClose: ()
           ) : null}
           <TextField
             label={t('agenda.titleField')}
+            hint={hints.appointmentTitle}
             required
             maxLength={200}
             value={form.titulo}

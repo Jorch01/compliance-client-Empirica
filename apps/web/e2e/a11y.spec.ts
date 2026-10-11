@@ -108,6 +108,7 @@ const SCREENS: { user: DemoUser; paths: string[]; mobile?: boolean }[] = [
       '#/documentos',
       '#/agenda',
       '#/avisos',
+      '#/ayuda',
     ],
     mobile: true,
   },

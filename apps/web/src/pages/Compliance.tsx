@@ -17,6 +17,7 @@ import { usePendingIds } from '../data/hooks.ts';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
 import { todayInCancun } from '../domain/deadlines.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { categoryLabel, riskLabel } from '../i18n/labels.ts';
 import { useScope, useScopedAllRows, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
@@ -290,6 +291,9 @@ export function CompliancePage() {
         <p className="mt-2 max-w-2xl text-muted-foreground">
           {me.isFirm ? t('compliance.intro') : t('compliance.introClient')}
         </p>
+        <div className="mt-2">
+          <GuideButton section="compliance" />
+        </div>
       </PageHeader>
 
       <Card

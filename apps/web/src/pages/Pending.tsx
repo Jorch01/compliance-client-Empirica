@@ -7,6 +7,7 @@ import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
 import { onClientSide, taskSemaforo, todayInCancun } from '../domain/deadlines.ts';
 import { CLIENT_NEXT } from '../domain/work.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { taskStateLabel } from '../i18n/labels.ts';
 import { useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
@@ -137,7 +138,11 @@ export function PendingPage() {
 
   return (
     <>
-      <PageHeader title={t('tasks.pendingTitle')} />
+      <PageHeader title={t('tasks.pendingTitle')}>
+        <div className="mt-2">
+          <GuideButton section="tasks" />
+        </div>
+      </PageHeader>
       {!editable ? (
         <p className="mb-4 rounded-control border border-border bg-muted px-4 py-2 text-sm">
           {t('tasks.readOnly')}

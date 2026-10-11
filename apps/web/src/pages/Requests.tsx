@@ -5,6 +5,8 @@ import { useRows } from '../data/hooks.ts';
 import { can } from '../domain/access.ts';
 import { isOpenRequest } from '../domain/dashboard.ts';
 import { unitTree } from '../domain/scope.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
+import { useGuideTexts } from '../help/guides.ts';
 import { areaLabel, priorityLabel } from '../i18n/labels.ts';
 import { clientName, useScope, useScopedRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
@@ -23,6 +25,7 @@ type Filter = 'open' | 'closed' | 'all';
  */
 function NewRequestDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const allUnits = useRows('Entidades');
@@ -115,6 +118,7 @@ function NewRequestDialog({ open, onClose }: { open: boolean; onClose: () => voi
         ) : null}
         <TextField
           label={t('requests.titleField')}
+          hint={hints.requestTitle}
           required
           maxLength={200}
           value={form.titulo}
@@ -124,6 +128,7 @@ function NewRequestDialog({ open, onClose }: { open: boolean; onClose: () => voi
         />
         <TextArea
           label={t('requests.description')}
+          hint={hints.requestDetails}
           optional={t('common.optional')}
           maxLength={5000}
           value={form.descripcion}
@@ -211,7 +216,11 @@ export function RequestsPage() {
             </Button>
           ) : null
         }
-      />
+      >
+        <div className="mt-2">
+          <GuideButton section="requests" />
+        </div>
+      </PageHeader>
       <Card>
         <div role="group" aria-label={t('requests.filter')} className="mb-2 flex flex-wrap gap-2">
           {(['open', 'closed', 'all'] as const).map((f) => (

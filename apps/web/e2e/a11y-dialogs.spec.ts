@@ -27,6 +27,8 @@ const OPENED: { user: DemoUser; mobile?: boolean; items: Opened[] }[] = [
       { path: '#/tramites', open: 'Nuevo trámite' },
       { path: '#/compliance', open: 'Nueva obligación' },
       { path: '#/compliance', open: /¿Cómo se lee\?/ },
+      { path: '#/asuntos', open: /¿Qué va aquí\?/ },
+      { path: '#/ayuda', open: /va en Trámites/ },
       { path: '#/contratos', open: 'Nuevo contrato' },
       { path: '#/', open: 'Tu cuenta', popover: true },
       { path: '#/', open: /Al día/, popover: true },
@@ -49,6 +51,7 @@ const OPENED: { user: DemoUser; mobile?: boolean; items: Opened[] }[] = [
     items: [
       { path: '#/solicitudes', open: 'Nueva solicitud' },
       { path: `#/compliance/${id(0x701)}`, open: 'Enviar evidencia' },
+      { path: '#/pendientes', open: /¿Qué va aquí\?/ },
     ],
   },
 ];

@@ -130,6 +130,16 @@ Pedido del socio: que los usuarios aprendan solos.
 
 Accesible con teclado y lector de pantalla; en ES y EN; los textos viven en los archivos de traducción, no en el código.
 
+**Botones "¿Qué va aquí?"** (D79). Bajo el título de cada sección (Solicitudes, Asuntos, Tareas o Pendientes, Trámites, Compliance, Contratos, Documentos, Agenda). Enseñan qué poner en cada una, siempre en el mismo orden:
+
+1. **Para qué sirve**.
+2. **Qué se registra aquí** (al cliente: **qué puede hacer aquí**).
+3. **Ejemplo**: un registro ficticio llenado, sin fundamentos, plazos ni fechas.
+4. **¿No es esto?**: lo que se confunde con la sección y dónde va. Cada opción abre ahí mismo la guía de la otra sección (con **Volver**), y **Ir a…** lleva a ella.
+5. **Qué poner en cada campo**, solo donde esa persona llena formularios.
+
+En **Ayuda**, **¿Dónde registro cada cosa?** junta situaciones comunes que abren su guía, cómo se conecta todo y las guías por nombre. Los formularios repiten lo esencial con un ejemplo bajo los campos clave. Una versión para el despacho (de tú) y otra para el cliente (de usted). Los textos viven en `apps/web/src/help/guides-es.ts` y `guides-en.ts`, fuera de la primera carga; una prueba comprueba que los dos idiomas digan lo mismo y lleven a las mismas secciones.
+
 **Tour guiado rápido.** Al primer ingreso, 5 o 6 pasos que señalan la barra lateral, el selector de cliente o unidad, "Pendientes de su lado", el semáforo y la búsqueda (⌘K). Se puede saltar y se repite desde **Ayuda → Ver el recorrido**. Distinto para el despacho y para el cliente.
 
 **Instalar en la pantalla de inicio.** El último paso del tour, y luego un aviso discreto que se puede cerrar, piden instalar el portal. Las instrucciones dependen del sistema detectado:

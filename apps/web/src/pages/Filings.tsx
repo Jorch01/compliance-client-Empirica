@@ -15,6 +15,7 @@ import { usePendingIds } from '../data/hooks.ts';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
 import { daysBetween, todayInCancun } from '../domain/deadlines.ts';
+import { GuideButton } from '../help/SectionGuide.tsx';
 import { useScope, useScopedAllRows } from '../portal/scope.ts';
 import { usePortal } from '../session/context.ts';
 import { Button } from '../ui/Button.tsx';
@@ -256,6 +257,9 @@ export function FilingsPage() {
         <p className="mt-2 max-w-2xl text-muted-foreground">
           {me.isFirm ? t('filings.intro') : t('filings.introClient')}
         </p>
+        <div className="mt-2">
+          <GuideButton section="filings" />
+        </div>
       </PageHeader>
       <Card>
         <div className="mb-4 space-y-3">

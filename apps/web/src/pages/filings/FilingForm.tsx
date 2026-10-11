@@ -15,6 +15,7 @@ import { useRows } from '../../data/hooks.ts';
 import { can } from '../../domain/access.ts';
 import { todayInCancun } from '../../domain/deadlines.ts';
 import { unitTree } from '../../domain/scope.ts';
+import { useGuideTexts } from '../../help/guides.ts';
 import { clientName, useScope } from '../../portal/scope.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
@@ -55,6 +56,7 @@ export function FilingForm({
   onSaved?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { hints } = useGuideTexts();
   const { me, engine } = usePortal();
   const { scope, clients } = useScope();
   const templates = useTemplates();
@@ -175,6 +177,7 @@ export function FilingForm({
         ) : null}
         <TextField
           label={t('fields.titulo')}
+          hint={hints.filingTitle}
           required
           maxLength={200}
           value={form.titulo}
@@ -200,6 +203,7 @@ export function FilingForm({
           />
           <TextField
             label={t('fields.autoridad')}
+            hint={hints.filingAuthority}
             optional={t('common.optional')}
             maxLength={200}
             value={form.autoridad}
@@ -240,6 +244,7 @@ export function FilingForm({
           />
           <TextField
             label={t('fields.folioExpediente')}
+            hint={hints.filingFolio}
             optional={t('common.optional')}
             maxLength={200}
             value={form.folioExpediente}

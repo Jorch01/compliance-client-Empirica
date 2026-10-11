@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { APP_VERSION } from '../config/api.ts';
 import { useFeedback } from '../feedback/context.ts';
+import { GuideIndex } from '../help/SectionGuide.tsx';
 import { InstallInstructions } from '../portal/InstallInstructions.tsx';
 import { useTour } from '../portal/tour-context.ts';
 import { configNumber, usePortal } from '../session/context.ts';
@@ -9,7 +10,10 @@ import { Button } from '../ui/Button.tsx';
 import { Card, PageHeader } from '../ui/Card.tsx';
 import { Icon } from '../ui/Icon.tsx';
 
-/** Help: the tour again, installing the portal, working offline and the device's copy. */
+/**
+ * Help: where each thing goes (D79), the tour again, installing the portal,
+ * working offline and the device's copy.
+ */
 export function HelpPage() {
   const { t } = useTranslation();
   const { me } = usePortal();
@@ -19,6 +23,7 @@ export function HelpPage() {
     <>
       <PageHeader title={t('help.title')} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <GuideIndex />
         <Card title={t('help.tour')}>
           <p className="mb-4">{t('help.tourHint')}</p>
           <Button icon="arrowRight" onClick={start}>
