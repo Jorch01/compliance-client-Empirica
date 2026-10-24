@@ -102,7 +102,7 @@ export function changed(r: LockedRun, before: Row, changes: Record<string, Value
 /** Saves a change (if any) and logs it; returns the stored row. */
 export function saveChange(
   r: LockedRun,
-  table: 'Usuarios' | 'Membresias' | 'Invitaciones' | 'Clientes',
+  table: 'Usuarios' | 'Membresias' | 'Invitaciones' | 'Clientes' | 'Participantes',
   before: Row | undefined,
   after: Row,
   clienteId: string | null,

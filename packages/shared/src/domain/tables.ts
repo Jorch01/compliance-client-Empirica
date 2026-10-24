@@ -10,8 +10,10 @@ import {
   CATEGORIAS_OBLIGACION,
   ESTADOS_ASUNTO,
   ESTADOS_CLIENTE,
+  ESTADOS_COBRO,
   ESTADOS_CONFLICTO,
   ESTADOS_CUMPLIMIENTO,
+  ESTADOS_HONORARIO,
   ESTADOS_INVITACION,
   ESTADOS_MEMBRESIA,
   ESTADOS_OBLIGACION,
@@ -23,13 +25,18 @@ import {
   ESTADOS_USUARIO,
   LADOS,
   LADOS_RESPONSABLE,
+  METODOS_PAGO,
   MODOS_IA,
+  MONEDAS,
   PRIORIDADES,
+  REPETICIONES,
   RIESGOS,
   ROLES,
   SERVICIOS,
   TIPOS_ENTIDAD,
   TIPOS_EVENTO,
+  TIPOS_GASTO,
+  TIPOS_PARTICIPANTE,
   TIPOS_SUGERENCIA,
   VISIBILIDADES,
 } from './enums.ts';
@@ -117,7 +124,13 @@ export type Audience =
   /** Everyone with an account (non-client reference data such as public holidays). */
   | 'everyone'
   /** The user it names (`scope.user`) and the portal's administrators (SOCIO_ADMIN). */
-  | 'own';
+  | 'own'
+  /**
+   * Billing (F9, D80): the SOCIO_ADMIN and the lawyers the partners authorize
+   * (`Usuarios.cobranza`), each within their clients. Never a client user,
+   * never an assistant.
+   */
+  | 'billing';
 
 /**
  * How a tab reaches the devices:
@@ -217,6 +230,13 @@ export const TABLE_NAMES = [
   'Reportes',
   'OpsAplicadas',
   'Calendario',
+  // F9: billing (Cobranza), the firm's only.
+  'Honorarios',
+  'Cobros',
+  'Pagos',
+  'Gastos',
+  'Participantes',
+  'RecordatoriosCobro',
 ] as const;
 export type TableName = (typeof TABLE_NAMES)[number];
 
@@ -341,12 +361,14 @@ export const TABLES: Record<TableName, TableDef> = {
       col('icsToken', { type: 'string' }),
       col('ultimoAcceso', { type: 'datetime' }),
       col('firebaseUid', { type: 'string' }),
+      // F9: a lawyer the partners authorize for billing (D80); the SOCIO_ADMIN always is.
+      col('cobranza', { type: 'boolean' }),
     ],
     {
       sync: 'snapshot',
       audience: 'members',
-      sensitive: ['rolBase', 'estado'],
-      hiddenFromClients: ['estado', 'prefsNotificacion', 'ultimoAcceso', 'idioma'],
+      sensitive: ['rolBase', 'estado', 'cobranza'],
+      hiddenFromClients: ['estado', 'prefsNotificacion', 'ultimoAcceso', 'idioma', 'cobranza'],
       serverOnly: ['icsToken', 'firebaseUid'],
       serverManaged: ['icsToken', 'firebaseUid', 'ultimoAcceso'],
       immutable: ['email'],
@@ -912,6 +934,185 @@ export const TABLES: Record<TableName, TableDef> = {
       col('titulo', { type: 'string' }),
     ],
     { sync: 'none', audience: 'firm' },
+  ),
+
+  /**
+   * F9, billing (D80 to D86). A recurring fee of a client (an iguala): its
+   * amount before taxes, every how many months and on which day it is
+   * charged, from when, and how it is split among the participants. Each
+   * period is a charge (`Cobros`), recorded or not yet.
+   */
+  Honorarios: table(
+    'Honorarios',
+    [
+      CLIENTE,
+      col('concepto', { type: 'string', required: true }),
+      // Before taxes, per period.
+      col('monto', { type: 'number', required: true }),
+      col('moneda', { ...e(MONEDAS), required: true }),
+      col('cadaMeses', { type: 'number', required: true }),
+      // 1 to 28, or -1 for the last day of the month (as the obligations' rules).
+      col('diaCobro', { type: 'number', required: true }),
+      // Days the client has to pay after each charge.
+      col('diasCredito', { type: 'number' }),
+      // The first charge is the first period from this date on.
+      col('desde', { type: 'date', required: true }),
+      col('hasta', { type: 'date' }),
+      col('estado', { ...e(ESTADOS_HONORARIO), required: true }),
+      // Percentages: VAT charged, and what the client withholds.
+      col('tasaIVA', { type: 'number' }),
+      col('retencionISR', { type: 'number' }),
+      col('retencionIVA', { type: 'number' }),
+      // [{ participanteId, porcentaje }]: who takes what (the partners decide).
+      col('reparto', { type: 'json' }),
+      ref('responsableId', 'Usuarios'),
+      col('notas', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'billing',
+      scope: { client: 'clienteId' },
+      immutable: ['clienteId'],
+    },
+  ),
+
+  /**
+   * A charge: one period of a fee (`honorarioId` + `periodo`, with a fixed
+   * id, so two devices never record it twice) or one on its own (a single
+   * job, a success fee). Paid, partly paid or overdue come from its payments.
+   */
+  Cobros: table(
+    'Cobros',
+    [
+      CLIENTE,
+      ref('honorarioId', 'Honorarios'),
+      // "2026-10": the fee's period it charges.
+      col('periodo', { type: 'string' }),
+      ref('asuntoId', 'Asuntos'),
+      col('concepto', { type: 'string', required: true }),
+      // The day it is earned (devengado) and billed.
+      col('fechaEmision', { type: 'date', required: true }),
+      col('fechaVencimiento', { type: 'date' }),
+      col('subtotal', { type: 'number', required: true }),
+      col('moneda', { ...e(MONEDAS), required: true }),
+      col('tasaIVA', { type: 'number' }),
+      col('retencionISR', { type: 'number' }),
+      col('retencionIVA', { type: 'number' }),
+      col('folioFactura', { type: 'string' }),
+      col('estado', { ...e(ESTADOS_COBRO), required: true }),
+      // Its own split; empty: the fee's.
+      col('reparto', { type: 'json' }),
+      ref('responsableId', 'Usuarios'),
+      col('notas', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'billing',
+      scope: { client: 'clienteId' },
+      immutable: ['clienteId', 'honorarioId', 'periodo'],
+    },
+  ),
+
+  /** Money received for a charge. */
+  Pagos: table(
+    'Pagos',
+    [
+      CLIENTE,
+      ref('cobroId', 'Cobros', true),
+      col('fecha', { type: 'date', required: true }),
+      col('monto', { type: 'number', required: true }),
+      col('metodo', e(METODOS_PAGO)),
+      col('referencia', { type: 'string' }),
+      col('notas', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'billing',
+      scope: {
+        client: 'clienteId',
+        parent: { kind: 'fixed', table: 'Cobros', column: 'cobroId', mode: 'attached' },
+      },
+      immutable: ['clienteId', 'cobroId'],
+    },
+  ),
+
+  /**
+   * What comes out of a charge, typed by hand: a bank's commission, an
+   * expense, a tax. Shared by everyone in the split, or on one participant
+   * (`aCargoDe`); `pagadoPor` gets it back if they paid it.
+   */
+  Gastos: table(
+    'Gastos',
+    [
+      CLIENTE,
+      ref('cobroId', 'Cobros', true),
+      col('fecha', { type: 'date' }),
+      col('concepto', { type: 'string', required: true }),
+      col('tipo', { ...e(TIPOS_GASTO), required: true }),
+      col('monto', { type: 'number', required: true }),
+      ref('aCargoDe', 'Participantes'),
+      ref('pagadoPor', 'Participantes'),
+      col('notas', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'billing',
+      scope: {
+        client: 'clienteId',
+        parent: { kind: 'fixed', table: 'Cobros', column: 'cobroId', mode: 'attached' },
+      },
+      immutable: ['clienteId', 'cobroId'],
+    },
+  ),
+
+  /**
+   * Who takes part in the splits: a person of the firm, the firm's own fund,
+   * or someone outside (who referred the client). Its estimated tax comes
+   * out of its part. Few rows, edited online by the partners.
+   */
+  Participantes: table(
+    'Participantes',
+    [
+      col('nombre', { type: 'string', required: true }),
+      ref('usuarioId', 'Usuarios'),
+      col('tipo', { ...e(TIPOS_PARTICIPANTE), required: true }),
+      // Percentage of its part, estimated (BORRADOR: validar con el contador).
+      col('tasaImpuesto', { type: 'number' }),
+      col('activo', { type: 'boolean' }),
+      col('notas', { type: 'text' }),
+    ],
+    { sync: 'snapshot', audience: 'billing' },
+  ),
+
+  /**
+   * A billing reminder: once or every so often, to the people it names, in
+   * the bell (the nightly job writes it the day it falls).
+   */
+  RecordatoriosCobro: table(
+    'RecordatoriosCobro',
+    [
+      CLIENTE,
+      ref('honorarioId', 'Honorarios'),
+      ref('cobroId', 'Cobros'),
+      col('titulo', { type: 'string', required: true }),
+      // The first time; the next ones follow `repetir`.
+      col('fecha', { type: 'date', required: true }),
+      col('repetir', { ...e(REPETICIONES), required: true }),
+      col('hasta', { type: 'date' }),
+      // [usuarioId]: who hears it; empty, whoever wrote it.
+      col('destinatarios', { type: 'json' }),
+      col('activo', { type: 'boolean' }),
+      // The last day the bell said it (set by the server).
+      col('ultimoAviso', { type: 'date' }),
+      col('notas', { type: 'text' }),
+    ],
+    {
+      sync: 'pushpull',
+      audience: 'billing',
+      scope: { client: 'clienteId' },
+      serverManaged: ['ultimoAviso'],
+      immutable: ['clienteId'],
+    },
   ),
 };
 

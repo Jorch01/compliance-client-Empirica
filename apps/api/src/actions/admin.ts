@@ -8,6 +8,7 @@ import {
   CLIENT_ROLES,
   FIRM_ROLES,
   TABLES,
+  hasBillingAccess,
   sameValue,
   type Alcance,
   type Row,
@@ -46,6 +47,7 @@ export function updateUser(
     estado?: 'ACTIVO' | 'INACTIVO' | undefined;
     rolBase?: (typeof FIRM_ROLES)[number] | undefined;
     resetAccount?: boolean | undefined;
+    cobranza?: boolean | undefined;
   },
 ): { user: Row } {
   return underLock(env, session.user.id, (r) => {
@@ -65,6 +67,14 @@ export function updateUser(
       changes.rolBase = input.rolBase;
     }
     if (input.resetAccount) changes.firebaseUid = null;
+    if (input.cobranza !== undefined) {
+      // Billing (D80): a partner sees it always; a lawyer, if authorized; nobody else.
+      const rol = changes.rolBase ?? user.rolBase;
+      if (input.cobranza && (user.lado !== 'EMPIRICA' || rol !== 'ABOGADO')) {
+        throw validation('Solo se autoriza la cobranza a un abogado del despacho.');
+      }
+      changes.cobranza = input.cobranza;
+    }
 
     // Somebody must always be able to administer the portal.
     const losesAdmin =
@@ -84,7 +94,24 @@ export function updateUser(
       'nombre',
       'estado',
       'rolBase',
+      'cobranza',
     ]);
+    // Billing on or off: each of the person's clients is downloaded again, so
+    // their devices get its billing, or lose it (PLAN.md § 5).
+    if (hasBillingAccess(user) !== hasBillingAccess(saved)) {
+      const clients = r.db
+        .rows('Membresias')
+        .filter((m) => m.usuarioId === user.id && m.estado === 'ACTIVA' && !m.deleted)
+        .flatMap((m) => (typeof m.clienteId === 'string' ? [m.clienteId] : []));
+      const all = user.rolBase === 'SOCIO_ADMIN' || saved.rolBase === 'SOCIO_ADMIN';
+      const ids = all
+        ? r.db
+            .rows('Clientes')
+            .filter((c) => !c.deleted)
+            .map((c) => c.id)
+        : clients;
+      for (const id of new Set(ids)) bumpEpoch(r, id);
+    }
     return { user: publicUser(saved) };
   });
 }

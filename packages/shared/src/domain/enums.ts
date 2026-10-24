@@ -113,3 +113,37 @@ export const ESTADOS_REPORTE = ['BORRADOR', 'ENVIADO'] as const;
 /** What someone tells the firm about the portal itself. */
 export const TIPOS_SUGERENCIA = ['SUGERENCIA', 'ERROR'] as const;
 export const ESTADOS_SUGERENCIA = ['NUEVA', 'EN_REVISION', 'RESUELTA', 'DESCARTADA'] as const;
+
+/**
+ * Billing (Cobranza, F9): the firm's fees and what each client owes. Only
+ * the firm sees it, and only who the partners authorize (D80).
+ */
+export const MONEDAS = ['MXN', 'USD'] as const;
+export type Moneda = (typeof MONEDAS)[number];
+
+/** A recurring fee (an iguala): charged every period while active. */
+export const ESTADOS_HONORARIO = ['ACTIVO', 'PAUSADO', 'TERMINADO'] as const;
+
+/** A charge stands until it is cancelled; paid or overdue come from its payments. */
+export const ESTADOS_COBRO = ['VIGENTE', 'CANCELADO'] as const;
+
+export const METODOS_PAGO = ['TRANSFERENCIA', 'EFECTIVO', 'CHEQUE', 'TARJETA', 'OTRO'] as const;
+
+/** What comes out of a charge before (or after) it is split. */
+export const TIPOS_GASTO = ['COMISION', 'GASTO', 'IMPUESTO', 'OTRO'] as const;
+
+/** Who takes part in the split: a person, the firm's own fund, or someone outside. */
+export const TIPOS_PARTICIPANTE = ['PERSONA', 'DESPACHO', 'EXTERNO'] as const;
+
+/** How often a billing reminder comes back. */
+export const REPETICIONES = [
+  'NO',
+  'SEMANAL',
+  'QUINCENAL',
+  'MENSUAL',
+  'BIMESTRAL',
+  'TRIMESTRAL',
+  'SEMESTRAL',
+  'ANUAL',
+] as const;
+export type Repeticion = (typeof REPETICIONES)[number];

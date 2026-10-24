@@ -55,6 +55,11 @@ function expectedFor(w: World, userId: string): string[] {
     'Conflictos',
     'Sugerencias',
     'Reportes',
+    'Honorarios',
+    'Cobros',
+    'Pagos',
+    'Gastos',
+    'RecordatoriosCobro',
   ] as TableName[]) {
     for (const row of db.rows(t)) {
       if (!row.deleted && canRead(ctx, t, row, db.lookup())) out.push(`${t}:${row.id}`);

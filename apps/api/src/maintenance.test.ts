@@ -160,6 +160,9 @@ describe('the yearly audit archive', () => {
 
   it('on New Year’s night the past year moves to its own spreadsheet in Respaldos', () => {
     const w = createWorld();
+    // The demo's monthly billing reminder would ring that night and log it (F9):
+    // this test counts the archive's rows only.
+    w.edit('RecordatoriosCobro', ID.recFactura, { activo: false });
     archiveAuditLog(w.env);
     fillAuditLog(w, 1_200, '2026-12-31T23:59:00.000-05:00');
     const pastYear = ids(w);

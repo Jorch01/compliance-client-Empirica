@@ -7,7 +7,7 @@
  * `sync.push`: they have online endpoints with their own checks.
  */
 import type { EstadoTarea, Rol } from '../domain/enums.ts';
-import type { TableName } from '../domain/tables.ts';
+import { TABLES, type TableName } from '../domain/tables.ts';
 import type { Value } from '../domain/values.ts';
 
 /** Placeholder for "the user making the change" in forced values. */
@@ -40,6 +40,10 @@ export interface TablePolicy {
 export const OWNER_COLUMN: Partial<Record<TableName, string>> = {
   Comentarios: 'autorId',
   Notificaciones: 'usuarioId',
+  // F9: a lawyer corrects or removes the payments, expenses and reminders he wrote.
+  Pagos: 'createdBy',
+  Gastos: 'createdBy',
+  RecordatoriosCobro: 'createdBy',
 };
 
 /** Set on creation for every role. */
@@ -144,6 +148,28 @@ const reportDraft: TablePolicy = {
   delete: false,
 };
 
+/**
+ * Billing (F9, D80): the SOCIO_ADMIN runs all of it; an authorized lawyer
+ * records his clients' fees, charges, payments, expenses and reminders, but
+ * never sets the split (`reparto`), which is the partners' decision. Who is
+ * authorized at all is decided by the `billing` audience (read.ts).
+ */
+const allBut = (table: TableName, ...drop: string[]): string[] =>
+  TABLES[table].columns.map((c) => c.name).filter((n) => !drop.includes(n));
+
+const lawyerCharges = (table: 'Honorarios' | 'Cobros'): TablePolicy => ({
+  read: true,
+  create: { blank: ['reparto'] },
+  update: { fields: allBut(table, 'reparto') },
+  delete: false,
+});
+
+const lawyerOwn: TablePolicy = { read: true, create: true, update: 'own', delete: 'own' };
+
+/** Billing: the partners, and a lawyer as above; nobody else. */
+const billing = (lawyer: TablePolicy): RolePolicies =>
+  byRole([FULL, lawyer, NONE], [NONE, NONE, NONE]);
+
 const ownNotification: TablePolicy = {
   read: true,
   create: false,
@@ -203,6 +229,13 @@ export const POLICIES: Record<TableName, RolePolicies> = {
   ),
   OpsAplicadas: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
   Calendario: byRole([NONE, NONE, NONE], [NONE, NONE, NONE]),
+  Honorarios: billing(lawyerCharges('Honorarios')),
+  Cobros: billing(lawyerCharges('Cobros')),
+  Pagos: billing(lawyerOwn),
+  Gastos: billing(lawyerOwn),
+  // Edited online by the partners (billing.participants.save).
+  Participantes: byRole([READ, READ, NONE], [NONE, NONE, NONE]),
+  RecordatoriosCobro: billing(lawyerOwn),
 };
 
 export type Operation = 'create' | 'update' | 'delete';

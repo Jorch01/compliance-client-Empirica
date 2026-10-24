@@ -9,6 +9,7 @@ import {
   FIRM_ROLES,
   LADOS,
   ROLES,
+  TIPOS_PARTICIPANTE,
   type Lado,
   type Rol,
 } from '../domain/enums.ts';
@@ -51,6 +52,8 @@ export const ACTIONS = [
   'ai.reminder',
   // F8: 'Crear con IA', the lawyers only (D73).
   'ai.draft',
+  // F9: billing's participants, by the partners (D82).
+  'billing.participants.save',
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 
@@ -213,7 +216,28 @@ export const UserUpdateSchema = z.object({
   rolBase: z.optional(z.enum(FIRM_ROLES)),
   /** Unbinds the Firebase account, so the person can sign in with a new one. */
   resetAccount: z.optional(z.boolean()),
+  /** F9: a lawyer may see and work the billing of his clients (D80). */
+  cobranza: z.optional(z.boolean()),
 });
+
+/**
+ * F9: who takes part in the billing splits (D82), new (no id) or changed.
+ * Only the SOCIO_ADMIN; a participant is never deleted (the splits name it),
+ * it is turned off.
+ */
+export const ParticipantSaveSchema = z.object({
+  participanteId: z.optional(id),
+  nombre: name,
+  tipo: z.enum(TIPOS_PARTICIPANTE),
+  usuarioId: z.optional(z.nullable(id)),
+  tasaImpuesto: z.optional(z.nullable(z.number().check(z.minimum(0), z.maximum(100)))),
+  activo: z.optional(z.boolean()),
+  notas: z.optional(z.nullable(z.string().check(z.maxLength(1_000)))),
+});
+
+export interface ParticipantSaveData {
+  participante: Row;
+}
 
 /** Creates the membership of a user in a client, or changes it if it exists. */
 export const MembershipSaveSchema = z.object({
@@ -517,7 +541,7 @@ export interface PushData {
  * apps are asked to reload instead of failing to sync. `Config.minAppVersion`
  * can only raise it further.
  */
-export const MIN_APP_VERSION = '0.6.0';
+export const MIN_APP_VERSION = '0.8.0';
 
 /** Compares dotted versions ("1.2.10" > "1.2.9"). */
 export function compareVersions(a: string, b: string): number {

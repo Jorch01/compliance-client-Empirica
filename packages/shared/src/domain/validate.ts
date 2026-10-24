@@ -4,6 +4,7 @@
  * show errors before queueing a change.
  */
 import * as z from 'zod/mini';
+import { BILLING_TABLES, billingFieldOk } from './billing.ts';
 import { SYSTEM_COLUMNS, columnOf, type ColumnDef, type TableDef } from './tables.ts';
 import { isEmpty, type Value } from './values.ts';
 
@@ -84,6 +85,7 @@ export function validateFields(
 ): { ok: true; fields: Record<string, Value> } | { ok: false; issues: FieldIssue[] } {
   const issues: FieldIssue[] = [];
   const out: Record<string, Value> = {};
+  const billing = (BILLING_TABLES as readonly string[]).includes(def.name);
 
   for (const [name, raw] of Object.entries(fields)) {
     if (SYSTEM_COLUMNS.has(name)) {
@@ -108,6 +110,10 @@ export function validateFields(
         field: name,
         code: tooLong && column.type !== 'number' ? 'TOO_LONG' : 'INVALID',
       });
+      continue;
+    }
+    if (billing && !billingFieldOk(def.name, name, value)) {
+      issues.push({ field: name, code: 'INVALID' });
       continue;
     }
     out[name] = value;

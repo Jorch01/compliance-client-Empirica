@@ -520,6 +520,59 @@ const MATRIX: Partial<Record<TableName, Cell>> = {
     create: { tipo: 'SUGERENCIA', mensaje: 'Una idea para el portal' },
     expected: ['CU', 'C', 'C', 'C', 'C', 'C'],
   },
+  // F9, billing: the demo's lawyer is authorized (Usuarios.cobranza); the
+  // partner wrote the payment, the expense and the reminder below.
+  Honorarios: {
+    target: ID.honA,
+    update: { notas: 'Revisar en enero (ejemplo)' },
+    create: {
+      clienteId: A,
+      concepto: 'Iguala trimestral (ejemplo)',
+      monto: 9000,
+      moneda: 'MXN',
+      cadaMeses: 3,
+      diaCobro: 5,
+      desde: '2026-11-05',
+      estado: 'ACTIVO',
+    },
+    expected: ['CUD', 'CU', '', '', '', ''],
+  },
+  Cobros: {
+    target: ID.cobSep,
+    update: { folioFactura: 'F-0003-B (ejemplo)' },
+    create: {
+      clienteId: A,
+      concepto: 'Opinión fuera de la iguala (ejemplo)',
+      fechaEmision: '2026-10-02',
+      subtotal: 5000,
+      moneda: 'MXN',
+      estado: 'VIGENTE',
+    },
+    expected: ['CUD', 'CU', '', '', '', ''],
+  },
+  Pagos: {
+    target: ID.pagJul,
+    update: { referencia: 'REF-EJEMPLO-1B' },
+    create: { cobroId: ID.cobSep, fecha: '2026-10-02', monto: 10000 },
+    expected: ['CUD', 'C', '', '', '', ''],
+  },
+  Gastos: {
+    target: ID.gasAgo,
+    update: { monto: 175 },
+    create: { cobroId: ID.cobSep, concepto: 'Comisión (ejemplo)', tipo: 'COMISION', monto: 90 },
+    expected: ['CUD', 'C', '', '', '', ''],
+  },
+  RecordatoriosCobro: {
+    target: ID.recLlamar,
+    update: { titulo: 'Llamar otra vez (ejemplo)' },
+    create: {
+      clienteId: A,
+      titulo: 'Revisar los pagos (ejemplo)',
+      fecha: '2026-10-09',
+      repetir: 'SEMANAL',
+    },
+    expected: ['CUD', 'C', '', '', '', ''],
+  },
 };
 
 describe('the matrix, cell by cell', () => {
@@ -555,6 +608,7 @@ describe('the matrix, cell by cell', () => {
     'Conflictos',
     'Bitacora',
     'OpsAplicadas',
+    'Participantes',
   ] as TableName[])('%s cannot be written through sync, not even by the SOCIO_ADMIN', (table) => {
     const w = world();
     expect(w.write(ID.socio, table, 'create', uid(0x8888), {})).toMatchObject({
@@ -1160,5 +1214,182 @@ describe('the AI helpers, and creating records with the AI (F8, D73)', () => {
     expect(mayUseAi(w.ctx(ID.cAdmin), 'summary', A)).toBe(false);
     expect(mayUseAi(w.ctx(ID.cAdmin), 'ask', A)).toBe(true);
     expect(mayUseAi(w.ctx(ID.cAdmin), 'ask', B)).toBe(false);
+  });
+});
+
+describe('billing (F9, D80)', () => {
+  const B = ID.clienteB;
+  const BILLING: [TableName, string][] = [
+    ['Honorarios', ID.honA],
+    ['Cobros', ID.cobSep],
+    ['Pagos', ID.pagJul],
+    ['Gastos', ID.gasAgo],
+    ['RecordatoriosCobro', ID.recFactura],
+  ];
+
+  it('the partners see all of it; an authorized lawyer, his clients’ only', () => {
+    const w = world();
+    for (const [table, id] of BILLING) {
+      expect(w.sees(ID.socio, table, id)).toBe(true);
+      expect(w.sees(ID.abogado, table, id)).toBe(true);
+    }
+    expect(w.sees(ID.socio, 'Cobros', ID.cobB)).toBe(true);
+    expect(w.sees(ID.abogado, 'Cobros', ID.cobB)).toBe(false);
+  });
+
+  it('nobody else: a lawyer not authorized (not even of his client), assistants, clients', () => {
+    const w = world();
+    expect(w.ctx(ID.abogadoB).clients.has(B)).toBe(true);
+    expect(w.sees(ID.abogadoB, 'Cobros', ID.cobB)).toBe(false);
+    expect(w.sees(ID.abogadoB, 'RecordatoriosCobro', ID.recB)).toBe(false);
+    for (const userId of [ID.asistente, ...CLIENT_USERS_OF_A]) {
+      for (const [table, id] of BILLING) expect(w.sees(userId, table, id)).toBe(false);
+    }
+    expect(w.sees(ID.cB, 'Cobros', ID.cobB)).toBe(false);
+    expect(
+      w.write(ID.abogadoB, 'Pagos', 'create', uid(0x7101), {
+        cobroId: ID.cobB,
+        fecha: '2026-10-02',
+        monto: 100,
+      }),
+    ).toMatchObject({ ok: false, reason: 'NOT_FOUND' });
+  });
+
+  it('the authorization is a lawyer’s only, and goes with it', () => {
+    const off = world((d) => {
+      const u = d.Usuarios.find((x) => x.id === ID.abogado);
+      if (u) u.cobranza = false;
+    });
+    expect(off.ctx(ID.abogado).billing).toBe(false);
+    expect(off.sees(ID.abogado, 'Cobros', ID.cobSep)).toBe(false);
+    expect(off.write(ID.abogado, 'Cobros', 'update', ID.cobSep, { notas: 'x' })).toMatchObject({
+      ok: false,
+      reason: 'NOT_FOUND',
+    });
+    const assistant = world((d) => {
+      const u = d.Usuarios.find((x) => x.id === ID.asistente);
+      if (u) u.cobranza = true;
+      const c = d.Usuarios.find((x) => x.id === ID.cAdmin);
+      if (c) c.cobranza = true;
+    });
+    expect(assistant.ctx(ID.asistente).billing).toBe(false);
+    expect(assistant.ctx(ID.cAdmin).billing).toBe(false);
+    expect(assistant.sees(ID.asistente, 'Cobros', ID.cobSep)).toBe(false);
+    expect(world().ctx(ID.socio).billing).toBe(true);
+  });
+
+  it('the split is the partners’: a lawyer records charges without it', () => {
+    const w = world();
+    const reparto = [{ participanteId: ID.parAbogado, porcentaje: 100 }];
+    expect(w.write(ID.abogado, 'Honorarios', 'update', ID.honA, { reparto })).toMatchObject({
+      ok: false,
+      reason: 'FIELD_NOT_ALLOWED',
+      field: 'reparto',
+    });
+    expect(w.write(ID.abogado, 'Cobros', 'update', ID.cobSep, { reparto })).toMatchObject({
+      ok: false,
+      reason: 'FIELD_NOT_ALLOWED',
+    });
+    expect(
+      w.write(ID.abogado, 'Cobros', 'create', uid(0x7102), {
+        clienteId: A,
+        concepto: 'Opinión (ejemplo)',
+        fechaEmision: '2026-10-02',
+        subtotal: 1,
+        moneda: 'MXN',
+        estado: 'VIGENTE',
+        reparto,
+      }),
+    ).toMatchObject({ ok: false, reason: 'FIELD_NOT_ALLOWED', field: 'reparto' });
+    expect(w.write(ID.socio, 'Cobros', 'update', ID.cobSep, { reparto }).ok).toBe(true);
+    expect(w.write(ID.abogado, 'Cobros', 'delete', ID.cobSep)).toMatchObject({ reason: 'ROLE' });
+  });
+
+  it('a lawyer corrects and removes what he wrote, not what others did', () => {
+    const mine = uid(0x7103);
+    const w = world((d) => {
+      d.Pagos.push({ ...d.Pagos[0], id: mine, createdBy: ID.abogado });
+    });
+    expect(w.write(ID.abogado, 'Pagos', 'update', mine, { monto: 28000 }).ok).toBe(true);
+    expect(w.write(ID.abogado, 'Pagos', 'delete', mine).ok).toBe(true);
+    expect(w.write(ID.abogado, 'Pagos', 'delete', ID.pagJul)).toMatchObject({
+      reason: 'NOT_OWNER',
+    });
+  });
+
+  it('a payment takes its charge’s client; a charge of one client never names another’s', () => {
+    const w = world();
+    const ok = w.write(ID.socio, 'Pagos', 'create', uid(0x7104), {
+      cobroId: ID.cobSep,
+      fecha: '2026-10-02',
+      monto: 100,
+    });
+    expect(ok).toMatchObject({ ok: true, clienteId: A });
+    expect(
+      w.write(ID.socio, 'Pagos', 'create', uid(0x7105), {
+        clienteId: B,
+        cobroId: ID.cobSep,
+        fecha: '2026-10-02',
+        monto: 100,
+      }),
+    ).toMatchObject({ ok: false, reason: 'NOT_FOUND' });
+    expect(
+      w.write(ID.socio, 'Cobros', 'create', uid(0x7106), {
+        clienteId: B,
+        honorarioId: ID.honA,
+        concepto: 'x',
+        fechaEmision: '2026-10-02',
+        subtotal: 1,
+        moneda: 'MXN',
+        estado: 'VIGENTE',
+      }),
+    ).toMatchObject({ ok: false, reason: 'NOT_FOUND', field: 'honorarioId' });
+  });
+
+  it('when a reminder last rang is the server’s to say', () => {
+    const w = world();
+    expect(
+      w.write(ID.socio, 'RecordatoriosCobro', 'update', ID.recFactura, {
+        ultimoAviso: '2026-10-01',
+      }),
+    ).toMatchObject({ ok: false, reason: 'SERVER_MANAGED' });
+  });
+
+  it('the participants reach only who sees billing, and never a client', () => {
+    const w = world();
+    const snap = (userId: string) =>
+      buildSnapshot(w.ctx(userId), {
+        usuarios: w.data.Usuarios,
+        membresias: w.data.Membresias,
+        entidades: w.data.Entidades,
+        config: w.data.Config,
+        participantes: w.data.Participantes,
+      });
+    const all = w.data.Participantes.map((p) => p.id).sort();
+    expect(
+      snap(ID.socio)
+        .Participantes.map((p) => p.id)
+        .sort(),
+    ).toEqual(all);
+    expect(
+      snap(ID.abogado)
+        .Participantes.map((p) => p.id)
+        .sort(),
+    ).toEqual(all);
+    for (const userId of [ID.abogadoB, ID.asistente, ID.cAdmin, ID.cB]) {
+      expect(snap(userId).Participantes).toEqual([]);
+    }
+    // Who is authorized is not for clients to know.
+    const lawyer = snap(ID.cAdmin).Usuarios.find((u) => u.id === ID.abogado);
+    expect(lawyer).not.toHaveProperty('cobranza');
+  });
+
+  it('a client’s whole view (calendar, report) never carries billing', () => {
+    const w = world();
+    expect(w.sees(ID.cAdmin, 'Cobros', ID.cobJul)).toBe(false);
+    expect(projectRow(w.ctx(ID.socio), 'Cobros', w.row('Cobros', ID.cobJul))).toHaveProperty(
+      'subtotal',
+      25000,
+    );
   });
 });

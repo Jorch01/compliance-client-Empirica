@@ -12,6 +12,7 @@
  *   their company (from a unit, only those inside their units); everyone,
  *   their own.
  * - Settings: the SOCIO_ADMIN all of them; everyone else, the public ones.
+ * - Billing participants (F9): whoever may see billing, all of them; nobody else.
  */
 import { isFirmRole } from '../domain/enums.ts';
 import { TABLES } from '../domain/tables.ts';
@@ -43,12 +44,15 @@ export interface SnapshotSources {
   membresias: readonly Row[];
   entidades: readonly Row[];
   config: readonly Row[];
+  /** F9: who takes part in the billing splits. */
+  participantes?: readonly Row[];
 }
 
 export interface Snapshot {
   Usuarios: Row[];
   Membresias: Row[];
   Config: Row[];
+  Participantes: Row[];
 }
 
 export function buildSnapshot(ctx: UserContext, src: SnapshotSources): Snapshot {
@@ -125,10 +129,12 @@ export function buildSnapshot(ctx: UserContext, src: SnapshotSources): Snapshot 
   });
 
   const config = live(src.config).filter((c) => ctx.isAdmin || c.publica === true);
+  const participantes = ctx.billing && isFirm ? live(src.participantes ?? []) : [];
 
   return {
     Usuarios: [...visibleUsers.values()].map(withoutBookkeeping),
     Membresias: visibleMemberships.map(withoutBookkeeping),
     Config: config.map(withoutBookkeeping),
+    Participantes: participantes.map(withoutBookkeeping),
   };
 }

@@ -141,6 +141,14 @@ function canReadAt(
     return clienteId === null || ctx.clients.has(clienteId);
   }
 
+  // Billing (F9): whoever the partners authorize, within their clients; nobody of a client.
+  if (def.audience === 'billing') {
+    if (!ctx.billing || ctx.lado !== 'EMPIRICA' || !POLICIES[table][ctx.rolBase].read) return false;
+    if (!def.scope.client) return true;
+    const clienteId = clientIdOf(def, row);
+    return clienteId !== null && ctx.clients.has(clienteId);
+  }
+
   if (def.audience === 'firm') {
     if (ctx.lado !== 'EMPIRICA' || !POLICIES[table][ctx.rolBase].read) return false;
     if (!def.scope.client) return true;

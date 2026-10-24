@@ -61,6 +61,8 @@ export function firmReader(db: Database): UserContext {
     lado: 'EMPIRICA',
     rolBase: 'SOCIO_ADMIN',
     isAdmin: true,
+    // The calendars never carry billing.
+    billing: false,
     clients,
   };
 }
