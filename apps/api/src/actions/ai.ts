@@ -302,11 +302,12 @@ export function aiAsk(
           : a.fecha.localeCompare(b.fecha),
   );
 
-  // Any other name the portal knows (a person, another client) is masked in the
-  // question too, and never written back: it may not be this person's to see.
+  // Any other name the portal knows (a person, another client, one the AI is
+  // off for or that is billing only) is masked in the question too, and
+  // never written back: it may not be this person's to see.
   for (const u of db.rows('Usuarios')) masker.hide('PERSONA', text(u, 'nombre'));
   for (const c of db.rows('Clientes')) {
-    if (ctx.clients.has(c.id)) continue;
+    if (clients.includes(c.id)) continue;
     for (const name of clientNames(db, c.id)) masker.hide('CLIENTE', name);
   }
 

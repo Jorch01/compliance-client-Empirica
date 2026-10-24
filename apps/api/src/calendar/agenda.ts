@@ -8,6 +8,7 @@
 import {
   agendaItems,
   canRead,
+  isBillingOnly,
   nonWorkingDays,
   text,
   type AgendaData,
@@ -52,7 +53,14 @@ export function firmReader(db: Database): UserContext {
   const clients = new Map(
     live(db.rows('Clientes')).map((c) => [
       c.id,
-      { clienteId: c.id, rol: 'SOCIO_ADMIN' as const, alcance: null, units: null },
+      {
+        clienteId: c.id,
+        rol: 'SOCIO_ADMIN' as const,
+        alcance: null,
+        units: null,
+        // A client the firm only bills (D87) puts nothing on a calendar.
+        ...(isBillingOnly(c) ? { billingOnly: true as const } : {}),
+      },
     ]),
   );
   return {

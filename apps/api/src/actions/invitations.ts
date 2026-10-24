@@ -15,6 +15,7 @@
  */
 import {
   INVITATION_DAYS,
+  isBillingOnly,
   isFirmRole,
   parseAlcance,
   parseInstant,
@@ -239,6 +240,10 @@ function createUnderLock(env: Env, session: Session, input: InvitationCreate): I
       const cliente = r.db.table('Clientes').get(clienteId);
       const visible = ctx.isAdmin || ctx.clients.has(clienteId);
       if (!cliente || cliente.deleted || !visible) throw new ApiError('NOT_FOUND');
+      // A client the firm only bills has nobody of its own in the portal (D87).
+      if (input.lado === 'CLIENTE' && isBillingOnly(cliente)) {
+        throw validation('Este cliente es solo de cobranza: no tiene usuarios en el portal.');
+      }
     }
 
     let needsApproval = false;

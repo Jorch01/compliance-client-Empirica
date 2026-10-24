@@ -31,6 +31,10 @@ const BillingParticipantsPage = lazyPage(
   () => import('../pages/BillingParticipants.tsx'),
   'BillingParticipantsPage',
 );
+const BillingClientsPage = lazyPage(
+  () => import('../pages/BillingClients.tsx'),
+  'BillingClientsPage',
+);
 const ClientHome = lazyPage(() => import('../pages/ClientHome.tsx'), 'ClientHome');
 const ClientsPage = lazyPage(() => import('../pages/Clients.tsx'), 'ClientsPage');
 const CompliancePage = lazyPage(() => import('../pages/Compliance.tsx'), 'CompliancePage');
@@ -192,6 +196,11 @@ function Routes() {
       {billing ? (
         <Route path="/cobranza/participantes">
           <BillingParticipantsPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/clientes">
+          <BillingClientsPage />
         </Route>
       ) : null}
       {me.isFirm ? (

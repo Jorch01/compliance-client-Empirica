@@ -1,8 +1,9 @@
 /**
  * F9, billing on the server: who gets it on their devices (and loses it), a
  * payment recorded offline for a month nobody recorded yet, the split that
- * only the partners set, the participants, and the nightly bell. On the
- * fictitious data set: the demo's lawyer is authorized, lawyer B is not.
+ * only the partners set, the participants, the nightly bell, and clients
+ * the firm only bills (D87). On the fictitious data set: the demo's lawyer
+ * is authorized, lawyer B is not; client C is billing only.
  */
 import { cobroId, periodFields, text, type Op, type Row } from '@empirica/shared';
 import { ID, uid } from '@empirica/shared/testing';
@@ -13,6 +14,7 @@ import { createWorld, type World } from './testing/harness.ts';
 
 const A = ID.clienteA;
 const B = ID.clienteB;
+const C = ID.clienteC;
 const OCTOBER = cobroId(ID.honA, '2026-10');
 const BILLING = ['Honorarios', 'Cobros', 'Pagos', 'Gastos', 'RecordatoriosCobro'] as const;
 
@@ -49,9 +51,9 @@ function payOctober(w: World): Op[] {
 describe('who gets billing on their devices', () => {
   it('the partners and the authorized lawyer; the rest of the firm and every client, nothing', () => {
     const w = createWorld();
-    expect(billingOf(new Device(w, ID.socio).sync())).toHaveLength(13);
+    expect(billingOf(new Device(w, ID.socio).sync())).toHaveLength(15);
     const lawyer = new Device(w, ID.abogado).sync();
-    expect(lawyer.ids('Cobros')).toEqual([ID.cobJul, ID.cobAgo, ID.cobSep].sort());
+    expect(lawyer.ids('Cobros')).toEqual([ID.cobJul, ID.cobAgo, ID.cobSep, ID.cobC].sort());
     expect(lawyer.ids('RecordatoriosCobro')).toEqual([ID.recFactura, ID.recLlamar].sort());
     for (const userId of [ID.abogadoB, ID.asistente, ID.cAdmin, ID.cColab, ID.cB]) {
       expect(billingOf(new Device(w, userId).sync())).toEqual([]);
@@ -101,6 +103,106 @@ describe('who gets billing on their devices', () => {
         w.call('admin.users.update', { usuarioId, cobranza: true }, { as: ID.socio }),
       ).toMatchObject({ ok: false, error: { code: 'VALIDATION' } });
     }
+  });
+});
+
+describe('clients the firm only bills (D87)', () => {
+  it('reach the partners and the authorized lawyers, with their billing; nobody else', () => {
+    const w = createWorld();
+    for (const userId of [ID.socio, ID.abogado]) {
+      const d = new Device(w, userId).sync();
+      expect(d.ids('Clientes')).toContain(C);
+      expect(d.ids('Cobros')).toContain(ID.cobC);
+      expect(d.ids('Pagos')).toContain(ID.pagC);
+    }
+    // The assistant is assigned to it, and still never hears of it.
+    for (const userId of [ID.asistente, ID.abogadoB, ID.cAdmin, ID.cB]) {
+      const d = new Device(w, userId).sync();
+      expect(d.ids('Clientes')).not.toContain(C);
+      expect(d.last.changes.some((id) => id === C)).toBe(false);
+    }
+  });
+
+  it('take billing only: no matter, task or unit is recorded there', () => {
+    const w = createWorld();
+    const lawyer = new Device(w, ID.abogado).sync();
+    const [matter, unit, payment] = lawyer.push([
+      op('Asuntos', 'create', uid(0x9201), {
+        clienteId: C,
+        titulo: 'Juicio (ejemplo)',
+        area: 'CONTROVERSIAS',
+        estado: 'ACTIVO',
+        visibilidad: 'INTERNO',
+      }),
+      op('Entidades', 'create', uid(0x9202), { clienteId: C, nombre: 'Unidad', tipo: 'UNIDAD' }),
+      op('Pagos', 'create', uid(0x9203), { cobroId: ID.cobC, fecha: '2026-10-20', monto: 1000 }),
+    ]);
+    expect(matter?.status).toBe('rejected');
+    expect(unit?.status).toBe('rejected');
+    expect(payment?.status).toBe('applied');
+    expect(w.row('Asuntos', uid(0x9201))).toBeUndefined();
+  });
+
+  it('a partner opens one; it has nobody of its own, and no monthly report', () => {
+    const w = createWorld();
+    const partner = new Device(w, ID.socio).sync();
+    const id = uid(0x9204);
+    const [created] = partner.push([
+      op('Clientes', 'create', id, {
+        razonSocial: 'Otro Litigio Demo, S.C.',
+        servicio: 'ASUNTO_PUNTUAL',
+        estado: 'ACTIVO',
+        soloCobranza: true,
+      }),
+    ]);
+    expect(created?.status).toBe('applied');
+    expect(new Device(w, ID.asistente).sync().ids('Clientes')).not.toContain(id);
+    expect(
+      w.call(
+        'invitations.create',
+        { email: 'nadie@cliente-c.example', lado: 'CLIENTE', rol: 'CLIENTE_ADMIN', clienteId: C },
+        { as: ID.socio },
+      ),
+    ).toMatchObject({ ok: false, error: { code: 'VALIDATION' } });
+    expect(
+      w.call(
+        'admin.memberships.save',
+        { usuarioId: ID.cB, clienteId: C, rol: 'CLIENTE_ADMIN' },
+        { as: ID.socio },
+      ),
+    ).toMatchObject({ ok: false, error: { code: 'VALIDATION' } });
+  });
+
+  it('moving a client in or out of the tracking portal downloads it again everywhere', () => {
+    const w = createWorld();
+    const assistant = new Device(w, ID.asistente).sync();
+    const partner = new Device(w, ID.socio).sync();
+    expect(assistant.ids('Clientes')).not.toContain(C);
+
+    // C joins the tracking portal: the assistant assigned to it gets it now.
+    partner.push([op('Clientes', 'update', C, { soloCobranza: false })]);
+    assistant.sync();
+    expect(assistant.ids('Clientes')).toContain(C);
+    partner.sync();
+    expect(partner.last.resets).toContain(C);
+
+    // A leaves it: its tracking goes from every device, its billing stays with billing.
+    expect(assistant.ids('Asuntos').length).toBeGreaterThan(0);
+    const lawyer = new Device(w, ID.abogado).sync();
+    partner.push([op('Clientes', 'update', A, { soloCobranza: true })]);
+    assistant.sync();
+    expect(assistant.ids('Clientes')).not.toContain(A);
+    expect(assistant.ids('Asuntos')).toEqual([]);
+    lawyer.sync();
+    expect(lawyer.last.resets).toContain(A);
+    expect(lawyer.ids('Asuntos')).toEqual([]);
+    expect(lawyer.ids('Cobros')).toContain(ID.cobSep);
+    expect(new Device(w, ID.cAdmin).sync().ids('Clientes')).toEqual([]);
+    // Nothing was deleted: back in the portal, it is all there again.
+    partner.push([
+      op('Clientes', 'update', A, { soloCobranza: false }, { at: '2026-10-02T11:59:30.000-05:00' }),
+    ]);
+    expect(assistant.sync().ids('Asuntos').length).toBeGreaterThan(0);
   });
 });
 

@@ -1,7 +1,8 @@
 /**
  * Billing (F9): the amounts of a charge, the periods a fee earns, what is
  * owed and what each participant takes, on the fictitious data set (a fee
- * of 25,000 a month plus VAT for client A, a single job for client B).
+ * of 25,000 a month plus VAT for client A, a single job for client B, and
+ * client C's lawsuit, 40,000 plus VAT with half paid: C is billing only, D87).
  */
 import { describe, expect, it } from 'vitest';
 import { ID, demoData } from '../testing/fixtures.ts';
@@ -169,6 +170,7 @@ describe('charges', () => {
     const { charges, get } = setup();
     expect(charges.map((c) => c.id)).toEqual([
       cobroId(ID.honA, '2026-10'),
+      ID.cobC,
       ID.cobB,
       ID.cobSep,
       ID.cobAgo,
@@ -341,12 +343,12 @@ describe('the dashboard', () => {
     expect(totalsOf(charges, d.Pagos, monthRange('2026-10')).MXN).toEqual({
       devengado: 29000,
       cobrado: 0,
-      porCobrar: 64960,
+      porCobrar: 88160,
       vencido: 35960,
     });
     expect(totalsOf(charges, d.Pagos, monthRange('2026-09')).MXN).toMatchObject({
-      devengado: 42920,
-      cobrado: 6960,
+      devengado: 89320,
+      cobrado: 30160,
     });
     expect(totalsOf(charges, d.Pagos, monthRange('2026-10')).USD.porCobrar).toBe(0);
   });
@@ -354,7 +356,7 @@ describe('the dashboard', () => {
   it('what is owed by how late it is', () => {
     const { charges } = setup();
     expect(agingOf(charges, 'MXN')).toEqual({
-      alCorriente: 29000,
+      alCorriente: 52200,
       d1a30: 35960,
       d31a60: 0,
       d61a90: 0,
@@ -367,7 +369,7 @@ describe('the dashboard', () => {
     expect(monthlySeries(charges, d.Pagos, '2026-10', 'MXN', 4)).toEqual([
       { periodo: '2026-07', devengado: 29000, cobrado: 29000 },
       { periodo: '2026-08', devengado: 29000, cobrado: 29000 },
-      { periodo: '2026-09', devengado: 42920, cobrado: 6960 },
+      { periodo: '2026-09', devengado: 89320, cobrado: 30160 },
       { periodo: '2026-10', devengado: 29000, cobrado: 0 },
     ]);
     expect(shiftPeriod('2026-01', -1)).toBe('2025-12');
@@ -385,7 +387,8 @@ describe('the dashboard', () => {
     ]);
     const september = earningsOf(charges, rows, monthRange('2026-09'), 'MXN');
     expect(september.map((e) => [e.participanteId, e.bruto, e.impuesto, e.neto])).toEqual([
-      [ID.parSocia, 3600, 1080, 2520],
+      [ID.parSocia, 13600, 4080, 9520],
+      [ID.parAbogado, 10000, 2000, 8000],
       [ID.parDespacho, 2400, 0, 2400],
     ]);
     expect(earningsOf(charges, rows, monthRange('2026-10'), 'MXN')).toEqual([]);

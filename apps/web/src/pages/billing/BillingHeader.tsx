@@ -8,7 +8,7 @@ import { Icon, type IconName } from '../../ui/Icon.tsx';
 import { useBillingAccess } from './access.ts';
 import './texts.ts';
 
-export type BillingTab = 'board' | 'charges' | 'fees' | 'reminders' | 'participants';
+export type BillingTab = 'board' | 'charges' | 'fees' | 'reminders' | 'participants' | 'clients';
 
 const TABS: { key: BillingTab; href: string; icon: IconName }[] = [
   { key: 'board', href: '/cobranza', icon: 'activity' },
@@ -16,6 +16,7 @@ const TABS: { key: BillingTab; href: string; icon: IconName }[] = [
   { key: 'fees', href: '/cobranza/igualas', icon: 'calendar' },
   { key: 'reminders', href: '/cobranza/recordatorios', icon: 'bell' },
   { key: 'participants', href: '/cobranza/participantes', icon: 'users' },
+  { key: 'clients', href: '/cobranza/clientes', icon: 'building' },
 ];
 
 /** "¿Qué va aquí?" for billing: what goes in each tab, an example and what does not go here. */

@@ -3,9 +3,11 @@
  * and an expense and sees each one's net; a month the retainer generated is
  * paid offline; the split is the partners' alone; assistants and clients
  * never see billing; taking a lawyer's authorization away takes billing off
- * his device; a reminder rings in the bell. Amounts and rates are the demo's
+ * his device; a reminder rings in the bell; a client the firm only bills
+ * (D87) lives in billing and nowhere else. Amounts and rates are the demo's
  * examples (packages/shared/src/testing/fixtures.ts).
  */
+import { audit } from './axe.ts';
 import { device, expect, signIn, syncNow, test } from './fixtures.ts';
 
 const SEPTEMBER = 'Iguala mensual (ejemplo) · septiembre de 2026';
@@ -167,4 +169,61 @@ test('the partner changes a split, and a reminder rings in the bell', async ({
     page.getByText('Recordatorio de cobranza: «Llamar al cliente (prueba)».'),
   ).toBeVisible();
   await context.close();
+});
+
+test('a client the firm only bills: opened from billing, and nowhere else', async ({ browser }) => {
+  const context = await device(browser);
+  const page = await context.newPage();
+  await signIn(page, 'socia');
+  await page.goto('./#/cobranza/clientes');
+  await expect(page.getByRole('heading', { level: 1, name: 'Clientes' })).toBeVisible();
+  // The demo's lawsuit: 40,000 plus VAT, half paid.
+  const lawsuit = page.getByRole('row', { name: /Litigio Demo/ });
+  await expect(lawsuit).toContainText('Solo cobranza');
+  await expect(lawsuit).toContainText('$23,200.00');
+
+  await page.getByRole('button', { name: 'Nuevo cliente de cobranza' }).click();
+  const form = page.getByRole('dialog', { name: 'Nuevo cliente de cobranza' });
+  await form.getByRole('textbox', { name: 'Razón social' }).fill('Juicio Demo, S.C.');
+  await expect(
+    form.getByRole('checkbox', { name: 'Solo cobranza (fuera del seguimiento)' }),
+  ).toBeChecked();
+  await form.getByRole('button', { name: 'Crear' }).click();
+  await expect(form).toBeHidden();
+  await expect(page.getByRole('row', { name: /Juicio Demo/ })).toContainText('Solo cobranza');
+  await syncNow(page);
+  // The server took it: still there after the sync.
+  await expect(page.getByRole('row', { name: /Juicio Demo/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /Ver su cobranza.*Litigio Demo/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Cobranza' })).toBeVisible();
+  const client = page.getByRole('combobox', { name: 'Cliente' });
+  await expect(client.locator('option:checked')).toHaveText('Litigio Demo');
+  await expect(page.getByText('$23,200.00').first()).toBeVisible();
+
+  // Its card: the team and what billing only means; no units, users or invitations.
+  await page.goto('./#/cobranza/clientes');
+  await page.getByRole('button', { name: /Ficha y equipo.*Litigio Demo/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Litigio Demo' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Equipo del despacho' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Unidades y sucursales' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Invitar usuario' })).toHaveCount(0);
+  await audit(page, 'ficha de un cliente solo de cobranza');
+
+  // The tracking portal never offers it.
+  await page.goto('./#/asuntos');
+  await expect(client.locator('option', { hasText: 'Litigio Demo' })).toHaveCount(0);
+  await expect(client.locator('option', { hasText: 'Juicio Demo' })).toHaveCount(0);
+  await page.goto('./#/');
+  await expect(page.getByText('Litigio Demo')).toHaveCount(0);
+  await context.close();
+
+  // An assistant assigned to it never has it.
+  const assistantContext = await device(browser);
+  const assistant = await assistantContext.newPage();
+  await signIn(assistant, 'asistente');
+  await assistant.goto('./#/clientes');
+  await expect(assistant.getByRole('heading', { level: 1, name: 'Clientes' })).toBeVisible();
+  await expect(assistant.getByText('Litigio Demo')).toHaveCount(0);
+  await assistantContext.close();
 });

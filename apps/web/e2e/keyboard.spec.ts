@@ -127,6 +127,7 @@ const NARROW: { user: DemoUser; paths: string[] }[] = [
       '#/cobranza/igualas',
       '#/cobranza/recordatorios',
       '#/cobranza/participantes',
+      '#/cobranza/clientes',
     ],
   },
   {

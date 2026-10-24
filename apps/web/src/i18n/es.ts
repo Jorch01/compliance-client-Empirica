@@ -222,6 +222,7 @@ export const es = {
     client: 'Cliente',
     chooseClient: 'Elegir cliente',
     allClients: 'Todos los clientes',
+    billingOnly: 'Solo cobranza',
     unit: 'Unidad',
     hub: 'Todas las unidades',
     noClients: 'Todavía no tienes clientes asignados.',
@@ -535,6 +536,17 @@ export const es = {
     invitations: 'Invitaciones',
     created: 'Cliente creado.',
     adminOnly: 'Solo el socio administrador abre clientes nuevos.',
+    // D87: a client the firm only bills (a lawsuit, say).
+    newBillingOnly: 'Nuevo cliente de cobranza',
+    billingOnly: 'Solo cobranza',
+    billingOnlyIntro:
+      'Clientes que solo cobras, como un litigio: no están en el seguimiento, no tienen usuarios y solo los ven los socios y los abogados autorizados para cobranza.',
+    billingOnlyField: 'Solo cobranza (fuera del seguimiento)',
+    billingOnlyHint:
+      'Para un cliente que solo cobras, como un litigio: no aparece en asuntos, tareas, agenda ni reportes, no tiene usuarios ni ayudas de IA, y solo lo ven los socios y los abogados autorizados para cobranza.',
+    billingOnlyMove:
+      'Marcarlo lo saca del seguimiento: sus usuarios dejan de verlo y lo registrado queda guardado, sin borrarse. Desmarcarlo lo pasa al seguimiento con todo lo que tenía.',
+    billingOnlyTeam: 'Lo ven los socios y, de este equipo, los abogados autorizados para cobranza.',
     servicios: {
       FLT_IGUALA: 'Fractional Legal Team (iguala)',
       ASUNTO_PUNTUAL: 'Asunto puntual',

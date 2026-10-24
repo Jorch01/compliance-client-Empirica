@@ -165,11 +165,12 @@ export type AiHelper = 'summary' | 'reminder' | 'ask' | 'draft';
  * summary or a reminder is the firm's; asking "what is pending" is for
  * anyone with access, about what they see. Creating records with the AI
  * (F8, D73) is for the client's lawyers only: the SOCIO_ADMIN and its
- * ABOGADO, not assistants and nobody of the client.
+ * ABOGADO, not assistants and nobody of the client. Never for a client the
+ * firm only bills (D87): billing never reaches the AI.
  */
 export function mayUseAi(ctx: UserContext, helper: AiHelper, clienteId: string): boolean {
   const access = ctx.clients.get(clienteId);
-  if (!access) return false;
+  if (!access || access.billingOnly) return false;
   if (helper === 'ask') return true;
   if (helper === 'draft') return access.rol === 'SOCIO_ADMIN' || access.rol === 'ABOGADO';
   return isFirmRole(access.rol);

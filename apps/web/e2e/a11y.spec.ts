@@ -93,11 +93,12 @@ const SCREENS: { user: DemoUser; paths: string[]; mobile?: boolean }[] = [
       '#/cobranza/igualas',
       '#/cobranza/recordatorios',
       '#/cobranza/participantes',
+      '#/cobranza/clientes',
     ],
   },
   {
     user: 'abogado',
-    paths: ['#/cobranza', `#/cobranza/cobros/${CHARGE_SEPTEMBER}`],
+    paths: ['#/cobranza', `#/cobranza/cobros/${CHARGE_SEPTEMBER}`, '#/cobranza/clientes'],
     mobile: true,
   },
   {

@@ -60,6 +60,8 @@ export const DEMO_REPORT_PDF = demoPdf([
 export const ID = {
   clienteA: uid(0x1a),
   clienteB: uid(0x1b),
+  // F9: a client the firm only bills (a lawsuit), outside the tracking portal (D87).
+  clienteC: uid(0x1c),
   // Units of client A: Norte has a branch; Sur is separate.
   norte: uid(0x2a1),
   norte1: uid(0x2a2),
@@ -130,7 +132,8 @@ export const ID = {
   repBorrador: reportId(uid(0x1a), '2026-09'),
   repEnviado: reportId(uid(0x1a), '2026-08'),
   // F9, billing: who takes part in the splits, a fee of client A with its
-  // months (fixed ids, one per period), a single job of client B.
+  // months (fixed ids, one per period), a single job of client B, a lawsuit's
+  // fees for client C (billing only), partly paid.
   parSocia: uid(0x1101),
   parAbogado: uid(0x1102),
   parDespacho: uid(0x1103),
@@ -139,9 +142,11 @@ export const ID = {
   cobAgo: cobroId(uid(0x1201), '2026-08'),
   cobSep: cobroId(uid(0x1201), '2026-09'),
   cobB: uid(0x1301),
+  cobC: uid(0x1302),
   pagJul: uid(0x1401),
   pagAgo: uid(0x1402),
   pagB: uid(0x1403),
+  pagC: uid(0x1404),
   gasAgo: uid(0x1501),
   gasJul: uid(0x1502),
   recFactura: uid(0x1601),
@@ -190,6 +195,7 @@ export type Dataset = Record<TableName, Row[]>;
 export function demoData(): Dataset {
   const A = ID.clienteA;
   const B = ID.clienteB;
+  const C = ID.clienteC;
   return {
     Config: [
       base(ID.cfgPublica, { clave: 'inactividadMinutos', valor: '30', publica: true }),
@@ -215,6 +221,15 @@ export function demoData(): Dataset {
         servicio: 'ASUNTO_PUNTUAL',
         estado: 'ACTIVO',
         abogadoResponsableId: ID.abogadoB,
+        membershipEpoch: 1,
+      }),
+      base(C, {
+        razonSocial: 'Cliente Litigio Demo, S.C.',
+        nombreComercial: 'Litigio Demo',
+        servicio: 'ASUNTO_PUNTUAL',
+        estado: 'ACTIVO',
+        abogadoResponsableId: ID.abogado,
+        soloCobranza: true,
         membershipEpoch: 1,
       }),
     ],
@@ -272,6 +287,9 @@ export function demoData(): Dataset {
       member(7, ID.cAdminSur, A, 'CLIENTE_ADMIN', { entidades: [ID.sur], asuntos: [] }),
       member(8, ID.cInactivo, A, 'CLIENTE_COLABORADOR'),
       member(9, ID.cB, B, 'CLIENTE_ADMIN'),
+      // Client C is billing only: the lawyer sees it (he works billing), the assistant never.
+      member(10, ID.abogado, C, 'ABOGADO'),
+      member(11, ID.asistente, C, 'ASISTENTE'),
     ],
     Invitaciones: [],
     Asuntos: [
@@ -815,6 +833,21 @@ export function demoData(): Dataset {
         ],
         responsableId: ID.abogadoB,
       }),
+      base(ID.cobC, {
+        clienteId: C,
+        concepto: 'Honorarios del juicio (ejemplo)',
+        fechaEmision: '2026-09-15',
+        fechaVencimiento: '2026-12-15',
+        subtotal: 40000,
+        moneda: 'MXN',
+        tasaIVA: 16,
+        estado: 'VIGENTE',
+        reparto: [
+          { participanteId: ID.parSocia, porcentaje: 50 },
+          { participanteId: ID.parAbogado, porcentaje: 50 },
+        ],
+        responsableId: ID.abogado,
+      }),
     ],
     Pagos: [
       base(ID.pagJul, {
@@ -838,6 +871,13 @@ export function demoData(): Dataset {
         cobroId: ID.cobB,
         fecha: '2026-09-20',
         monto: 6960,
+        metodo: 'TRANSFERENCIA',
+      }),
+      base(ID.pagC, {
+        clienteId: C,
+        cobroId: ID.cobC,
+        fecha: '2026-09-30',
+        monto: 23200,
         metodo: 'TRANSFERENCIA',
       }),
     ],

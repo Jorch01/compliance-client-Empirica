@@ -71,3 +71,5 @@ Por cliente:
 2. **Cambiar reparto**: quién se lleva qué porcentaje (suma 100 %).
 3. Cada mes el cobro aparece solo. Cuando el cliente paga: **Cobros** → el cobro → **Registrar pago**; las comisiones o gastos, en **Agregar gasto**; el folio de la factura, en **Editar cobro**.
 4. Opcional: **Recordatorios** → «Enviar la factura de la iguala», cada mes, a quien la emite.
+
+Un cliente que solo cobras y no usa el portal (un litigio, por ejemplo): **Cobranza** → **Clientes** → **Nuevo cliente de cobranza**. Queda marcado **Solo cobranza**: no aparece en el seguimiento, no tiene usuarios y solo lo ven los socios y los abogados autorizados que pongas en su equipo (**Ficha y equipo**). Después, sus igualas o cobros como los de cualquier cliente.

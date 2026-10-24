@@ -213,6 +213,7 @@ describe('the first of the month', () => {
   it('each client’s lawyer hears last month’s report is ready, once', () => {
     const w = createWorld();
     w.clock.set('2026-11-01T03:00:00.000-05:00');
+    // Client C is billing only (D87): it has no monthly report.
     expect(runNightly(w.env).reportNotices).toBe(2);
     expect(notices(w, 'REPORTE_POR_PREPARAR').sort()).toEqual(
       [
