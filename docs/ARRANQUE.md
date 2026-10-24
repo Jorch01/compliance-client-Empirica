@@ -57,3 +57,17 @@ No hace falta cargar todo el primer día: el cliente ve lo que ya está y lo dem
 
 - El día 1, el abogado responsable recibe el aviso de que el reporte del mes anterior está por preparar: **Reportes** → **Preparar** → revisar la vista previa y el resumen (puede redactarlo con IA y corregirlo) → **Enviar al cliente**. Lo reciben, en PDF, quienes ven toda la empresa; enviado, queda congelado.
 - El **Centro de control** muestra el índice de salud de cada cliente; el cliente ve el suyo en su inicio y en el reporte.
+
+## 6. Cobranza (solo socios y abogados autorizados)
+
+Una vez, antes del primer cliente con iguala:
+
+1. **Cobranza** → **Participantes** → **Nuevo participante**: cada socio y abogado que entra en los repartos (con su usuario del portal), el **Fondo del despacho** si una parte se queda en el despacho, y quien sea externo (un referidor). En cada uno, su **impuesto estimado** (%): confírmalo con el contador.
+2. **Usuarios** → en cada abogado que deba ver la cobranza de sus clientes, marca **Cobranza**. Los socios administradores la ven siempre; los asistentes, nunca.
+
+Por cliente:
+
+1. **Cobranza** → **Igualas** → **Nueva iguala**: concepto, honorarios por periodo sin IVA, cada cuándo, día de cobro, días de crédito, **Primer cobro desde** (el primer mes que llevarás en el portal), IVA y, si el cliente retiene, sus retenciones. **Da seguimiento**: quién recibe los avisos de sus cobros vencidos.
+2. **Cambiar reparto**: quién se lleva qué porcentaje (suma 100 %).
+3. Cada mes el cobro aparece solo. Cuando el cliente paga: **Cobros** → el cobro → **Registrar pago**; las comisiones o gastos, en **Agregar gasto**; el folio de la factura, en **Editar cobro**.
+4. Opcional: **Recordatorios** → «Enviar la factura de la iguala», cada mes, a quien la emite.

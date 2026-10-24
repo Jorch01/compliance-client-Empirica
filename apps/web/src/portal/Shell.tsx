@@ -6,6 +6,7 @@ import { useRows } from '../data/hooks.ts';
 import { onClientSide } from '../domain/deadlines.ts';
 import { useFeedback } from '../feedback/context.ts';
 import { recordError } from '../feedback/diagnostics.ts';
+import { useBillingAccess } from '../pages/billing/access.ts';
 import { usePortal } from '../session/context.ts';
 import { Drawer } from '../ui/Drawer.tsx';
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx';
@@ -37,6 +38,7 @@ function useNavGroups(): NavGroup[] {
   const { t } = useTranslation();
   const { me } = usePortal();
   const { access } = useScope();
+  const billing = useBillingAccess();
   const tareas = useScopedRows('Tareas');
   const sugerencias = useRows('Sugerencias');
   const conflictos = useScopedRows('Conflictos');
@@ -93,6 +95,10 @@ function useNavGroups(): NavGroup[] {
         key: 'admin',
         label: t('nav.groups.admin'),
         items: [
+          // Billing (F9): the partners and the lawyers they authorize, nobody else.
+          ...(billing
+            ? [{ href: '/cobranza', label: t('nav.billing'), icon: 'wallet' as const }]
+            : []),
           { href: '/clientes', label: t('nav.clients'), icon: 'building' },
           { href: '/usuarios', label: t('nav.people'), icon: 'users' },
           ...conflicts,

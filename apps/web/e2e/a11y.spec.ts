@@ -28,6 +28,9 @@ const OBLIGATION = id(0x701);
 const CONFLICT = id(0xe01);
 const APPOINTMENT = id(0xf03);
 const CLIENT_A = id(0x1a);
+/** F9: September's charge of the demo retainer (a fixed id per period) and October's, not recorded. */
+const CHARGE_SEPTEMBER = '36dc34a8-b208-8a2a-ba7b-c14da03b9116';
+const CHARGE_OCTOBER = 'cdb2bbc4-bf30-8cfb-8186-7ae8b828d801';
 
 /** Every screen, as each role sees it; each one in both themes (F7). */
 const SCREENS: { user: DemoUser; paths: string[]; mobile?: boolean }[] = [
@@ -79,6 +82,24 @@ const SCREENS: { user: DemoUser; paths: string[]; mobile?: boolean }[] = [
     ],
   },
   { user: 'socia', paths: ['#/reportes', `#/reportes/${CLIENT_A}/2026-08`, '#/no-existe'] },
+  // F9: billing, the partners' and the authorized lawyers'.
+  {
+    user: 'socia',
+    paths: [
+      '#/cobranza',
+      '#/cobranza/cobros',
+      `#/cobranza/cobros/${CHARGE_SEPTEMBER}`,
+      `#/cobranza/cobros/${CHARGE_OCTOBER}`,
+      '#/cobranza/igualas',
+      '#/cobranza/recordatorios',
+      '#/cobranza/participantes',
+    ],
+  },
+  {
+    user: 'abogado',
+    paths: ['#/cobranza', `#/cobranza/cobros/${CHARGE_SEPTEMBER}`],
+    mobile: true,
+  },
   {
     user: 'adminA',
     paths: ['#/', '#/pendientes', '#/equipo', '#/usuarios', '#/agenda', '#/reportes'],

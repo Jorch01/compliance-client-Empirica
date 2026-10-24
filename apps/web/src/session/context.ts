@@ -1,5 +1,6 @@
 import { createContext, use } from 'react';
 import {
+  hasBillingAccess,
   text,
   type BootstrapData,
   type ClientSummary,
@@ -19,6 +20,8 @@ export interface Me {
   rolBase: Rol;
   isAdmin: boolean;
   isFirm: boolean;
+  /** Sees billing (F9): a partner, or a lawyer they authorized, as of signing in. */
+  billing: boolean;
   clients: ClientSummary[];
   /** Public settings (Config with publica = true), by key. */
   config: Readonly<Record<string, string>>;
@@ -86,6 +89,7 @@ export function meFrom(boot: BootstrapData): Me {
     rolBase,
     isAdmin: lado === 'EMPIRICA' && rolBase === 'SOCIO_ADMIN',
     isFirm: lado === 'EMPIRICA',
+    billing: hasBillingAccess(user),
     clients: boot.clients,
     config,
   };

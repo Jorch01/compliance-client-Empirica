@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Route, Switch } from 'wouter';
 import { FeedbackProvider } from '../feedback/FeedbackProvider.tsx';
 import { NotFound } from '../pages/NotFound.tsx';
+import { useBillingAccess } from '../pages/billing/access.ts';
 import { usePortal } from '../session/context.ts';
 import { Spinner } from '../ui/Card.tsx';
 import { lazyPage, preloadPages } from './lazy-page.ts';
@@ -12,6 +13,24 @@ import { Shell } from './Shell.tsx';
 import { TourProvider } from './Tour.tsx';
 
 const AgendaPage = lazyPage(() => import('../pages/Agenda.tsx'), 'AgendaPage');
+const BillingPage = lazyPage(() => import('../pages/Billing.tsx'), 'BillingPage');
+const BillingChargesPage = lazyPage(
+  () => import('../pages/BillingCharges.tsx'),
+  'BillingChargesPage',
+);
+const BillingChargeDetailPage = lazyPage(
+  () => import('../pages/BillingChargeDetail.tsx'),
+  'BillingChargeDetailPage',
+);
+const BillingFeesPage = lazyPage(() => import('../pages/BillingFees.tsx'), 'BillingFeesPage');
+const BillingRemindersPage = lazyPage(
+  () => import('../pages/BillingReminders.tsx'),
+  'BillingRemindersPage',
+);
+const BillingParticipantsPage = lazyPage(
+  () => import('../pages/BillingParticipants.tsx'),
+  'BillingParticipantsPage',
+);
 const ClientHome = lazyPage(() => import('../pages/ClientHome.tsx'), 'ClientHome');
 const ClientsPage = lazyPage(() => import('../pages/Clients.tsx'), 'ClientsPage');
 const CompliancePage = lazyPage(() => import('../pages/Compliance.tsx'), 'CompliancePage');
@@ -53,6 +72,7 @@ const TeamPage = lazyPage(() => import('../pages/Team.tsx'), 'TeamPage');
 function Routes() {
   const { me } = usePortal();
   const { access } = useScope();
+  const billing = useBillingAccess();
   const clientAdmin = access?.rol === 'CLIENTE_ADMIN';
   return (
     <Switch>
@@ -144,6 +164,36 @@ function Routes() {
       <Route path="/sugerencias">
         <FeedbackPage />
       </Route>
+      {billing ? (
+        <Route path="/cobranza">
+          <BillingPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/cobros">
+          <BillingChargesPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/cobros/:id">
+          <BillingChargeDetailPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/igualas">
+          <BillingFeesPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/recordatorios">
+          <BillingRemindersPage />
+        </Route>
+      ) : null}
+      {billing ? (
+        <Route path="/cobranza/participantes">
+          <BillingParticipantsPage />
+        </Route>
+      ) : null}
       {me.isFirm ? (
         <Route path="/clientes">
           <ClientsPage />

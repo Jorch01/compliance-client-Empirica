@@ -4,13 +4,14 @@
 
 ## 1. Qué protegemos y de quién
 
-| Activo                                                   | Amenaza principal                                  |
-| -------------------------------------------------------- | -------------------------------------------------- |
-| Información de cada cliente                              | Que la vea otro cliente (aislamiento multicliente) |
-| Notas de estrategia, comentarios y documentos internos   | Que lleguen a un usuario de cliente                |
-| Cuenta institucional de Google (Sheets, Drive, Calendar) | Acceso directo de terceros; secretos filtrados     |
-| Datos guardados en los dispositivos                      | Robo o pérdida del equipo; navegador compartido    |
-| Integridad de plazos y cumplimientos                     | Ediciones simultáneas que pisan un plazo fatal     |
+| Activo                                                   | Amenaza principal                                                                                                      |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Información de cada cliente                              | Que la vea otro cliente (aislamiento multicliente)                                                                     |
+| Notas de estrategia, comentarios y documentos internos   | Que lleguen a un usuario de cliente                                                                                    |
+| Cuenta institucional de Google (Sheets, Drive, Calendar) | Acceso directo de terceros; secretos filtrados                                                                         |
+| Datos guardados en los dispositivos                      | Robo o pérdida del equipo; navegador compartido                                                                        |
+| Integridad de plazos y cumplimientos                     | Ediciones simultáneas que pisan un plazo fatal                                                                         |
+| Cobranza: honorarios, pagos y repartos (F9)              | Que la vea alguien del despacho no autorizado o un cliente: solo viaja a los socios y a los abogados autorizados (D80) |
 
 ## 2. Diferencia con TSJ Filing: aquí no hay cifrado de extremo a extremo
 

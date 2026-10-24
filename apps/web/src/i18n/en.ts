@@ -219,6 +219,7 @@ export const en: Messages = {
     contracts: 'Contracts',
     agenda: 'Agenda',
     reports: 'Reports',
+    billing: 'Billing',
     groups: { work: 'Follow-up', admin: 'Administration', company: 'Your company' },
   },
   shell: {
@@ -580,6 +581,9 @@ export const en: Messages = {
     activated: 'Access activated.',
     estados: { INVITADO: 'Invited', ACTIVO: 'Active', INACTIVO: 'Inactive' },
     you: 'You',
+    billing: 'Billing',
+    billingHint: 'May see and record the billing of their clients.',
+    billingLabel: 'Billing for {{name}}',
   },
   invitations: {
     chooseUnits: 'Choose at least one unit.',
@@ -1384,6 +1388,8 @@ export const en: Messages = {
       IA_CUOTA_ALTA:
         '{{titulo}} AI requests used today. At the limit, the AI stops until tomorrow.',
       IA_MODELO: 'The configured AI model no longer exists; the portal switched to {{titulo}}.',
+      COBRO_RECORDATORIO: 'Billing reminder: “{{titulo}}”.',
+      COBRO_VENCIDO: 'Overdue charge: {{titulo}}.',
     },
   },
   agenda: {

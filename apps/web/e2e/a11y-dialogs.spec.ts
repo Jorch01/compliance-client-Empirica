@@ -7,6 +7,9 @@ import type { Page } from '@playwright/test';
 import { audit } from './axe.ts';
 import { device, expect, signIn, test, type DemoUser } from './fixtures.ts';
 
+/** F9: September's charge of the demo retainer (a fixed id per period). */
+const SEPTEMBER = '36dc34a8-b208-8a2a-ba7b-c14da03b9116';
+
 const id = (n: number): string => `00000000-0000-4000-8000-${n.toString(16).padStart(12, '0')}`;
 
 interface Opened {
@@ -30,6 +33,18 @@ const OPENED: { user: DemoUser; mobile?: boolean; items: Opened[] }[] = [
       { path: '#/asuntos', open: /¿Qué va aquí\?/ },
       { path: '#/ayuda', open: /va en Trámites/ },
       { path: '#/contratos', open: 'Nuevo contrato' },
+      // F9: billing's forms and dialogs.
+      { path: '#/cobranza', open: /¿Qué va aquí\?/ },
+      { path: '#/cobranza', open: /¿Cómo se lee\?/ },
+      { path: '#/cobranza/igualas', open: 'Nueva iguala' },
+      { path: '#/cobranza/igualas', open: 'Cambiar reparto' },
+      { path: '#/cobranza/cobros', open: 'Nuevo cobro' },
+      { path: `#/cobranza/cobros/${SEPTEMBER}`, open: 'Registrar pago' },
+      { path: `#/cobranza/cobros/${SEPTEMBER}`, open: 'Agregar gasto' },
+      { path: `#/cobranza/cobros/${SEPTEMBER}`, open: 'Recordatorio para el cliente' },
+      { path: `#/cobranza/cobros/${SEPTEMBER}`, open: 'Nuevo recordatorio' },
+      { path: '#/cobranza/recordatorios', open: 'Nuevo recordatorio' },
+      { path: '#/cobranza/participantes', open: 'Nuevo participante' },
       { path: '#/', open: 'Tu cuenta', popover: true },
       { path: '#/', open: /Al día/, popover: true },
     ],

@@ -34,6 +34,8 @@ const KIND_ICON: Record<NotificationKind, IconName> = {
   IA_CUOTA: 'alert',
   IA_CUOTA_ALTA: 'clock',
   IA_MODELO: 'info',
+  COBRO_RECORDATORIO: 'bell',
+  COBRO_VENCIDO: 'wallet',
 };
 
 /** One notification: what happened, when, and the way to it (opening it marks it read). */

@@ -13,6 +13,7 @@ const me = (clients: Partial<Me['clients'][number]>[]): Me => ({
   rolBase: 'ABOGADO',
   isAdmin: false,
   isFirm: true,
+  billing: false,
   config: {},
   clients: clients.map((c, i) => ({
     id: `c${String(i)}`,
