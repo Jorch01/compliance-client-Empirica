@@ -120,6 +120,13 @@ const NARROW: { user: DemoUser; paths: string[] }[] = [
       '#/avisos',
       '#/sugerencias',
       '#/ayuda',
+      // F9: billing.
+      '#/cobranza',
+      '#/cobranza/cobros',
+      '#/cobranza/cobros/36dc34a8-b208-8a2a-ba7b-c14da03b9116',
+      '#/cobranza/igualas',
+      '#/cobranza/recordatorios',
+      '#/cobranza/participantes',
     ],
   },
   {

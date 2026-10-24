@@ -30,6 +30,8 @@ export interface UserContext {
   lado: Lado;
   rolBase: Rol;
   isAdmin: boolean;
+  /** Sees and works the billing of their clients (F9, D80). */
+  billing: boolean;
   clients: ReadonlyMap<string, ClientAccess>;
 }
 
@@ -68,6 +70,15 @@ export function expandUnits(roots: readonly string[], entidades: readonly Row[])
     queue.push(...(children.get(id) ?? []));
   }
   return out;
+}
+
+/**
+ * Billing (F9, D80): every SOCIO_ADMIN, and the lawyers a partner authorized
+ * (`Usuarios.cobranza`). Never an assistant nor anyone of a client.
+ */
+export function hasBillingAccess(user: Readonly<Record<string, Value>>): boolean {
+  if (user.lado !== 'EMPIRICA' || user.deleted || user.estado === 'INACTIVO') return false;
+  return user.rolBase === 'SOCIO_ADMIN' || (user.rolBase === 'ABOGADO' && user.cobranza === true);
 }
 
 export interface ContextSources {
@@ -132,6 +143,7 @@ export function buildUserContext({
     lado,
     rolBase,
     isAdmin,
+    billing: hasBillingAccess(user),
     clients,
   };
 }

@@ -18,6 +18,7 @@ export function wholeClientViewer(clienteId: string): UserContext {
     lado: 'CLIENTE',
     rolBase: 'CLIENTE_LECTURA',
     isAdmin: false,
+    billing: false,
     clients: new Map([
       [clienteId, { clienteId, rol: 'CLIENTE_LECTURA' as const, alcance: null, units: null }],
     ]),

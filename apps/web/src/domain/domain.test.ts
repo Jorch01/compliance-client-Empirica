@@ -165,6 +165,7 @@ describe('what the interface offers', () => {
     rolBase: 'CLIENTE_COLABORADOR',
     isAdmin: false,
     isFirm: false,
+    billing: false,
     clients: [],
     config: {},
     ...fields,

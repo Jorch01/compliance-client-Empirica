@@ -215,6 +215,7 @@ export const es = {
     contracts: 'Contratos',
     agenda: 'Agenda',
     reports: 'Reportes',
+    billing: 'Cobranza',
     groups: { work: 'Seguimiento', admin: 'Administración', company: 'Su empresa' },
   },
   shell: {
@@ -576,6 +577,9 @@ export const es = {
     activated: 'Acceso activado.',
     estados: { INVITADO: 'Invitado', ACTIVO: 'Activo', INACTIVO: 'Inactivo' },
     you: 'Tú',
+    billing: 'Cobranza',
+    billingHint: 'Puede ver y registrar la cobranza de sus clientes.',
+    billingLabel: 'Cobranza de {{name}}',
   },
   invitations: {
     chooseUnits: 'Elige al menos una unidad.',
@@ -1376,6 +1380,8 @@ export const es = {
       IA_CUOTA_ALTA:
         'Van {{titulo}} consultas de IA hoy. Al llegar al límite, la IA se detiene hasta mañana.',
       IA_MODELO: 'El modelo de IA configurado ya no existe; el portal cambió a {{titulo}}.',
+      COBRO_RECORDATORIO: 'Recordatorio de cobranza: «{{titulo}}».',
+      COBRO_VENCIDO: 'Cobro vencido: {{titulo}}.',
     },
   },
   agenda: {

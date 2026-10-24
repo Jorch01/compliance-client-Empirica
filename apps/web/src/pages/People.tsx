@@ -177,6 +177,48 @@ function MembershipDialog({ membership, onClose }: { membership: Row; onClose: (
   );
 }
 
+/**
+ * Billing (F9): a partner sees it always; a lawyer, if a partner authorizes
+ * him here. The box shows the new state at once, while it is saved online.
+ */
+function BillingToggle({ user }: { user: Row }) {
+  const { t } = useTranslation();
+  const { run, busy, error } = useAdminCall();
+  const [pending, setPending] = useState<boolean | null>(null);
+  const checked = pending ?? user.cobranza === true;
+  return (
+    <span className="inline-flex flex-col">
+      <label
+        className="inline-flex min-h-11 items-center gap-2 text-sm"
+        title={t('people.billingHint')}
+      >
+        <input
+          type="checkbox"
+          className="size-4 accent-primary"
+          checked={checked}
+          disabled={busy}
+          onChange={(e) => {
+            const value = e.target.checked;
+            setPending(value);
+            void run('admin.users.update', { usuarioId: user.id, cobranza: value }).finally(() => {
+              setPending(null);
+            });
+          }}
+        />
+        <span aria-hidden="true">{t('people.billing')}</span>
+        <span className="sr-only">
+          {t('people.billingLabel', { name: text(user, 'nombre') ?? '' })}
+        </span>
+      </label>
+      {error ? (
+        <span role="alert" className="text-xs font-medium text-danger-subtle-foreground">
+          {error}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function FirmTeam({ onAsk }: { onAsk: (p: Pending) => void }) {
   const { t } = useTranslation();
   const { me } = usePortal();
@@ -234,6 +276,7 @@ function FirmTeam({ onAsk }: { onAsk: (p: Pending) => void }) {
               <span className="text-sm">{roleLabel(t, u.rolBase)}</span>
             )}
             <UserState estado={u.estado} />
+            {me.isAdmin && u.rolBase === 'ABOGADO' ? <BillingToggle user={u} /> : null}
             {me.isAdmin && u.id !== me.id ? (
               <div className="flex flex-wrap gap-1">
                 <Button

@@ -8,7 +8,9 @@
  * - once a year, move the past years' audit entries to their own spreadsheet
  *   in Respaldos (F7), so the live tab only holds this year's;
  * - on the first of the month, tell each client's lawyer that last month's
- *   report is ready to prepare (F6).
+ *   report is ready to prepare (F6);
+ * - billing's bell (F9): the reminders that fall today and the charges
+ *   overdue by 1, 7, 15, 30, 60 or 90 days.
  */
 import {
   isStaleNotice,
@@ -18,6 +20,7 @@ import {
   type Row,
   type TableName,
 } from '@empirica/shared';
+import { runBillingNotices, type BillingNoticesReport } from './actions/billing.ts';
 import { remindMonthlyReports } from './actions/reports.ts';
 import { runDailyBackup } from './backup.ts';
 import { AuditArchive } from './db/archive.ts';
@@ -133,6 +136,7 @@ export function runNightly(env: Env): {
   purgedNotices: number;
   archivedAudit: Record<string, number>;
   reportNotices: number;
+  billingNotices: BillingNoticesReport;
 } {
   const backup = runDailyBackup(env);
   const purgedOps = purgeAppliedOps(env);
@@ -151,12 +155,19 @@ export function runNightly(env: Env): {
     () => remindMonthlyReports(env),
     0,
   );
+  const billingNotices = attempt<BillingNoticesReport>(
+    env,
+    'Avisos de cobranza no creados',
+    () => runBillingNotices(env),
+    { reminders: 0, overdue: 0, notices: 0 },
+  );
   env.log('Tareas nocturnas', {
     respaldo: backup.copy,
     operacionesDepuradas: purgedOps,
     avisosDepurados: purgedNotices,
     bitacoraArchivada: archivedAudit,
     avisosDeReporte: reportNotices,
+    avisosDeCobranza: billingNotices,
   });
   return {
     backup: backup.copy,
@@ -165,5 +176,6 @@ export function runNightly(env: Env): {
     purgedNotices,
     archivedAudit,
     reportNotices,
+    billingNotices,
   };
 }

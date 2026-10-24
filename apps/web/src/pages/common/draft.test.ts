@@ -27,6 +27,7 @@ const me = (rolBase: Rol, clients: ClientSummary[]): Me => ({
   rolBase,
   isAdmin: rolBase === 'SOCIO_ADMIN',
   isFirm: !rolBase.startsWith('CLIENTE'),
+  billing: rolBase === 'SOCIO_ADMIN',
   clients,
   config: {},
 });

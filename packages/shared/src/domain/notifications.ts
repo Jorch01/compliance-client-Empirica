@@ -38,6 +38,10 @@ export const NOTIFICATION_KINDS = [
   'IA_CUOTA_ALTA',
   /** F6: the AI model in Config no longer exists; the portal chose another (to the partners). */
   'IA_MODELO',
+  /** F9: a billing reminder falls today (to the people it names). */
+  'COBRO_RECORDATORIO',
+  /** F9: a charge is 1, 7, 15, 30, 60 or 90 days overdue (to whoever follows it). */
+  'COBRO_VENCIDO',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

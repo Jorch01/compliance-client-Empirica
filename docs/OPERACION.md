@@ -10,6 +10,7 @@ Qué hacer en el día a día y cuando algo falla. Para alguien que no programa; 
 | Limpieza de operaciones repetidas y de avisos viejos    | Cada noche, después del respaldo                 | Apps Script → **Ejecuciones** → `nightly`                                          |
 | Bitácora del año anterior a su propio libro (D66)       | La noche del 1 de enero                          | **Respaldos**: `EMPIRICA_PORTAL_DB bitácora <año>`                                 |
 | Aviso de que el reporte del mes está por preparar       | El día 1 de cada mes                             | La campana del abogado responsable (o de los socios)                               |
+| Recordatorios de cobranza y cobros vencidos (D84)       | Cada noche, después del respaldo                 | La campana de quien nombra cada recordatorio o le da seguimiento al cobro          |
 | Resumen diario por correo                               | Cada hora revisa si ya toca; una vez al día      | Apps Script → **Ejecuciones** → `dailyDigest`                                      |
 | Calendarios de Google                                   | Cada 15 minutos                                  | Apps Script → **Ejecuciones** → `syncCalendars`                                    |
 | Publicación del portal y del servidor                   | Al fusionar a `main`, si todas las pruebas pasan | GitHub → **Actions**                                                               |

@@ -16,6 +16,7 @@ import { healthIndex, type HealthIndex, type HealthWeights } from './health.ts';
 import { daysBetween, taskLight, type Light } from './lights.ts';
 import { progressOf } from './progress.ts';
 import { addDays, daysInMonth } from './recurrence.ts';
+import { stableUuid } from './stable-id.ts';
 import { parseInstant, toProjectDate } from '../time.ts';
 import { text, type Row } from './values.ts';
 
@@ -222,19 +223,7 @@ export function previousPeriod(today: string): string {
  * merge on the server field by field.
  */
 export function reportId(clienteId: string, periodo: string): string {
-  const key = `reporte:${clienteId}:${periodo}`;
-  const words = [0x811c9dc5, 0x01000193, 0x9e3779b9, 0x85ebca6b].map((seed) => {
-    let h = seed >>> 0;
-    for (let i = 0; i < key.length; i++) {
-      h ^= key.charCodeAt(i);
-      h = Math.imul(h, 0x01000193) >>> 0;
-      h ^= h >>> 13;
-    }
-    return h >>> 0;
-  });
-  const hex = words.map((w) => w.toString(16).padStart(8, '0')).join('');
-  const variant = ((parseInt(hex.slice(16, 17), 16) & 0x3) | 0x8).toString(16);
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+  return stableUuid(`reporte:${clienteId}:${periodo}`);
 }
 
 const live = (rows: readonly Row[] | undefined, clienteId: string): Row[] =>

@@ -9,6 +9,8 @@
  *   GET  /mock-api/exec      ?action=ics&token=…: the personal calendar feed
  *   GET  /mock-api/correos   the emails the portal would have sent (a page to look at)
  *   POST /mock-api/correos/resumen   today's daily summary, now
+ *   POST /mock-api/cobranza/avisos   billing's nightly bell (reminders, overdue charges), now
+ *   POST /mock-api/correos/cobranza  the same, from the button on the emails page
  *   GET  /mock-api/users     demo users to sign in as
  *   POST /mock-api/token     an ID token for any e-mail, always verified
  *   GET  /mock-api/instance  changes when the server restarts (the browser wipes its copy)
@@ -46,6 +48,7 @@ interface Backend {
   handle(body: string): unknown;
   feed(token: string): string;
   digest(): unknown;
+  billingNotices(): unknown;
   instance: string;
 }
 
@@ -64,12 +67,16 @@ async function start(apiSrc: string): Promise<Backend> {
   const mail = (await load('mail/digest.ts')) as {
     runDigest(env: unknown, options: { force?: boolean }): unknown;
   };
+  const billing = (await load('actions/billing.ts')) as {
+    runBillingNotices(env: unknown): unknown;
+  };
   const world = harness.createWorld({ now: () => Date.now() });
   return {
     world,
     handle: (body) => router.handleRequest(world.env, body),
     feed: (token) => calendar.icsFeed(world.env, token),
     digest: () => mail.runDigest(world.env, { force: true }),
+    billingNotices: () => billing.runBillingNotices(world.env),
     instance: randomUUID(),
   };
 }
@@ -129,6 +136,7 @@ function mailPage(sent: readonly SentMail[], quota: number, note: string): strin
 <p>Lo que el portal habría mandado desde que arrancó este servidor: el resumen diario, las invitaciones y los reportes mensuales. Nada sale de aquí. Quedan ${String(quota)} destinatarios de 100.</p>
 ${note ? `<p role="status">${escape(note)}</p>` : ''}
 <form method="post" action="/mock-api/correos/resumen"><button type="submit">Generar el resumen de hoy</button></form>
+<form method="post" action="/mock-api/correos/cobranza"><button type="submit">Correr los avisos de cobranza de hoy</button></form>
 ${items || '<p>Todavía no hay correos.</p>'}
 </body>
 </html>`;
@@ -174,6 +182,19 @@ export function mockApi(apiSrc: string): Plugin {
             res.setHeader(
               'Location',
               `/mock-api/correos?enviados=${encodeURIComponent(`${String(report.sent ?? 0)} enviados, ${String(report.empty ?? 0)} sin nada que contar`)}`,
+            );
+            res.end();
+            return;
+          }
+          case 'POST /mock-api/cobranza/avisos':
+            send(res, 200, b.billingNotices());
+            return;
+          case 'POST /mock-api/correos/cobranza': {
+            const report = b.billingNotices() as { notices?: number };
+            res.statusCode = 303;
+            res.setHeader(
+              'Location',
+              `/mock-api/correos?enviados=${encodeURIComponent(`${String(report.notices ?? 0)} avisos de cobranza en la campana`)}`,
             );
             res.end();
             return;

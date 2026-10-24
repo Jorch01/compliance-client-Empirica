@@ -21,6 +21,7 @@ import {
   InvitationRefSchema,
   InvitationsListSchema,
   MembershipSaveSchema,
+  ParticipantSaveSchema,
   ProfileUpdateSchema,
   PullPayloadSchema,
   PushPayloadSchema,
@@ -36,6 +37,7 @@ import {
 import type * as z from 'zod/mini';
 import { saveMembership, updateProfile, updateUser } from './actions/admin.ts';
 import { aiAsk, aiReminder, aiStatus, aiSummary } from './actions/ai.ts';
+import { saveParticipant } from './actions/billing.ts';
 import { aiDraft } from './actions/draft.ts';
 import { bootstrap } from './actions/bootstrap.ts';
 import { shareCalendar, subscribeCalendar } from './actions/calendar.ts';
@@ -196,6 +198,9 @@ export function handleRequest(env: Env, body: string): ApiResponse<unknown> {
         break;
       case 'ai.draft':
         data = aiDraft(env, session, parse(AiDraftSchema, payload));
+        break;
+      case 'billing.participants.save':
+        data = saveParticipant(env, session, parse(ParticipantSaveSchema, payload));
         break;
     }
     return { ok: true, data, serverNow, ...(requestId ? { requestId } : {}) };

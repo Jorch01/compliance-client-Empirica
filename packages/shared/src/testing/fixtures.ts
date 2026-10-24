@@ -3,6 +3,7 @@
  * and branches, and one user per role and scope. Only used by tests; never
  * bundled. Every name is invented ("Cliente Demo, S.A. de C.V.").
  */
+import { cobroId } from '../domain/billing.ts';
 import { reportId } from '../domain/report.ts';
 import type { Row, Value } from '../domain/values.ts';
 import type { TableName } from '../domain/tables.ts';
@@ -128,6 +129,24 @@ export const ID = {
   // F6: a monthly report being prepared, and one already sent (one id per client and month).
   repBorrador: reportId(uid(0x1a), '2026-09'),
   repEnviado: reportId(uid(0x1a), '2026-08'),
+  // F9, billing: who takes part in the splits, a fee of client A with its
+  // months (fixed ids, one per period), a single job of client B.
+  parSocia: uid(0x1101),
+  parAbogado: uid(0x1102),
+  parDespacho: uid(0x1103),
+  honA: uid(0x1201),
+  cobJul: cobroId(uid(0x1201), '2026-07'),
+  cobAgo: cobroId(uid(0x1201), '2026-08'),
+  cobSep: cobroId(uid(0x1201), '2026-09'),
+  cobB: uid(0x1301),
+  pagJul: uid(0x1401),
+  pagAgo: uid(0x1402),
+  pagB: uid(0x1403),
+  gasAgo: uid(0x1501),
+  gasJul: uid(0x1502),
+  recFactura: uid(0x1601),
+  recLlamar: uid(0x1602),
+  recB: uid(0x1603),
 } as const;
 
 const T0 = '2026-09-01T10:00:00.000-05:00';
@@ -217,7 +236,10 @@ export function demoData(): Dataset {
     ],
     Usuarios: [
       user(ID.socio, 'socia@despacho.example', 'Socia Demo', 'EMPIRICA', 'SOCIO_ADMIN'),
-      user(ID.abogado, 'abogado@despacho.example', 'Abogado Demo', 'EMPIRICA', 'ABOGADO'),
+      {
+        ...user(ID.abogado, 'abogado@despacho.example', 'Abogado Demo', 'EMPIRICA', 'ABOGADO'),
+        cobranza: true,
+      },
       user(ID.asistente, 'asistente@despacho.example', 'Asistente Demo', 'EMPIRICA', 'ASISTENTE'),
       user(ID.abogadoB, 'abogado.b@despacho.example', 'Abogado B', 'EMPIRICA', 'ABOGADO'),
       user(ID.cAdmin, 'admin@cliente-a.example', 'Admin A', 'CLIENTE', 'CLIENTE_ADMIN'),
@@ -714,5 +736,157 @@ export function demoData(): Dataset {
     ],
     OpsAplicadas: [],
     Calendario: [],
+    // F9: amounts, rates and splits are examples, as everything here.
+    Participantes: [
+      base(ID.parSocia, {
+        nombre: 'Socia Demo',
+        usuarioId: ID.socio,
+        tipo: 'PERSONA',
+        tasaImpuesto: 30,
+        activo: true,
+        notas: 'Tasa de ejemplo',
+      }),
+      base(ID.parAbogado, {
+        nombre: 'Abogado Demo',
+        usuarioId: ID.abogado,
+        tipo: 'PERSONA',
+        tasaImpuesto: 20,
+        activo: true,
+        notas: 'Tasa de ejemplo',
+      }),
+      base(ID.parDespacho, { nombre: 'Fondo del despacho', tipo: 'DESPACHO', activo: true }),
+    ],
+    Honorarios: [
+      base(ID.honA, {
+        clienteId: A,
+        concepto: 'Iguala mensual (ejemplo)',
+        monto: 25000,
+        moneda: 'MXN',
+        cadaMeses: 1,
+        diaCobro: 1,
+        diasCredito: 10,
+        desde: '2026-07-01',
+        estado: 'ACTIVO',
+        tasaIVA: 16,
+        reparto: [
+          { participanteId: ID.parSocia, porcentaje: 50 },
+          { participanteId: ID.parAbogado, porcentaje: 30 },
+          { participanteId: ID.parDespacho, porcentaje: 20 },
+        ],
+        responsableId: ID.abogado,
+      }),
+    ],
+    Cobros: [
+      ...(
+        [
+          [ID.cobJul, '2026-07', 'F-0001 (ejemplo)'],
+          [ID.cobAgo, '2026-08', 'F-0002 (ejemplo)'],
+          [ID.cobSep, '2026-09', 'F-0003 (ejemplo)'],
+        ] as const
+      ).map(([id, periodo, folio]) =>
+        base(id, {
+          clienteId: A,
+          honorarioId: ID.honA,
+          periodo,
+          concepto: 'Iguala mensual (ejemplo)',
+          fechaEmision: `${periodo}-01`,
+          fechaVencimiento: `${periodo}-11`,
+          subtotal: 25000,
+          moneda: 'MXN',
+          tasaIVA: 16,
+          folioFactura: folio,
+          estado: 'VIGENTE',
+          responsableId: ID.abogado,
+        }),
+      ),
+      base(ID.cobB, {
+        clienteId: B,
+        asuntoId: ID.asB,
+        concepto: 'Registro de marca (ejemplo)',
+        fechaEmision: '2026-09-10',
+        fechaVencimiento: '2026-09-25',
+        subtotal: 12000,
+        moneda: 'MXN',
+        tasaIVA: 16,
+        estado: 'VIGENTE',
+        reparto: [
+          { participanteId: ID.parSocia, porcentaje: 60 },
+          { participanteId: ID.parDespacho, porcentaje: 40 },
+        ],
+        responsableId: ID.abogadoB,
+      }),
+    ],
+    Pagos: [
+      base(ID.pagJul, {
+        clienteId: A,
+        cobroId: ID.cobJul,
+        fecha: '2026-07-08',
+        monto: 29000,
+        metodo: 'TRANSFERENCIA',
+        referencia: 'REF-EJEMPLO-1',
+      }),
+      base(ID.pagAgo, {
+        clienteId: A,
+        cobroId: ID.cobAgo,
+        fecha: '2026-08-15',
+        monto: 29000,
+        metodo: 'TRANSFERENCIA',
+        referencia: 'REF-EJEMPLO-2',
+      }),
+      base(ID.pagB, {
+        clienteId: B,
+        cobroId: ID.cobB,
+        fecha: '2026-09-20',
+        monto: 6960,
+        metodo: 'TRANSFERENCIA',
+      }),
+    ],
+    Gastos: [
+      base(ID.gasAgo, {
+        clienteId: A,
+        cobroId: ID.cobAgo,
+        fecha: '2026-08-15',
+        concepto: 'Comisión bancaria (ejemplo)',
+        tipo: 'COMISION',
+        monto: 150,
+      }),
+      base(ID.gasJul, {
+        clienteId: A,
+        cobroId: ID.cobJul,
+        fecha: '2026-07-08',
+        concepto: 'Mensajería (ejemplo)',
+        tipo: 'GASTO',
+        monto: 300,
+        pagadoPor: ID.parAbogado,
+      }),
+    ],
+    RecordatoriosCobro: [
+      base(ID.recFactura, {
+        clienteId: A,
+        honorarioId: ID.honA,
+        titulo: 'Enviar la factura de la iguala (ejemplo)',
+        fecha: '2026-07-01',
+        repetir: 'MENSUAL',
+        destinatarios: [ID.abogado],
+        activo: true,
+      }),
+      base(ID.recLlamar, {
+        clienteId: A,
+        cobroId: ID.cobSep,
+        titulo: 'Llamar por el pago de septiembre (ejemplo)',
+        fecha: '2026-10-05',
+        repetir: 'NO',
+        destinatarios: [ID.abogado, ID.socio],
+        activo: true,
+      }),
+      base(ID.recB, {
+        clienteId: B,
+        cobroId: ID.cobB,
+        titulo: 'Pedir el resto del registro de marca (ejemplo)',
+        fecha: '2026-10-01',
+        repetir: 'SEMANAL',
+        activo: true,
+      }),
+    ],
   };
 }

@@ -148,6 +148,7 @@ export function pull(env: Env, db: Database, session: Session, payload: PullPayl
     membresias: db.rows('Membresias'),
     entidades: db.rows('Entidades'),
     config: db.rows('Config'),
+    participantes: db.rows('Participantes'),
   });
   const hash = fingerprint(snapshot);
 
