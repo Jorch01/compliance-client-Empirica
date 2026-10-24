@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
-import { text, type Row } from '@empirica/shared';
+import { hasBillingAccess, isBillingOnly, text, type Row } from '@empirica/shared';
 import { useRows } from '../data/hooks.ts';
 import { useNames } from '../data/names.ts';
 import { can } from '../domain/access.ts';
@@ -33,30 +33,11 @@ function ClientState({ estado }: { estado: unknown }) {
   );
 }
 
-function ClientsList({ onNew }: { onNew: (() => void) | null }) {
+function ClientCards({ clients }: { clients: Row[] }) {
   const { t } = useTranslation();
-  const { clients, setClient } = useScope();
+  const { setClient } = useScope();
   const names = useNames();
   const units = useRows('Entidades');
-  if (!clients.length) {
-    return (
-      <Card>
-        <EmptyState
-          icon="building"
-          title={t('clients.empty')}
-          {...(onNew
-            ? {
-                action: (
-                  <Button icon="plus" onClick={onNew}>
-                    {t('clients.new')}
-                  </Button>
-                ),
-              }
-            : {})}
-        />
-      </Card>
-    );
-  }
   return (
     <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {clients.map((c) => {
@@ -81,7 +62,7 @@ function ClientsList({ onNew }: { onNew: (() => void) | null }) {
               ) : null}
               <span className="text-sm">
                 {[
-                  serviceLabel(t, c.servicio),
+                  isBillingOnly(c) ? t('clients.billingOnly') : serviceLabel(t, c.servicio),
                   names.user(text(c, 'abogadoResponsableId')),
                   count ? t('clients.unitCount', { count }) : '',
                 ]
@@ -96,8 +77,52 @@ function ClientsList({ onNew }: { onNew: (() => void) | null }) {
   );
 }
 
+function ClientsList({ onNew }: { onNew: (() => void) | null }) {
+  const { t } = useTranslation();
+  const { clients } = useScope();
+  // Clients the firm only bills (D87), apart: only who sees billing has them.
+  const tracking = clients.filter((c) => !isBillingOnly(c));
+  const billingOnly = clients.filter((c) => isBillingOnly(c));
+  if (!clients.length) {
+    return (
+      <Card>
+        <EmptyState
+          icon="building"
+          title={t('clients.empty')}
+          {...(onNew
+            ? {
+                action: (
+                  <Button icon="plus" onClick={onNew}>
+                    {t('clients.new')}
+                  </Button>
+                ),
+              }
+            : {})}
+        />
+      </Card>
+    );
+  }
+  return (
+    <>
+      <ClientCards clients={tracking} />
+      {billingOnly.length ? (
+        <section className="mt-8" aria-labelledby="billing-only-clients">
+          <h2 id="billing-only-clients" className="font-display text-xl font-semibold text-heading">
+            {t('clients.billingOnly')}
+          </h2>
+          <p className="mt-1 mb-4 max-w-2xl text-sm text-muted-foreground">
+            {t('clients.billingOnlyIntro')}
+          </p>
+          <ClientCards clients={billingOnly} />
+        </section>
+      ) : null}
+    </>
+  );
+}
+
 /** The firm's people on this client; the partner assigns and removes them. */
 function FirmTeamCard({ client }: { client: Row }) {
+  const billingOnly = isBillingOnly(client);
   const { t } = useTranslation();
   const { me } = usePortal();
   const usuarios = useRows('Usuarios');
@@ -112,7 +137,9 @@ function FirmTeamCard({ client }: { client: Row }) {
   const candidates = firmUsers.filter(
     (u) =>
       u.estado === 'ACTIVO' &&
-      (u.rolBase === 'ABOGADO' || u.rolBase === 'ASISTENTE') &&
+      (billingOnly
+        ? u.rolBase === 'ABOGADO' && hasBillingAccess(u)
+        : u.rolBase === 'ABOGADO' || u.rolBase === 'ASISTENTE') &&
       !assigned.some((m) => m.usuarioId === u.id),
   );
   const responsible = text(client, 'abogadoResponsableId');
@@ -159,6 +186,9 @@ function FirmTeamCard({ client }: { client: Row }) {
       </ul>
       {assigned.length === 0 && !responsible ? (
         <p className="text-sm text-muted-foreground">{t('clients.noTeam')}</p>
+      ) : null}
+      {billingOnly ? (
+        <p className="mt-3 text-sm text-muted-foreground">{t('clients.billingOnlyTeam')}</p>
       ) : null}
       {me.isAdmin && candidates.length > 0 ? (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4">
@@ -242,7 +272,8 @@ function ClientDetail({ client }: { client: Row }) {
   const [unit, setUnit] = useState<Row | 'new' | null>(null);
   const [inviting, setInviting] = useState(false);
   const canEdit = can(me, 'Clientes', 'update', client.id);
-  const canUnits = can(me, 'Entidades', 'create', client.id);
+  const billingOnly = isBillingOnly(client);
+  const canUnits = !billingOnly && can(me, 'Entidades', 'create', client.id);
   const tree = unitTree(entidades);
 
   return (
@@ -276,6 +307,7 @@ function ClientDetail({ client }: { client: Row }) {
       >
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <ClientState estado={client.estado} />
+          {billingOnly ? <StatusBadge tone="info">{t('clients.billingOnly')}</StatusBadge> : null}
           <span>{serviceLabel(t, client.servicio)}</span>
           {text(client, 'rfc') ? (
             <span>
@@ -293,89 +325,107 @@ function ClientDetail({ client }: { client: Row }) {
         ) : null}
       </PageHeader>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card
-          title={t('clients.units')}
-          actions={
-            canUnits ? (
+      {billingOnly ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <FirmTeamCard client={client} />
+          <Card title={t('clients.billingOnly')}>
+            <p className="text-sm text-muted-foreground">{t('clients.billingOnlyHint')}</p>
+            <Link
+              href="/cobranza/clientes"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-link underline-offset-2 hover:underline"
+            >
+              <Icon name="wallet" className="size-4" />
+              {t('nav.billing')}
+            </Link>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card
+            title={t('clients.units')}
+            actions={
+              canUnits ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon="plus"
+                  onClick={() => {
+                    setUnit('new');
+                  }}
+                >
+                  {t('clients.addUnit')}
+                </Button>
+              ) : null
+            }
+          >
+            {tree.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('clients.noUnits')}</p>
+            ) : (
+              <ul className="space-y-1">
+                {tree.map(({ row, depth }) => (
+                  <li
+                    key={row.id}
+                    className="flex items-center gap-2"
+                    style={{ paddingInlineStart: `${depth * 1.5}rem` }}
+                  >
+                    <Icon
+                      name={depth ? 'chevronRight' : 'building'}
+                      className="size-4 text-muted-foreground"
+                    />
+                    <span className="flex-1">
+                      <span className="font-medium">{text(row, 'nombre')}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {' · '}
+                        {[unitTypeLabel(t, row.tipo), text(row, 'giro') ?? '']
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </span>
+                    {can(me, 'Entidades', 'update', client.id) ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setUnit(row);
+                        }}
+                      >
+                        {t('common.edit')}
+                        <span className="sr-only">: {text(row, 'nombre')}</span>
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+          <FirmTeamCard client={client} />
+          <Card
+            title={t('clients.invitations')}
+            className="lg:col-span-2"
+            actions={
               <Button
                 size="sm"
-                variant="secondary"
                 icon="plus"
                 onClick={() => {
-                  setUnit('new');
+                  setInviting(true);
                 }}
               >
-                {t('clients.addUnit')}
+                {t('clients.invite')}
               </Button>
-            ) : null
-          }
-        >
-          {tree.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('clients.noUnits')}</p>
-          ) : (
-            <ul className="space-y-1">
-              {tree.map(({ row, depth }) => (
-                <li
-                  key={row.id}
-                  className="flex items-center gap-2"
-                  style={{ paddingInlineStart: `${depth * 1.5}rem` }}
-                >
-                  <Icon
-                    name={depth ? 'chevronRight' : 'building'}
-                    className="size-4 text-muted-foreground"
-                  />
-                  <span className="flex-1">
-                    <span className="font-medium">{text(row, 'nombre')}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {' · '}
-                      {[unitTypeLabel(t, row.tipo), text(row, 'giro') ?? '']
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </span>
-                  {can(me, 'Entidades', 'update', client.id) ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setUnit(row);
-                      }}
-                    >
-                      {t('common.edit')}
-                      <span className="sr-only">: {text(row, 'nombre')}</span>
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <FirmTeamCard client={client} />
-        <Card
-          title={t('clients.invitations')}
-          className="lg:col-span-2"
-          actions={
-            <Button
-              size="sm"
-              icon="plus"
-              onClick={() => {
-                setInviting(true);
-              }}
-            >
-              {t('clients.invite')}
-            </Button>
-          }
-        >
-          <InvitationList state={state} onChanged={reload} showClient={false} />
-        </Card>
-      </div>
-      <p className="mt-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        {t('clients.membersHint')}
-        <Link href="/usuarios" className="text-link underline underline-offset-2">
-          {t('nav.people')}
-        </Link>
-      </p>
+            }
+          >
+            <InvitationList state={state} onChanged={reload} showClient={false} />
+          </Card>
+        </div>
+      )}
+      {billingOnly ? null : (
+        <p className="mt-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          {t('clients.membersHint')}
+          <Link href="/usuarios" className="text-link underline underline-offset-2">
+            {t('nav.people')}
+          </Link>
+        </p>
+      )}
 
       {editing ? (
         <ClientForm

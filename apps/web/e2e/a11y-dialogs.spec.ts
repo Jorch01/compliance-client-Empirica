@@ -45,6 +45,7 @@ const OPENED: { user: DemoUser; mobile?: boolean; items: Opened[] }[] = [
       { path: `#/cobranza/cobros/${SEPTEMBER}`, open: 'Nuevo recordatorio' },
       { path: '#/cobranza/recordatorios', open: 'Nuevo recordatorio' },
       { path: '#/cobranza/participantes', open: 'Nuevo participante' },
+      { path: '#/cobranza/clientes', open: 'Nuevo cliente de cobranza' },
       { path: '#/', open: 'Tu cuenta', popover: true },
       { path: '#/', open: /Al día/, popover: true },
     ],

@@ -316,13 +316,15 @@ export const TABLES: Record<TableName, TableDef> = {
       col('logoFileId', { type: 'string' }),
       col('modoIA', e(MODOS_IA)),
       col('membershipEpoch', { type: 'number' }),
+      // F9: a client the firm only bills (a lawsuit, say): outside the tracking portal (D87).
+      col('soloCobranza', { type: 'boolean' }),
     ],
     {
       sync: 'pushpull',
       audience: 'members',
       scope: { client: 'id' },
       sensitive: ['servicio', 'perimetroIguala', 'estado'],
-      hiddenFromClients: ['driveFolderId', 'calendarId', 'modoIA'],
+      hiddenFromClients: ['driveFolderId', 'calendarId', 'modoIA', 'soloCobranza'],
       serverOnly: ['membershipEpoch'],
       serverManaged: ['driveFolderId', 'calendarId', 'membershipEpoch'],
     },

@@ -22,6 +22,11 @@ export interface ClientAccess {
   alcance: Alcance | null;
   /** The units in scope including all their descendants (null for the hub). */
   units: ReadonlySet<string> | null;
+  /**
+   * A client the firm only bills (D87): only billing reaches it, and only
+   * whoever sees billing has it at all.
+   */
+  billingOnly?: true;
 }
 
 export interface UserContext {
@@ -81,6 +86,10 @@ export function hasBillingAccess(user: Readonly<Record<string, Value>>): boolean
   return user.rolBase === 'SOCIO_ADMIN' || (user.rolBase === 'ABOGADO' && user.cobranza === true);
 }
 
+/** A client kept for billing only, outside the tracking portal (D87). */
+export const isBillingOnly = (cliente: Readonly<Record<string, Value>> | undefined): boolean =>
+  cliente?.soloCobranza === true;
+
 export interface ContextSources {
   user: Row;
   membresias: readonly Row[];
@@ -92,7 +101,8 @@ export interface ContextSources {
  * Builds the context of an active user. Memberships that do not match the
  * user's side are ignored (a client user never gets a firm role, and the
  * other way round); if a user has two active memberships in the same client,
- * the narrower one wins.
+ * the narrower one wins. A client the firm only bills is there only for
+ * whoever sees billing (D87).
  */
 export function buildUserContext({
   user,
@@ -103,12 +113,27 @@ export function buildUserContext({
   const lado = user.lado === 'EMPIRICA' ? 'EMPIRICA' : 'CLIENTE';
   const rolBase = (text(user, 'rolBase') ?? 'CLIENTE_LECTURA') as Rol;
   const isAdmin = lado === 'EMPIRICA' && rolBase === 'SOCIO_ADMIN';
-  const liveClients = new Set(clientes.filter((c) => !c.deleted).map((c) => c.id));
+  const billing = hasBillingAccess(user);
+  // Live clients this user may have at all, and whether each is billing only.
+  const liveClients = new Map<string, boolean>();
+  for (const c of clientes) {
+    if (c.deleted) continue;
+    const only = isBillingOnly(c);
+    if (!only || billing) liveClients.set(c.id, only);
+  }
+  const mark = (id: string): { billingOnly?: true } =>
+    liveClients.get(id) ? { billingOnly: true } : {};
   const clients = new Map<string, ClientAccess>();
 
   if (isAdmin) {
-    for (const id of liveClients) {
-      clients.set(id, { clienteId: id, rol: 'SOCIO_ADMIN', alcance: null, units: null });
+    for (const id of liveClients.keys()) {
+      clients.set(id, {
+        clienteId: id,
+        rol: 'SOCIO_ADMIN',
+        alcance: null,
+        units: null,
+        ...mark(id),
+      });
     }
   } else {
     for (const m of membresias) {
@@ -118,7 +143,13 @@ export function buildUserContext({
 
       if (lado === 'EMPIRICA') {
         if (rolBase !== 'ABOGADO' && rolBase !== 'ASISTENTE') continue;
-        clients.set(clienteId, { clienteId, rol: rolBase, alcance: null, units: null });
+        clients.set(clienteId, {
+          clienteId,
+          rol: rolBase,
+          alcance: null,
+          units: null,
+          ...mark(clienteId),
+        });
         continue;
       }
 
@@ -143,7 +174,7 @@ export function buildUserContext({
     lado,
     rolBase,
     isAdmin,
-    billing: hasBillingAccess(user),
+    billing,
     clients,
   };
 }

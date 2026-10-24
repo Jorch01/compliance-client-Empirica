@@ -504,6 +504,33 @@ describe('sync.push', () => {
     expect(results[0]?.removed).toBeUndefined();
   });
 
+  it('a new client’s responsible lawyer is on its team at once', () => {
+    const w = createWorld();
+    const client = uid(0x60022);
+    const lawyer = new Device(w, ID.abogadoB).sync();
+    expect(lawyer.ids('Clientes')).not.toContain(client);
+    const [created] = new Device(w, ID.socio).push([
+      op('Clientes', 'create', client, {
+        razonSocial: 'Cliente Nuevo Demo, S.A. de C.V.',
+        servicio: 'FLT_IGUALA',
+        estado: 'ACTIVO',
+        abogadoResponsableId: ID.abogadoB,
+      }),
+    ]);
+    expect(created?.status).toBe('applied');
+    expect(
+      w.rows('Membresias').find((m) => m.usuarioId === ID.abogadoB && m.clienteId === client),
+    ).toMatchObject({ rol: 'ABOGADO', estado: 'ACTIVA' });
+    expect(lawyer.sync().ids('Clientes')).toContain(client);
+    // Only someone of the firm who is a lawyer: never a client user, nor an assistant.
+    for (const someone of [ID.cAdmin, ID.asistente]) {
+      const [refused] = new Device(w, ID.socio).push([
+        op('Clientes', 'update', client, { abogadoResponsableId: someone }),
+      ]);
+      expect(refused).toMatchObject({ status: 'rejected', reason: 'USER_NOT_IN_CLIENT' });
+    }
+  });
+
   it('feedback: anyone sends it, the administrators answer it, only its author sees it', () => {
     const w = createWorld();
     const colab = new Device(w, ID.cColab).sync();

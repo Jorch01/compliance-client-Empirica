@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { text } from '@empirica/shared';
+import { isBillingOnly, text } from '@empirica/shared';
 import { unitTree } from '../domain/scope.ts';
 import { usePortal } from '../session/context.ts';
 import { Icon } from '../ui/Icon.tsx';
@@ -18,6 +18,9 @@ export function ScopeSelect() {
   const { me } = usePortal();
   const tree = unitTree(entidades);
   const showClient = me.isFirm || clients.length > 1;
+  // Clients the firm only bills (D87), apart: they are here only in billing and in Clientes.
+  const tracking = clients.filter((c) => !isBillingOnly(c));
+  const billingOnly = clients.filter((c) => isBillingOnly(c));
 
   return (
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:flex-nowrap">
@@ -36,11 +39,20 @@ export function ScopeSelect() {
             }}
           >
             {me.isFirm ? <option value="">{t('shell.allClients')}</option> : null}
-            {clients.map((c) => (
+            {tracking.map((c) => (
               <option key={c.id} value={c.id}>
                 {clientName(c)}
               </option>
             ))}
+            {billingOnly.length ? (
+              <optgroup label={t('shell.billingOnly')}>
+                {billingOnly.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {clientName(c)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
           </select>
           <Icon
             name="chevronDown"

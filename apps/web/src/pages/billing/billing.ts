@@ -37,14 +37,19 @@ export interface BillingData {
   charges: Charge[];
 }
 
-/** Billing of the chosen client (or of all the user's clients); undefined while loading. */
-export function useBillingData(): BillingData | undefined {
+/**
+ * Billing of the chosen client (or of all the user's clients); undefined
+ * while loading. `allClients`: whichever client is chosen (a charge opened
+ * from the bell may be another client's).
+ */
+export function useBillingData({ allClients = false } = {}): BillingData | undefined {
   const { scope } = useScope();
-  const honorarios = useRows('Honorarios', scope.clientId);
-  const cobros = useRows('Cobros', scope.clientId);
-  const pagos = useRows('Pagos', scope.clientId);
-  const gastos = useRows('Gastos', scope.clientId);
-  const recordatorios = useRows('RecordatoriosCobro', scope.clientId);
+  const clientId = allClients ? null : scope.clientId;
+  const honorarios = useRows('Honorarios', clientId);
+  const cobros = useRows('Cobros', clientId);
+  const pagos = useRows('Pagos', clientId);
+  const gastos = useRows('Gastos', clientId);
+  const recordatorios = useRows('RecordatoriosCobro', clientId);
   const participantes = useRows('Participantes');
   const today = todayInCancun();
   return useMemo(() => {

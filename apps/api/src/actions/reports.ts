@@ -12,6 +12,7 @@ import {
   authorizeReportSend,
   buildUserContext,
   canRead,
+  isBillingOnly,
   periodBounds,
   periodLabel,
   previousPeriod,
@@ -305,7 +306,7 @@ export function remindMonthlyReports(env: Env): number {
     );
     const drafts: NotificationDraft[] = [];
     for (const c of r.db.rows('Clientes')) {
-      if (c.deleted || c.estado !== 'ACTIVO' || sent.has(c.id)) continue;
+      if (c.deleted || c.estado !== 'ACTIVO' || sent.has(c.id) || isBillingOnly(c)) continue;
       const start = text(c, 'fechaInicio');
       if (start && start > lastDay) continue;
       const lawyer = byId.get(text(c, 'abogadoResponsableId') ?? '');

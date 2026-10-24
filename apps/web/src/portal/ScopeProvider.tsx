@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useLocation } from 'wouter';
+import { isBillingOnly } from '@empirica/shared';
 import { useRows } from '../data/hooks.ts';
 import { unitsUnder, type Scope } from '../domain/scope.ts';
 import { usePortal } from '../session/context.ts';
 import { ScopeContext, clientName, type ScopeContextValue } from './scope.ts';
 
 const key = (userId: string): string => `empirica.scope.${userId}`;
+
+/**
+ * The screens where a client the firm only bills (D87) can be chosen:
+ * billing, and the clients' cards. Everywhere else it does not exist.
+ */
+const billingView = (path: string): boolean =>
+  path === '/clientes' || path === '/cobranza' || path.startsWith('/cobranza/');
 
 function load(userId: string): Scope {
   try {
@@ -21,10 +30,13 @@ function load(userId: string): Scope {
 /**
  * The client and unit the user is looking at, remembered per user on this
  * device. Firm users may look at every client at once; a client user always
- * has one client selected (usually their only one).
+ * has one client selected (usually their only one). A client the firm only
+ * bills is there only in billing and in the clients' cards (D87).
  */
 export function ScopeProvider({ children }: { children: ReactNode }) {
   const { me } = usePortal();
+  const [path] = useLocation();
+  const withBillingOnly = billingView(path);
   const [chosen, setChosen] = useState<Scope>(() => load(me.id));
   const allClients = useRows('Clientes');
   const allUnits = useRows('Entidades');
@@ -33,8 +45,9 @@ export function ScopeProvider({ children }: { children: ReactNode }) {
     const allowed = new Set(me.clients.map((c) => c.id));
     return (allClients ?? [])
       .filter((c) => me.isFirm || allowed.has(c.id))
+      .filter((c) => withBillingOnly || !isBillingOnly(c))
       .sort((a, b) => clientName(a).localeCompare(clientName(b), 'es'));
-  }, [allClients, me]);
+  }, [allClients, me, withBillingOnly]);
 
   // What was remembered may no longer apply (access withdrawn, unit deleted).
   const scope = useMemo<Scope>(() => {
@@ -49,13 +62,18 @@ export function ScopeProvider({ children }: { children: ReactNode }) {
     return { clientId, unitId: unitOk ? chosen.unitId : null };
   }, [chosen, clients, allClients, allUnits, me]);
 
+  // A billing-only client is still the one chosen while another screen hides it.
+  const hiddenHere =
+    !withBillingOnly &&
+    (allClients ?? []).some((c) => c.id === chosen.clientId && isBillingOnly(c));
+  const remembered = hiddenHere ? chosen : scope;
   useEffect(() => {
     try {
-      localStorage.setItem(key(me.id), JSON.stringify(scope));
+      localStorage.setItem(key(me.id), JSON.stringify(remembered));
     } catch {
       /* private mode */
     }
-  }, [scope, me.id]);
+  }, [remembered, me.id]);
 
   const setClient = useCallback((clientId: string | null) => {
     setChosen({ clientId, unitId: null });

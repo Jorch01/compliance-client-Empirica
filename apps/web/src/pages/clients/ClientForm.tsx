@@ -5,6 +5,7 @@ import {
   ESTADOS_CLIENTE,
   SERVICIOS,
   TABLES,
+  isBillingOnly,
   missingRequired,
   parsePerimeter,
   perimeterValue,
@@ -19,7 +20,7 @@ import { serviceLabel } from '../../i18n/labels.ts';
 import { usePortal } from '../../session/context.ts';
 import { Button } from '../../ui/Button.tsx';
 import { Dialog } from '../../ui/Dialog.tsx';
-import { SelectField, TextArea, TextField } from '../../ui/Field.tsx';
+import { CheckboxField, SelectField, TextArea, TextField } from '../../ui/Field.tsx';
 
 interface Form {
   razonSocial: string;
@@ -34,11 +35,12 @@ interface Form {
   modoIA: string;
 }
 
-const formOf = (c: Row | null): Form => ({
+const formOf = (c: Row | null, billingOnly = false): Form => ({
   razonSocial: (c && text(c, 'razonSocial')) ?? '',
   nombreComercial: (c && text(c, 'nombreComercial')) ?? '',
   rfc: (c && text(c, 'rfc')) ?? '',
-  servicio: (c && text(c, 'servicio')) ?? 'FLT_IGUALA',
+  // A client only billed is most often a lawsuit: one matter.
+  servicio: (c && text(c, 'servicio')) ?? (billingOnly ? 'ASUNTO_PUNTUAL' : 'FLT_IGUALA'),
   fechaInicio: (c && text(c, 'fechaInicio')) ?? '',
   abogadoResponsableId: (c && text(c, 'abogadoResponsableId')) ?? '',
   estado: (c && text(c, 'estado')) ?? 'ACTIVO',
@@ -49,21 +51,29 @@ const formOf = (c: Row | null): Form => ({
 /**
  * A client's card. The partner opens clients and edits everything; lawyers
  * and assistants only the operational fields (trade name, language).
- * Saved on the device first, like any other change.
+ * Saved on the device first, like any other change. A new one from billing
+ * starts as billing only (D87); only the partner moves a client in or out
+ * of the tracking portal.
  */
 export function ClientForm({
   client,
+  billingOnly: startsBillingOnly = false,
   onClose,
   onCreated,
 }: {
   client: Row | null;
+  /** A new client the firm only bills (opened from Cobranza). */
+  billingOnly?: boolean;
   onClose: () => void;
   onCreated?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const { me, engine } = usePortal();
   const usuarios = useRows('Usuarios');
-  const [form, setForm] = useState<Form>(() => formOf(client));
+  const [form, setForm] = useState<Form>(() => formOf(client, startsBillingOnly));
+  const [billingOnly, setBillingOnly] = useState(() =>
+    client ? isBillingOnly(client) : startsBillingOnly,
+  );
   // What the retainer covers: one line each (only the partner changes it).
   const [perimeter, setPerimeter] = useState(() => {
     const p = parsePerimeter(client?.perimetroIguala);
@@ -87,7 +97,7 @@ export function ClientForm({
   const submit = async (event: SubmitEvent): Promise<void> => {
     event.preventDefault();
     setError(null);
-    const before = formOf(client);
+    const before = formOf(client, startsBillingOnly);
     const fields: Record<string, Value> = {};
     for (const key of Object.keys(form) as (keyof Form)[]) {
       if (!editable(key)) continue;
@@ -101,6 +111,8 @@ export function ClientForm({
         excluidos: perimeter.excluidos.split('\n'),
       });
       if (!sameValue(client?.perimetroIguala ?? null, value)) fields.perimetroIguala = value;
+      if (billingOnly !== (client ? isBillingOnly(client) : false))
+        fields.soloCobranza = billingOnly;
     }
     if (!client && missingRequired(TABLES.Clientes, fields).length) {
       setError(t('errors.VALIDATION'));
@@ -131,7 +143,13 @@ export function ClientForm({
       open
       onClose={onClose}
       error={error}
-      title={client ? t('clients.editTitle') : t('clients.new')}
+      title={
+        client
+          ? t('clients.editTitle')
+          : startsBillingOnly
+            ? t('clients.newBillingOnly')
+            : t('clients.new')
+      }
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -225,22 +243,34 @@ export function ClientForm({
               { value: 'en', label: t('language.en') },
             ]}
           />
-          <SelectField
-            label={t('ai.mode')}
-            hint={t('ai.modeHint')}
-            disabled={!editable('modoIA')}
-            value={form.modoIA}
-            onChange={(e) => {
-              set('modoIA', e.target.value);
-            }}
-            options={[
-              { value: '', label: t('ai.modes.DEFAULT') },
-              { value: 'METADATA_ONLY', label: t('ai.modes.METADATA_ONLY') },
-              { value: 'OFF', label: t('ai.modes.OFF') },
-            ]}
-          />
+          {billingOnly ? null : (
+            <SelectField
+              label={t('ai.mode')}
+              hint={t('ai.modeHint')}
+              disabled={!editable('modoIA')}
+              value={form.modoIA}
+              onChange={(e) => {
+                set('modoIA', e.target.value);
+              }}
+              options={[
+                { value: '', label: t('ai.modes.DEFAULT') },
+                { value: 'METADATA_ONLY', label: t('ai.modes.METADATA_ONLY') },
+                { value: 'OFF', label: t('ai.modes.OFF') },
+              ]}
+            />
+          )}
         </div>
-        {form.servicio === 'FLT_IGUALA' ? (
+        {full ? (
+          <CheckboxField
+            label={t('clients.billingOnlyField')}
+            hint={t(client ? 'clients.billingOnlyMove' : 'clients.billingOnlyHint')}
+            checked={billingOnly}
+            onChange={(e) => {
+              setBillingOnly(e.target.checked);
+            }}
+          />
+        ) : null}
+        {form.servicio === 'FLT_IGUALA' && !billingOnly ? (
           <fieldset className="space-y-2">
             <legend className="font-medium">{t('clients.perimeter')}</legend>
             <p className="text-sm text-muted-foreground">{t('clients.perimeterHint')}</p>

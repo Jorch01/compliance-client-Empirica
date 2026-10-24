@@ -226,6 +226,7 @@ export const en: Messages = {
     client: 'Client',
     chooseClient: 'Choose client',
     allClients: 'All clients',
+    billingOnly: 'Billing only',
     unit: 'Unit',
     hub: 'All units',
     noClients: 'You have no clients assigned yet.',
@@ -539,6 +540,17 @@ export const en: Messages = {
     invitations: 'Invitations',
     created: 'Client created.',
     adminOnly: 'Only the managing partner opens new clients.',
+    // D87: a client the firm only bills (a lawsuit, say).
+    newBillingOnly: 'New billing client',
+    billingOnly: 'Billing only',
+    billingOnlyIntro:
+      'Clients you only bill, such as a lawsuit: they are not in the tracking portal, have no users, and only the partners and the lawyers authorized for billing see them.',
+    billingOnlyField: 'Billing only (outside the tracking portal)',
+    billingOnlyHint:
+      'For a client you only bill, such as a lawsuit: it does not appear in matters, tasks, the calendar or reports, has no users nor AI helpers, and only the partners and the lawyers authorized for billing see it.',
+    billingOnlyMove:
+      'Checking it takes the client out of the tracking portal: its users stop seeing it and what was recorded stays saved, not deleted. Unchecking it brings it back with everything it had.',
+    billingOnlyTeam: 'The partners see it and, of this team, the lawyers authorized for billing.',
     servicios: {
       FLT_IGUALA: 'Fractional Legal Team (retainer)',
       ASUNTO_PUNTUAL: 'One-off matter',

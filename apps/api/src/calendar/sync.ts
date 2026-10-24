@@ -22,6 +22,7 @@ import {
   RECORD_PATH,
   addDays,
   agendaTitle,
+  isBillingOnly,
   text,
   toProjectDate,
   toProjectIso,
@@ -388,7 +389,10 @@ export function syncCalendars(env: Env, budgetMs = CALENDAR_BUDGET_MS): Calendar
     ]);
     for (const c of calendars) {
       if (c.calendario === FIRM_CALENDAR) continue;
-      const items = agendaFor(wholeClientReader(c.calendario), db, rows, today, settings, window);
+      // A client the firm only bills now (D87): its calendar empties.
+      const items = isBillingOnly(db.table('Clientes').get(c.calendario))
+        ? []
+        : agendaFor(wholeClientReader(c.calendario), db, rows, today, settings, window);
       desired.set(
         c.calendario,
         new Map(

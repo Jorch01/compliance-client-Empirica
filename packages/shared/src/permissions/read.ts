@@ -110,6 +110,16 @@ export function inScope(
   return !partitioned;
 }
 
+/**
+ * A client the firm only bills (D87): its own card and its billing, nothing
+ * else. Nobody records a matter, a task or a document there, and if it was
+ * a tracking client before, what it had stays in the sheet and reaches no one.
+ */
+function closedToTracking(ctx: UserContext, def: TableDef, clienteId: string | null): boolean {
+  if (clienteId === null || def.name === 'Clientes') return false;
+  return ctx.clients.get(clienteId)?.billingOnly === true;
+}
+
 const MAX_PARENT_DEPTH = 6;
 
 /**
@@ -138,6 +148,7 @@ function canReadAt(
   if (def.audience === 'everyone') {
     if (def.scope.user && row[def.scope.user] !== ctx.userId) return false;
     const clienteId = clientIdOf(def, row);
+    if (closedToTracking(ctx, def, clienteId)) return false;
     return clienteId === null || ctx.clients.has(clienteId);
   }
 
@@ -153,13 +164,14 @@ function canReadAt(
     if (ctx.lado !== 'EMPIRICA' || !POLICIES[table][ctx.rolBase].read) return false;
     if (!def.scope.client) return true;
     const clienteId = clientIdOf(def, row);
+    if (closedToTracking(ctx, def, clienteId)) return false;
     return clienteId !== null && ctx.clients.has(clienteId);
   }
 
   const clienteId = clientIdOf(def, row);
   if (!clienteId) return false;
   const access = ctx.clients.get(clienteId);
-  if (!access) return false;
+  if (!access || closedToTracking(ctx, def, clienteId)) return false;
   if (isFirmRole(access.rol)) return true;
   if (!POLICIES[table][access.rol].read) return false;
   if (def.scope.visibility && row.visibilidad !== 'COMPARTIDO') return false;

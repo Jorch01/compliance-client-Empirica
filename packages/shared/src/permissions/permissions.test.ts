@@ -68,11 +68,13 @@ describe('user context', () => {
   it('gives the SOCIO_ADMIN every client', () => {
     const c = w.ctx(ID.socio);
     expect(c.isAdmin).toBe(true);
-    expect([...c.clients.keys()].sort()).toEqual([A, ID.clienteB].sort());
+    expect([...c.clients.keys()].sort()).toEqual([A, ID.clienteB, ID.clienteC].sort());
   });
 
   it('gives lawyers and assistants only the clients they are assigned to', () => {
-    expect([...w.ctx(ID.abogado).clients.keys()]).toEqual([A]);
+    // Client C is billing only: the lawyer works billing, the assistant never has it.
+    expect([...w.ctx(ID.abogado).clients.keys()].sort()).toEqual([A, ID.clienteC].sort());
+    expect([...w.ctx(ID.asistente).clients.keys()]).toEqual([A]);
     expect(w.ctx(ID.asistente).clients.get(A)?.rol).toBe('ASISTENTE');
     expect([...w.ctx(ID.abogadoB).clients.keys()]).toEqual([ID.clienteB]);
   });
@@ -1382,6 +1384,116 @@ describe('billing (F9, D80)', () => {
     // Who is authorized is not for clients to know.
     const lawyer = snap(ID.cAdmin).Usuarios.find((u) => u.id === ID.abogado);
     expect(lawyer).not.toHaveProperty('cobranza');
+  });
+
+  it('a client the firm only bills: its card and its billing, and only for billing (D87)', () => {
+    const C = ID.clienteC;
+    const w = world();
+    expect(w.ctx(ID.socio).clients.get(C)?.billingOnly).toBe(true);
+    expect(w.ctx(ID.abogado).clients.get(C)?.billingOnly).toBe(true);
+    expect(w.ctx(ID.socio).clients.get(A)).not.toHaveProperty('billingOnly');
+    for (const userId of [ID.socio, ID.abogado]) {
+      expect(w.sees(userId, 'Clientes', C)).toBe(true);
+      expect(w.sees(userId, 'Cobros', ID.cobC)).toBe(true);
+      expect(w.sees(userId, 'Pagos', ID.pagC)).toBe(true);
+    }
+    // Assigned to it, but neither an assistant nor a lawyer without billing gets it at all.
+    const unauthorized = world((d) => {
+      const u = d.Usuarios.find((x) => x.id === ID.abogado);
+      if (u) u.cobranza = false;
+    });
+    expect(unauthorized.ctx(ID.abogado).clients.has(C)).toBe(false);
+    expect(unauthorized.sees(ID.abogado, 'Clientes', C)).toBe(false);
+    expect(w.ctx(ID.asistente).clients.has(C)).toBe(false);
+    expect(w.sees(ID.asistente, 'Clientes', C)).toBe(false);
+    // A client user with a membership there (it cannot be invited) gets nothing either.
+    const member = world((d) => {
+      d.Membresias.push({
+        ...d.Membresias[0],
+        id: uid(0x7110),
+        usuarioId: ID.cB,
+        clienteId: C,
+        rol: 'CLIENTE_ADMIN',
+      });
+    });
+    expect(member.ctx(ID.cB).clients.has(C)).toBe(false);
+    expect(member.sees(ID.cB, 'Clientes', C)).toBe(false);
+  });
+
+  it('nothing of the tracking portal is recorded in a client the firm only bills', () => {
+    const C = ID.clienteC;
+    const w = world();
+    const matter = {
+      clienteId: C,
+      titulo: 'Juicio (ejemplo)',
+      area: 'CONTROVERSIAS',
+      estado: 'ACTIVO',
+      visibilidad: 'INTERNO',
+    };
+    for (const userId of [ID.socio, ID.abogado]) {
+      expect(w.write(userId, 'Asuntos', 'create', uid(0x7111), matter)).toMatchObject({
+        ok: false,
+      });
+      expect(
+        w.write(userId, 'Entidades', 'create', uid(0x7112), {
+          clienteId: C,
+          nombre: 'Unidad (ejemplo)',
+          tipo: 'UNIDAD',
+        }),
+      ).toMatchObject({ ok: false });
+    }
+    // Its billing, yes: a payment, a reminder.
+    expect(
+      w.write(ID.abogado, 'Pagos', 'create', uid(0x7113), {
+        cobroId: ID.cobC,
+        fecha: '2026-10-20',
+        monto: 1000,
+      }),
+    ).toMatchObject({ ok: true, clienteId: C });
+    expect(
+      w.write(ID.abogado, 'RecordatoriosCobro', 'create', uid(0x7114), {
+        clienteId: C,
+        titulo: 'Pedir el resto (ejemplo)',
+        fecha: '2026-11-02',
+        repetir: 'NO',
+      }).ok,
+    ).toBe(true);
+    // If it was a tracking client before, what it had stays in the sheet and reaches no one.
+    const was = world((d) => {
+      const matterOfC = { ...d.Asuntos[0], id: uid(0x7115), clienteId: C };
+      d.Asuntos.push(matterOfC);
+    });
+    expect(was.sees(ID.socio, 'Asuntos', uid(0x7115))).toBe(false);
+  });
+
+  it('only a partner moves a client in or out of the tracking portal', () => {
+    const w = world();
+    expect(w.write(ID.socio, 'Clientes', 'update', ID.clienteC, { soloCobranza: false }).ok).toBe(
+      true,
+    );
+    expect(w.write(ID.socio, 'Clientes', 'update', A, { soloCobranza: true }).ok).toBe(true);
+    expect(
+      w.write(ID.abogado, 'Clientes', 'update', ID.clienteC, { soloCobranza: false }),
+    ).toMatchObject({
+      ok: false,
+      reason: 'FIELD_NOT_ALLOWED',
+    });
+    expect(
+      w.write(ID.abogado, 'Clientes', 'update', ID.clienteC, {
+        nombreComercial: 'Litigio (ejemplo)',
+      }).ok,
+    ).toBe(true);
+    const created = w.write(ID.socio, 'Clientes', 'create', uid(0x7116), {
+      razonSocial: 'Otro Litigio Demo, S.C.',
+      servicio: 'ASUNTO_PUNTUAL',
+      estado: 'ACTIVO',
+      soloCobranza: true,
+    });
+    expect(created.ok).toBe(true);
+    expect(projectRow(w.ctx(ID.socio), 'Clientes', w.row('Clientes', ID.clienteC))).toHaveProperty(
+      'soloCobranza',
+      true,
+    );
   });
 
   it('a client’s whole view (calendar, report) never carries billing', () => {

@@ -213,7 +213,7 @@ export function BillingChargeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { me, engine } = usePortal();
   const [, navigate] = useLocation();
-  const data = useBillingData();
+  const data = useBillingData({ allClients: true });
   const names = useNames();
   const participant = useParticipantNames();
   const [dialog, setDialog] = useState<Dialogs | null>(null);

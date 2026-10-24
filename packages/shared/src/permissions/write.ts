@@ -288,6 +288,13 @@ function authorizeCreate(
   return { ok: true, fields, clienteId, rol };
 }
 
+const isActiveLawyer = (user: Row | undefined): boolean =>
+  user !== undefined &&
+  !user.deleted &&
+  user.estado !== 'INACTIVO' &&
+  user.lado === 'EMPIRICA' &&
+  (user.rolBase === 'ABOGADO' || user.rolBase === 'SOCIO_ADMIN');
+
 /** References must point to live records of the same client the user can see. */
 function checkRefs(
   ctx: UserContext,
@@ -303,9 +310,12 @@ function checkRefs(
     const value = text(row, name);
     if (!value) continue;
     if (column.ref === 'Usuarios') {
-      if (!lookup.userCanAccess(value, clienteId)) {
-        return deny('VALIDATION', 'USER_NOT_IN_CLIENT', name);
-      }
+      // A client's responsible lawyer joins its team on saving (push.ts): any lawyer of the firm.
+      const ok =
+        def.name === 'Clientes' && name === 'abogadoResponsableId'
+          ? isActiveLawyer(lookup.get('Usuarios', value))
+          : lookup.userCanAccess(value, clienteId);
+      if (!ok) return deny('VALIDATION', 'USER_NOT_IN_CLIENT', name);
       continue;
     }
     if (column.ref === def.name && value === row.id) return deny('VALIDATION', 'CYCLE', name);

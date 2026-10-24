@@ -9,6 +9,7 @@ import {
   FIRM_ROLES,
   TABLES,
   hasBillingAccess,
+  isBillingOnly,
   sameValue,
   type Alcance,
   type Row,
@@ -137,6 +138,10 @@ export function saveMembership(
     const roles: readonly string[] =
       user.lado === 'EMPIRICA' ? FIRM_ROLES.filter((x) => x !== 'SOCIO_ADMIN') : CLIENT_ROLES;
     if (!roles.includes(input.rol)) throw validation('El rol no corresponde a este usuario.');
+    // A client the firm only bills has nobody of its own in the portal (D87).
+    if (user.lado === 'CLIENTE' && isBillingOnly(cliente)) {
+      throw validation('Este cliente es solo de cobranza: no tiene usuarios en el portal.');
+    }
 
     let alcance: Value = null;
     if (user.lado === 'CLIENTE' && input.alcance) {

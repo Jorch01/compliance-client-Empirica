@@ -16,6 +16,7 @@ import {
   buildUserContext,
   canRead,
   clampStamp,
+  isBillingOnly,
   projectRow,
   text,
   toProjectDate,
@@ -436,23 +437,92 @@ class PushRun {
     if (table === 'Clientes' && (!before || Boolean(before.deleted) !== Boolean(after.deleted))) {
       this.#ctx = this.#contextOf();
     }
+    // A client moved in or out of the tracking portal (D87) changes who has
+    // it and what of it they see: every device of that client downloads it
+    // again, and the next operations already see it as it is now.
+    if (
+      table === 'Clientes' &&
+      before &&
+      isBillingOnly(before) !== isBillingOnly(after) &&
+      clienteId
+    ) {
+      this.#ctx = this.#contextOf();
+      this.#downloadAgain(clienteId);
+    }
     // Moving a unit in the tree changes who sees what: every device of that
     // client downloads it again.
     if (table === 'Entidades' && before && before.parentId !== after.parentId && clienteId) {
-      const cliente = this.#db.table('Clientes').get(clienteId);
-      if (cliente) {
-        const epoch = typeof cliente.membershipEpoch === 'number' ? cliente.membershipEpoch : 0;
-        this.#writer.save('Clientes', cliente, { ...cliente, membershipEpoch: epoch + 1 });
-        this.#writer.audit(
-          'SISTEMA',
-          'Clientes',
-          clienteId,
-          clienteId,
-          { membershipEpoch: epoch },
-          { membershipEpoch: epoch + 1 },
-        );
-      }
+      this.#downloadAgain(clienteId);
     }
+    // A client's responsible lawyer is on its team.
+    if (
+      table === 'Clientes' &&
+      clienteId &&
+      (!before || before.abogadoResponsableId !== after.abogadoResponsableId)
+    ) {
+      this.#joinTeam(clienteId, text(after, 'abogadoResponsableId'));
+    }
+  }
+
+  /** Assigns a lawyer to a client (an active membership), if they are not already. */
+  #joinTeam(clienteId: string, userId: string | null): void {
+    const user = userId ? this.#db.table('Usuarios').get(userId) : undefined;
+    // A partner sees every client: a membership would mean nothing.
+    if (user?.lado !== 'EMPIRICA' || user.rolBase !== 'ABOGADO') return;
+    const existing = this.#db
+      .rows('Membresias')
+      .find((m) => m.usuarioId === user.id && m.clienteId === clienteId && !m.deleted);
+    if (existing?.estado === 'ACTIVA') return;
+    const next: Row = existing
+      ? {
+          ...existing,
+          rol: 'ABOGADO',
+          estado: 'ACTIVA',
+          updatedAt: this.#serverNow,
+          updatedBy: this.#ctx.userId,
+          version: (typeof existing.version === 'number' ? existing.version : 0) + 1,
+        }
+      : {
+          id: this.#env.uuid(),
+          createdAt: this.#serverNow,
+          createdBy: this.#ctx.userId,
+          updatedAt: this.#serverNow,
+          updatedBy: this.#ctx.userId,
+          version: 1,
+          deleted: null,
+          fieldTimestamps: {},
+          usuarioId: user.id,
+          clienteId,
+          rol: 'ABOGADO',
+          alcance: null,
+          puesto: null,
+          estado: 'ACTIVA',
+        };
+    this.#writer.save('Membresias', existing, next);
+    this.#writer.audit(
+      'SISTEMA',
+      'Membresias',
+      next.id,
+      clienteId,
+      existing ? { estado: existing.estado ?? null } : null,
+      { usuarioId: user.id, rol: 'ABOGADO', estado: 'ACTIVA' },
+    );
+  }
+
+  /** Every device of a client wipes it and downloads it again (`membershipEpoch`). */
+  #downloadAgain(clienteId: string): void {
+    const cliente = this.#db.table('Clientes').get(clienteId);
+    if (!cliente) return;
+    const epoch = typeof cliente.membershipEpoch === 'number' ? cliente.membershipEpoch : 0;
+    this.#writer.save('Clientes', cliente, { ...cliente, membershipEpoch: epoch + 1 });
+    this.#writer.audit(
+      'SISTEMA',
+      'Clientes',
+      clienteId,
+      clienteId,
+      { membershipEpoch: epoch },
+      { membershipEpoch: epoch + 1 },
+    );
   }
 
   /** A sensitive field kept its value: record it and tell the responsible lawyer. */
