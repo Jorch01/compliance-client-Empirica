@@ -20,16 +20,18 @@ describe('legal texts', () => {
     expect(blocks[0]).toEqual({ kind: 'h1', text: 'Aviso de Privacidad Integral' });
     expect(
       blocks.flatMap((b) => (b.kind === 'h2' ? [b.text.slice(0, b.text.indexOf('.'))] : [])),
-    ).toEqual(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']);
+    ).toEqual(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']);
     expect(blocks.flatMap((b) => (b.kind === 'h3' ? [b.text] : []))).toEqual([
-      'a) Datos de identificación',
-      'b) Datos de contacto',
-      'c) Datos recabados de forma automática',
+      'a) Datos de identificación, contacto y fiscales',
+      'b) Datos familiares',
+      'c) Datos patrimoniales y financieros',
+      'd) Datos sobre juicios y procedimientos',
+      'e) Datos recabados de forma automática',
     ]);
     const tables = blocks.flatMap((b) => (b.kind === 'table' ? [b] : []));
     expect(tables).toHaveLength(1);
     expect(tables[0]?.head).toEqual(['Destinatario', 'Finalidad', 'Consentimiento']);
-    expect(tables[0]?.rows.map((r) => r.length)).toEqual([3, 3, 3]);
+    expect(tables[0]?.rows.map((r) => r.length)).toEqual([3, 3, 3, 3]);
   });
 
   it('keeps consecutive lines in one paragraph and indented lines as one list', () => {
