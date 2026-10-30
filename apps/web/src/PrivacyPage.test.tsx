@@ -16,14 +16,14 @@ describe('privacy notice page (/privacidad/)', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Aviso de Privacidad Integral' }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(11);
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(12);
     const table = screen.getByRole('table');
     expect(
       within(table)
         .getAllByRole('columnheader')
         .map((th) => th.textContent),
     ).toEqual(['Destinatario', 'Finalidad', 'Consentimiento']);
-    expect(within(table).getAllByRole('row')).toHaveLength(4);
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
   });
 
   it('links the contact address and leads back home', () => {
